@@ -1,0 +1,127 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Book {
+  id          String          @id @default(cuid())
+  title       String
+  coverBase64 String?
+  annotation  String          @default("")
+  synopsis    String          @default("")
+  createdAt   DateTime        @default(now())
+  chapters    Chapter[]
+  characters  Character[]
+  locations   Location[]
+  timeline    TimelineEvent[]
+  lore        LoreEntry[]
+}
+
+model Character {
+  id          String              @id @default(cuid())
+  name        String
+  role        String              @default("secondary")
+  bio         String              @default("")
+  appearance  String              @default("")
+  personality String              @default("")
+  decisions   String              @default("")
+  arc         String              @default("")
+  bookId      String
+  book        Book                @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  mentions    ChapterMention[]
+  relations   CharacterRelation[] @relation("CharacterRelations")
+  relatedIn   CharacterRelation[] @relation("RelatedRelations")
+  eventLinks  EventCharacter[]
+}
+
+model CharacterRelation {
+  id          String    @id @default(cuid())
+  characterId String
+  relatedId   String
+  note        String    @default("")
+  character   Character @relation("CharacterRelations", fields: [characterId], references: [id], onDelete: Cascade)
+  related     Character @relation("RelatedRelations", fields: [relatedId], references: [id], onDelete: Cascade)
+}
+
+model EventCharacter {
+  id          String        @id @default(cuid())
+  eventId     String
+  characterId String
+  event       TimelineEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  character   Character     @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, characterId])
+}
+
+model EventMention {
+  id        String        @id @default(cuid())
+  chapterId String
+  eventId   String
+  chapter   Chapter       @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  event     TimelineEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([chapterId, eventId])
+}
+
+model Location {
+  id          String           @id @default(cuid())
+  name        String
+  desc        String           @default("")
+  imageBase64 String?
+  bookId      String
+  book        Book             @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  mentions    ChapterMention[]
+}
+
+model Chapter {
+  id             String            @id @default(cuid())
+  title          String
+  content        String            @default("")
+  order          Int
+  bookId         String
+  book           Book              @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  mentions       ChapterMention[]
+  eventMentions  EventMention[]
+  timelinePins   TimelineEvent[]
+}
+
+model ChapterMention {
+  id          String     @id @default(cuid())
+  chapterId   String
+  characterId String?
+  locationId  String?
+  snippet     String     @default("")
+  chapter     Chapter    @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  character   Character? @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  location    Location?  @relation(fields: [locationId], references: [id], onDelete: Cascade)
+}
+
+model TimelineEvent {
+  id           String           @id @default(cuid())
+  dateType     String           @default("calendar")
+  date         String           @default("")
+  bookYear     Int?
+  bookDay      Int?
+  description  String
+  summary      String           @default("")
+  createdAt    DateTime         @default(now())
+  bookId       String
+  book         Book             @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  chapterId    String?
+  chapter      Chapter?         @relation(fields: [chapterId], references: [id], onDelete: SetNull)
+  participants EventCharacter[]
+  mentions     EventMention[]
+}
+
+model LoreEntry {
+  id        String   @id @default(cuid())
+  text      String
+  tags      String
+  createdAt DateTime @default(now())
+  bookId    String
+  book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+}

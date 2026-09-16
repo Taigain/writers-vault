@@ -1,0 +1,9 @@
+-- CreateTable
+CREATE TABLE "LoreEntry" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "text" TEXT NOT NULL,
+    "tags" TEXT NOT NULL,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "bookId" TEXT NOT NULL,
+    CONSTRAINT "LoreEntry_bookId_fkey" FOREIGN KEY ("bookId") REFERENCES "Book" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
