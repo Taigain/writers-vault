@@ -10,6 +10,7 @@ import ChapterEditor from '@/components/ChapterEditor'
 import DeleteButton from '@/components/DeleteButton'
 import ExportButton from '@/components/ExportButton'
 import ChapterSearch from '@/components/ChapterSearch'
+import ActBar from '@/components/ActBar'
 import { ROLES } from '@/lib/roles'
 import { getLang } from '@/lib/lang-server'
 import { tr } from '@/lib/i18n'
@@ -65,6 +66,45 @@ export default async function BookPage({
   const totalWords = chapters.reduce((s, c) => s + words(c.content), 0)
   const totalChars = chapters.reduce((s, c) => s + c.content.length, 0)
 
+    const globalIndex = new Map(chapters.map((c, i) => [c.id, i]))
+
+  const actNames: string[] = []
+  const byAct = new Map<string, typeof chapters>()
+  for (const c of chapters) {
+    if (!c.actName) continue
+    if (!byAct.has(c.actName)) {
+      byAct.set(c.actName, [])
+      actNames.push(c.actName)
+    }
+    byAct.get(c.actName)!.push(c)
+  }
+
+  type Block =
+    | { kind: 'chapter'; pos: number; ch: (typeof chapters)[number] }
+    | { kind: 'act'; pos: number; name: string; chs: typeof chapters }
+  const blocks: Block[] = []
+  for (const c of chapters) {
+    if (!c.actName) blocks.push({ kind: 'chapter', pos: c.order, ch: c })
+  }
+  for (const [name, chs] of byAct) {
+    blocks.push({ kind: 'act', pos: Math.min(...chs.map((c) => c.order)), name, chs })
+  }
+  blocks.sort((x, y) => x.pos - y.pos)
+
+  const renderChapter = (ch: (typeof chapters)[number]) => (
+    <ChapterEditor
+      key={ch.id}
+      id={ch.id}
+      index={globalIndex.get(ch.id) ?? 0}
+      total={chapters.length}
+      title={ch.title}
+      content={ch.content}
+      autoOpen={chParam === ch.id}
+      actNames={actNames}
+      actName={ch.actName}
+    />
+  )
+
   /* ---------- ГЛАВЫ ---------- */
   const chaptersSection = (
     <div className="space-y-6">
@@ -102,18 +142,17 @@ export default async function BookPage({
         </div>
       )}
 
-      <div className="space-y-4">
-        {chapters.map((ch, i) => (
-          <ChapterEditor
-            key={ch.id}
-            id={ch.id}
-            index={i}
-            total={chapters.length}
-            title={ch.title}
-            content={ch.content}
-            autoOpen={chParam === ch.id}
-          />
-        ))}
+      <div className="space-y-6">
+        {blocks.map((b) =>
+          b.kind === 'chapter' ? (
+            <div key={'c' + b.ch.id}>{renderChapter(b.ch)}</div>
+          ) : (
+            <section key={'a' + b.name}>
+              <ActBar bookId={id} name={b.name} />
+              <div className="space-y-4 mt-3">{b.chs.map(renderChapter)}</div>
+            </section>
+          ),
+        )}
       </div>
 
       <form

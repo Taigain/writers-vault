@@ -13,10 +13,15 @@ async function ensureSchema() {
       "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
     )`)
     await prisma.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "Series_name_key" ON "Series"("name")`)
-    const cols = await prisma.$queryRawUnsafe<Array<{ name: string }>>(`PRAGMA table_info("Book")`)
-    if (!cols.some((c) => c.name === 'seriesId')) {
+    const bookCols = await prisma.$queryRawUnsafe<Array<{ name: string }>>(`PRAGMA table_info("Book")`)
+    if (!bookCols.some((c) => c.name === 'seriesId')) {
       await prisma.$executeRawUnsafe(`ALTER TABLE "Book" ADD COLUMN "seriesId" TEXT REFERENCES "Series"("id") ON DELETE SET NULL ON UPDATE CASCADE`)
       await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "Book_seriesId_idx" ON "Book"("seriesId")`)
+    }
+    const chCols = await prisma.$queryRawUnsafe<Array<{ name: string }>>(`PRAGMA table_info("Chapter")`)
+    if (!chCols.some((c) => c.name === 'actName')) {
+      await prisma.$executeRawUnsafe(`ALTER TABLE "Chapter" ADD COLUMN "actName" TEXT`)
+      await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "Chapter_actName_idx" ON "Chapter"("actName")`)
     }
   } catch (e) {
     console.error('ensureSchema failed:', e)

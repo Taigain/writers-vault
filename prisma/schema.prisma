@@ -89,6 +89,7 @@ model Chapter {
   mentions       ChapterMention[]
   eventMentions  EventMention[]
   timelinePins   TimelineEvent[]
+  actName String?
 }
 
 model ChapterMention {

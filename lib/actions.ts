@@ -482,11 +482,11 @@ export async function moveChapter(chapterId: string, dir: number) {
   await schemaReady
   const ch = await prisma.chapter.findUnique({
     where: { id: chapterId },
-    select: { id: true, bookId: true },
+    select: { id: true, bookId: true, actName: true },
   })
   if (!ch) return
   const siblings = await prisma.chapter.findMany({
-    where: { bookId: ch.bookId },
+    where: { bookId: ch.bookId, actName: ch.actName },
     orderBy: { order: 'asc' },
     select: { id: true },
   })
@@ -512,4 +512,40 @@ export async function getBooksWithChapters() {
       chapters: { orderBy: { order: 'asc' }, select: { id: true, title: true } },
     },
   })
+}
+
+export async function setChapterAct(chapterId: string, actName: string | null) {
+  await schemaReady
+  const ch = await prisma.chapter.findUnique({ where: { id: chapterId }, select: { bookId: true } })
+  if (!ch) return
+  const maxOrd = await prisma.chapter.aggregate({ where: { bookId: ch.bookId }, _max: { order: true } })
+  await prisma.chapter.update({
+    where: { id: chapterId },
+    data: { actName, order: (maxOrd._max.order ?? 0) + 1 },
+  })
+  revalidatePath(`/book/${ch.bookId}`)
+}
+
+export async function renameActInBook(bookId: string, oldName: string, newName: string) {
+  await schemaReady
+  const name = newName.trim()
+  if (!name) return
+  await prisma.chapter.updateMany({ where: { bookId, actName: oldName }, data: { actName: name } })
+  revalidatePath(`/book/${bookId}`)
+}
+
+export async function deleteActInBook(bookId: string, name: string) {
+  await schemaReady
+  await prisma.chapter.updateMany({ where: { bookId, actName: name }, data: { actName: null } })
+  revalidatePath(`/book/${bookId}`)
+}
+
+export async function createChapterInAct(bookId: string, actName: string) {
+  await schemaReady
+  const count = await prisma.chapter.count({ where: { bookId } })
+  const maxOrd = await prisma.chapter.aggregate({ where: { bookId }, _max: { order: true } })
+  await prisma.chapter.create({
+    data: { bookId, actName, title: `Глава ${count + 1}`, order: (maxOrd._max.order ?? 0) + 1 },
+  })
+  revalidatePath(`/book/${bookId}`)
 }

@@ -1,10 +1,10 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Save, Trash2, Bold, Italic, AlignLeft, AlignCenter, AlignRight, Eye, EyeOff, ChevronRight, Eraser, ArrowUp, ArrowDown } from 'lucide-react'
+import { Save, Trash2, Bold, Italic, AlignLeft, AlignCenter, AlignRight, Eye, EyeOff, ChevronRight, Eraser, ArrowUp, ArrowDown, Check, Plus } from 'lucide-react'
 import RichPreview from './RichPreview'
 import { useLang } from '@/lib/useLang'
-import { saveChapter, deleteChapter, moveChapter } from '@/lib/actions'
+import { saveChapter, deleteChapter, moveChapter, setChapterAct } from '@/lib/actions'
 
 const wordsOf = (s: string) => (s.trim() ? s.trim().split(/\s+/).length : 0)
 const SIZES = [14, 16, 18, 20, 24, 32]
@@ -16,6 +16,8 @@ export default function ChapterEditor({
   title,
   content,
   autoOpen,
+  actNames,
+  actName,
 }: {
   id: string
   index: number
@@ -23,7 +25,10 @@ export default function ChapterEditor({
   title: string
   content: string
   autoOpen?: boolean
+  actNames: string[]
+  actName: string | null
 }) {
+  const [newActOpen, setNewActOpen] = useState(false)
   const { t } = useLang()
   const [chTitle, setChTitle] = useState(title)
   const [c, setC] = useState(content)
@@ -258,6 +263,45 @@ export default function ChapterEditor({
           >
             <ArrowDown size={14} />
           </button>
+          <select
+            className="act-select"
+            title={t('chAct')}
+            defaultValue={actName ?? ''}
+            onChange={async (e) => {
+              await setChapterAct(id, e.target.value || null)
+            }}
+          >
+            <option value="">{t('chNoAct')}</option>
+            {actNames.map((n) => (
+              <option key={n} value={n}>{n}</option>
+            ))}
+          </select>
+          {newActOpen ? (
+            <form
+              className="flex items-center gap-1"
+              onSubmit={async (e) => {
+                e.preventDefault()
+                const fd = new FormData(e.currentTarget)
+                const name = String(fd.get('newact') ?? '').trim()
+                if (name) await setChapterAct(id, name)
+                setNewActOpen(false)
+              }}
+            >
+              <input name="newact" className="act-select" placeholder={t('chActNewPh')} autoFocus />
+              <button type="submit" className="mini-btn" title={t('chActNew')}>
+                <Check size={13} />
+              </button>
+            </form>
+          ) : (
+            <button
+              type="button"
+              className="mini-btn"
+              title={t('chActNew')}
+              onClick={() => setNewActOpen(true)}
+            >
+              <Plus size={13} />
+            </button>
+          )}
         </span>
         <span className="chip">
           {wordsOf(c).toLocaleString('ru-RU')} {t('chWords')}
