@@ -501,3 +501,15 @@ export async function moveChapter(chapterId: string, dir: number) {
   )
   revalidatePath(`/book/${ch.bookId}`)
 }
+
+export async function getBooksWithChapters() {
+  await schemaReady
+  return prisma.book.findMany({
+    orderBy: { createdAt: 'asc' },
+    select: {
+      id: true,
+      title: true,
+      chapters: { orderBy: { order: 'asc' }, select: { id: true, title: true } },
+    },
+  })
+}

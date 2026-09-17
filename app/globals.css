@@ -627,3 +627,58 @@ button.acc-head, .acc-head-btn {
 }
 .mini-btn:hover:not(:disabled) { background: var(--card); color: var(--ink); }
 .mini-btn:disabled { opacity: .35; cursor: default; }
+
+.nav-ch-toggle {
+  display: flex; align-items: center; justify-content: center;
+  width: 1.4rem; height: 1.6rem; margin-right: .35rem;
+  border: none; background: transparent;
+  color: rgba(255,255,255,.45); cursor: pointer; border-radius: .35rem;
+}
+.nav-ch-toggle:hover { color: #fff; background: rgba(255,255,255,.08); }
+.nav-chapters {
+  display: flex; flex-direction: column; gap: 1px;
+  margin: 2px 0 4px .9rem; padding-left: .55rem;
+  border-left: 1px solid rgba(255,255,255,.12);
+}
+.nav-chapter-link {
+  display: flex; align-items: center; gap: .45rem;
+  padding: .28rem .5rem; border-radius: .4rem;
+  font-size: .72rem; color: rgba(255,255,255,.55);
+  text-decoration: none; min-width: 0;
+}
+.nav-chapter-link:hover { background: rgba(255,255,255,.08); color: #fff; }
+.nav-ch-num {
+  flex: none; min-width: 1.15rem; height: 1.15rem;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: .3rem; background: rgba(255,255,255,.1);
+  font-size: .62rem; font-weight: 700;
+}
+.ch-search {
+  position: sticky; top: 0; z-index: 20;
+  padding: .5rem 0 .4rem;
+  background: color-mix(in srgb, var(--card) 94%, transparent);
+  backdrop-filter: blur(6px);
+}
+.ch-search-bar {
+  display: flex; align-items: center; gap: .5rem;
+  padding: .5rem .8rem;
+  border: 1px solid var(--line); border-radius: .6rem;
+  background: var(--card); box-shadow: 0 2px 8px rgba(0,0,0,.06);
+}
+.ch-search-results {
+  margin-top: .4rem; max-height: 40vh; overflow: auto;
+  border: 1px solid var(--line); border-radius: .6rem;
+  background: var(--card); box-shadow: 0 8px 24px rgba(0,0,0,.12);
+}
+.ch-search-item {
+  display: block; width: 100%; text-align: left;
+  padding: .6rem .8rem; border: none; background: transparent;
+  border-bottom: 1px solid var(--line); cursor: pointer;
+}
+.ch-search-item:last-child { border-bottom: none; }
+.ch-search-item:hover { background: var(--line); }
+.ch-search-snippet { font-size: .75rem; margin-top: .3rem; color: var(--soft); line-height: 1.45; }
+.ch-search-snippet mark {
+  background: rgba(169,129,47,.25); color: inherit;
+  border-radius: .2rem; padding: 0 .1rem;
+}

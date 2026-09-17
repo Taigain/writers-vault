@@ -9,6 +9,7 @@ import BookPassport from '@/components/BookPassport'
 import ChapterEditor from '@/components/ChapterEditor'
 import DeleteButton from '@/components/DeleteButton'
 import ExportButton from '@/components/ExportButton'
+import ChapterSearch from '@/components/ChapterSearch'
 import { ROLES } from '@/lib/roles'
 import { getLang } from '@/lib/lang-server'
 import { tr } from '@/lib/i18n'
@@ -39,10 +40,10 @@ export default async function BookPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ tab?: string }>
+  searchParams: Promise<{ tab?: string; ch?: string }>
 }) {
   const { id } = await params
-  const { tab } = await searchParams
+  const { tab, ch: chParam } = await searchParams
   const view = tab && VIEWS.includes(tab) ? tab : 'passport'
   const lang = await getLang()
 
@@ -67,6 +68,10 @@ export default async function BookPage({
   /* ---------- ГЛАВЫ ---------- */
   const chaptersSection = (
     <div className="space-y-6">
+      <ChapterSearch
+        bookId={id}
+        chapters={chapters.map((c, i) => ({ id: c.id, title: c.title, content: c.content, index: i }))}
+      />
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap gap-2">
           <span className="chip">
@@ -99,9 +104,29 @@ export default async function BookPage({
 
       <div className="space-y-4">
         {chapters.map((ch, i) => (
-          <ChapterEditor key={ch.id} id={ch.id} index={i} total={chapters.length} title={ch.title} content={ch.content} />
+          <ChapterEditor
+            key={ch.id}
+            id={ch.id}
+            index={i}
+            total={chapters.length}
+            title={ch.title}
+            content={ch.content}
+            autoOpen={chParam === ch.id}
+          />
         ))}
       </div>
+
+      <form
+        action={async () => {
+          'use server'
+          await createChapter(id, chapters.length + 1)
+        }}
+        className="flex justify-center pt-2"
+      >
+        <button className="btn btn-ghost btn-sm">
+          <Plus size={14} /> {tr(lang, 'pgAddChapter')}
+        </button>
+      </form>
     </div>
   )
 

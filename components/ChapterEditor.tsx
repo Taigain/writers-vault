@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Save, Trash2, Bold, Italic, AlignLeft, AlignCenter, AlignRight, Eye, EyeOff, ChevronRight, Eraser, ArrowUp, ArrowDown } from 'lucide-react'
 import RichPreview from './RichPreview'
 import { useLang } from '@/lib/useLang'
@@ -15,19 +15,28 @@ export default function ChapterEditor({
   total,
   title,
   content,
+  autoOpen,
 }: {
   id: string
   index: number
   total: number
   title: string
   content: string
+  autoOpen?: boolean
 }) {
   const { t } = useLang()
   const [chTitle, setChTitle] = useState(title)
   const [c, setC] = useState(content)
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(Boolean(autoOpen))
   const [showPreview, setShowPreview] = useState(true)
   const taRef = useRef<HTMLTextAreaElement | null>(null)
+  const rootRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    if (autoOpen && rootRef.current) {
+      rootRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }, [autoOpen])
 
   const applyWrap = (start: number, end: number, before: string, after: string) => {
     const next = c.slice(0, start) + before + c.slice(start, end) + after + c.slice(end)
@@ -210,7 +219,7 @@ export default function ChapterEditor({
   }
 
   return (
-    <div className="acc">
+      <div className="acc" ref={rootRef}>
       <div
         role="button"
         tabIndex={0}

@@ -192,6 +192,10 @@ export const STR = {
     homeSeriesDeleteConfirm: 'Удалить серию «{name}»? Книги останутся без серии.',
     chMoveUp: 'Переместить выше',
     chMoveDown: 'Переместить ниже',
+    navChaptersToggle: 'Список глав',
+    chSearchPh: 'Поиск по тексту книги…',
+    chSearchFound: 'Совпадений: {n} · глав: {c}',
+    chSearchEmpty: 'Ничего не найдено.',
   },
   en: {
     tagline: "author's cabinet",
@@ -383,6 +387,10 @@ export const STR = {
     homeSeriesDeleteConfirm: 'Delete series "{name}"? Books will become standalone.',
     chMoveUp: 'Move up',
     chMoveDown: 'Move down',
+    navChaptersToggle: 'Chapter list',
+    chSearchPh: 'Search inside this book…',
+    chSearchFound: 'Matches: {n} · chapters: {c}',
+    chSearchEmpty: 'Nothing found.',
   },
 } as const
 

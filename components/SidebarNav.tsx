@@ -7,7 +7,7 @@ import { ChevronRight, BookOpenText, Feather, Users, Globe2, MapPin, Clock, Shar
 import { useLang } from '@/lib/useLang'
 import type { StrKey } from '@/lib/i18n'
 
-type BookItem = { id: string; title: string }
+type BookItem = { id: string; title: string; chapters: { id: string; title: string }[] }
 
 const SECTIONS: { tab: string; key: StrKey; icon: typeof Feather }[] = [
   { tab: 'chapters', key: 'secChapters', icon: Feather },
@@ -24,6 +24,7 @@ export default function SidebarNav({ books }: { books: BookItem[] }) {
   const currentTab = searchParams.get('tab')
   const currentBookId = pathname?.startsWith('/book/') ? pathname.split('/')[2] : null
   const [open, setOpen] = useState<string | null>(currentBookId)
+  const [chOpen, setChOpen] = useState<string | null>(null)
   const { t } = useLang()
 
   return (
@@ -76,13 +77,40 @@ export default function SidebarNav({ books }: { books: BookItem[] }) {
                   const Icon = s.icon
                   const active = isActive && currentTab === s.tab
                   return (
-                    <Link
-                      key={s.tab}
-                      href={`/book/${b.id}?tab=${s.tab}`}
-                      className={`nav-sub-link ${active ? 'nav-sub-active' : ''}`}
-                    >
-                      <Icon size={13} /> {t(s.key)}
-                    </Link>
+                    <div key={s.tab}>
+                      <div className="flex items-center">
+                        <Link
+                          href={`/book/${b.id}?tab=${s.tab}`}
+                          className={`nav-sub-link flex-1 min-w-0 ${active ? 'nav-sub-active' : ''}`}
+                        >
+                          <Icon size={13} /> <span className="truncate">{t(s.key)}</span>
+                        </Link>
+                        {s.tab === 'chapters' && b.chapters.length > 0 && (
+                          <button
+                            type="button"
+                            className="nav-ch-toggle"
+                            title={t('navChaptersToggle')}
+                            onClick={() => setChOpen(chOpen === b.id ? null : b.id)}
+                          >
+                            <ChevronRight size={12} className={`nav-chev ${chOpen === b.id ? 'nav-chev-open' : ''}`} />
+                          </button>
+                        )}
+                      </div>
+                      {s.tab === 'chapters' && chOpen === b.id && (
+                        <div className="nav-chapters">
+                          {b.chapters.map((ch, i) => (
+                            <Link
+                              key={ch.id}
+                              href={`/book/${b.id}?tab=chapters&ch=${ch.id}`}
+                              className="nav-chapter-link"
+                            >
+                              <span className="nav-ch-num">{i + 1}</span>
+                              <span className="truncate">{ch.title || '—'}</span>
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   )
                 })}
               </div>
