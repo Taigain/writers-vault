@@ -4,9 +4,12 @@ import { useRef, useState } from 'react'
 import { Save, Image as ImageIcon, Trash2 } from 'lucide-react'
 import { saveBook, removeBookCover } from '@/lib/actions'
 import { useLang } from '@/lib/useLang'
+import SeriesPicker from './SeriesPicker'
 
 const ANN_LIMIT = 800
 const SYN_LIMIT = 5000
+
+export type SeriesOption = { id: string; name: string }
 
 export default function BookPassport({
   id,
@@ -14,12 +17,16 @@ export default function BookPassport({
   coverBase64,
   annotation,
   synopsis,
+  series,
+  seriesId,
 }: {
   id: string
   title: string
   coverBase64: string | null
   annotation: string
   synopsis: string
+  series: SeriesOption[]
+  seriesId: string | null
 }) {
   const { t } = useLang()
   const [annLen, setAnnLen] = useState(annotation.length)
@@ -55,6 +62,8 @@ export default function BookPassport({
             <label className="field-label">{t('bpTitle')}</label>
             <input name="title" defaultValue={title} required className="input font-semibold" />
           </div>
+
+          <SeriesPicker bookId={id} series={series} seriesId={seriesId} />
 
           <div>
             <div className="flex items-center justify-between">

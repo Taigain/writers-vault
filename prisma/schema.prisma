@@ -19,6 +19,8 @@ model Book {
   locations   Location[]
   timeline    TimelineEvent[]
   lore        LoreEntry[]
+  seriesId String?
+  series   Series? @relation(fields: [seriesId], references: [id], onDelete: SetNull)
 }
 
 model Character {
@@ -124,4 +126,11 @@ model LoreEntry {
   createdAt DateTime @default(now())
   bookId    String
   book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+}
+
+model Series {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  books     Book[]
 }

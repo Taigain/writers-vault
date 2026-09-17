@@ -14,6 +14,7 @@ import { getLang } from '@/lib/lang-server'
 import { tr } from '@/lib/i18n'
 import {
   getBook,
+  getSeriesList,
   getChapters,
   createChapter,
   getCharacters,
@@ -47,6 +48,7 @@ export default async function BookPage({
 
   const book = await getBook(id)
   if (!book) notFound()
+  const seriesList = await getSeriesList()
 
   const [chapters, characters, locations, timeline, lore, graph] = await Promise.all([
     getChapters(id),
@@ -97,7 +99,7 @@ export default async function BookPage({
 
       <div className="space-y-4">
         {chapters.map((ch, i) => (
-          <ChapterEditor key={ch.id} id={ch.id} index={i} title={ch.title} content={ch.content} />
+          <ChapterEditor key={ch.id} id={ch.id} index={i} total={chapters.length} title={ch.title} content={ch.content} />
         ))}
       </div>
     </div>
@@ -273,6 +275,8 @@ export default async function BookPage({
             coverBase64={book.coverBase64}
             annotation={book.annotation}
             synopsis={book.synopsis}
+            series={seriesList}
+            seriesId={book.seriesId}
           />
 
           <div className="flex flex-wrap gap-2 mt-4">

@@ -612,3 +612,18 @@ button.acc-head, .acc-head-btn {
 .btn-danger { background: transparent; border-color: #b3402e; color: #b3402e; }
 .btn-danger:hover { background: #b3402e; color: #fff; }
 .btn-danger:disabled { opacity: .5; cursor: wait; }
+
+.mini-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border: none;
+  background: transparent;
+  border-radius: .4rem;
+  color: var(--soft);
+  cursor: pointer;
+}
+.mini-btn:hover:not(:disabled) { background: var(--card); color: var(--ink); }
+.mini-btn:disabled { opacity: .35; cursor: default; }

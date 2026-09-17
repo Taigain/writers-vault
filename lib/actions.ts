@@ -1,6 +1,6 @@
 'use server'
 
-import { prisma } from './prisma'
+import { prisma, schemaReady } from './prisma'
 import { revalidatePath } from 'next/cache'
 import { ROLES } from './roles'
 
@@ -31,21 +31,22 @@ export async function getBook(id: string) {
 }
 
 export async function saveBook(id: string, fd: FormData) {
-  const title = ((fd.get('title') as string) || '').trim()
-  const annotation = ((fd.get('annotation') as string) ?? '').slice(0, 800)
-  const synopsis = ((fd.get('synopsis') as string) ?? '').slice(0, 5000)
-  const file = fd.get('cover') as File | null
+  await schemaReady
+  const title = (fd.get('title') as string) || 'Без названия'
+  const annotation = (fd.get('annotation') as string) ?? ''
+  const synopsis = (fd.get('synopsis') as string) ?? ''
 
-  let coverBase64: string | null = null
-  if (file && file.size > 0) {
-    const buffer = Buffer.from(await file.arrayBuffer())
-    coverBase64 = `data:${file.type};base64,${buffer.toString('base64')}`
+  const cover = fd.get('cover')
+  let coverBase64: string | undefined
+  if (cover instanceof File && cover.size > 0) {
+    const buf = Buffer.from(await cover.arrayBuffer())
+    coverBase64 = `data:${cover.type};base64,${buf.toString('base64')}`
   }
 
   await prisma.book.update({
     where: { id },
     data: {
-      ...(title ? { title } : {}),
+      title,
       annotation,
       synopsis,
       ...(coverBase64 ? { coverBase64 } : {}),
@@ -438,4 +439,65 @@ export async function deleteLocation(id: string) {
   const loc = await prisma.location.findUnique({ where: { id }, select: { bookId: true } })
   await prisma.location.delete({ where: { id } })
   if (loc) revalidatePath(`/book/${loc.bookId}`)
+}
+
+export async function getSeriesList() {
+  await schemaReady
+  return prisma.series.findMany({ orderBy: { name: 'asc' }, select: { id: true, name: true } })
+}
+
+export async function getBooksWithSeries() {
+  await schemaReady
+  return prisma.book.findMany({
+    orderBy: { createdAt: 'asc' },
+    include: { series: true },
+  })
+}
+
+export async function createSeries(fd: FormData) {
+  await schemaReady
+  const name = ((fd.get('name') as string) ?? '').trim()
+  if (!name) return
+  const existing = await prisma.series.findUnique({ where: { name } })
+  if (!existing) {
+    await prisma.series.create({ data: { name } })
+  }
+  revalidatePath('/')
+}
+
+export async function deleteSeries(id: string) {
+  await schemaReady
+  await prisma.series.delete({ where: { id } })
+  revalidatePath('/')
+}
+
+export async function setBookSeries(bookId: string, seriesId: string | null) {
+  await schemaReady
+  await prisma.book.update({ where: { id: bookId }, data: { seriesId } })
+  revalidatePath('/')
+  revalidatePath(`/book/${bookId}`)
+}
+
+export async function moveChapter(chapterId: string, dir: number) {
+  await schemaReady
+  const ch = await prisma.chapter.findUnique({
+    where: { id: chapterId },
+    select: { id: true, bookId: true },
+  })
+  if (!ch) return
+  const siblings = await prisma.chapter.findMany({
+    where: { bookId: ch.bookId },
+    orderBy: { order: 'asc' },
+    select: { id: true },
+  })
+  const idx = siblings.findIndex((s) => s.id === chapterId)
+  const target = idx + dir
+  if (idx < 0 || target < 0 || target >= siblings.length) return
+  const ids = siblings.map((s) => s.id)
+  const [moved] = ids.splice(idx, 1)
+  ids.splice(target, 0, moved)
+  await prisma.$transaction(
+    ids.map((id, i) => prisma.chapter.update({ where: { id }, data: { order: i + 1 } })),
+  )
+  revalidatePath(`/book/${ch.bookId}`)
 }

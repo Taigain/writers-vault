@@ -1,10 +1,10 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import { Save, Trash2, Bold, Italic, AlignLeft, AlignCenter, AlignRight, Eye, EyeOff, ChevronRight, Eraser } from 'lucide-react'
-import { saveChapter, deleteChapter } from '@/lib/actions'
+import { Save, Trash2, Bold, Italic, AlignLeft, AlignCenter, AlignRight, Eye, EyeOff, ChevronRight, Eraser, ArrowUp, ArrowDown } from 'lucide-react'
 import RichPreview from './RichPreview'
 import { useLang } from '@/lib/useLang'
+import { saveChapter, deleteChapter, moveChapter } from '@/lib/actions'
 
 const wordsOf = (s: string) => (s.trim() ? s.trim().split(/\s+/).length : 0)
 const SIZES = [14, 16, 18, 20, 24, 32]
@@ -12,11 +12,13 @@ const SIZES = [14, 16, 18, 20, 24, 32]
 export default function ChapterEditor({
   id,
   index,
+  total,
   title,
   content,
 }: {
   id: string
   index: number
+  total: number
   title: string
   content: string
 }) {
@@ -209,14 +211,49 @@ export default function ChapterEditor({
 
   return (
     <div className="acc">
-      <button type="button" className="acc-head acc-head-btn" onClick={() => setOpen(!open)}>
+      <div
+        role="button"
+        tabIndex={0}
+        className="acc-head acc-head-btn"
+        onClick={() => setOpen(!open)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            setOpen(!open)
+          }
+        }}
+      >
         <ChevronRight size={18} className={`acc-chev ${open ? 'acc-chev-open' : ''}`} />
         <div className="ch-num">{index + 1}</div>
         <span className="acc-title">{chTitle || t('chUntitled')}</span>
+        <span className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+          <button
+            type="button"
+            className="mini-btn"
+            title={t('chMoveUp')}
+            disabled={index === 0}
+            onClick={async () => {
+              await moveChapter(id, -1)
+            }}
+          >
+            <ArrowUp size={14} />
+          </button>
+          <button
+            type="button"
+            className="mini-btn"
+            title={t('chMoveDown')}
+            disabled={index === total - 1}
+            onClick={async () => {
+              await moveChapter(id, 1)
+            }}
+          >
+            <ArrowDown size={14} />
+          </button>
+        </span>
         <span className="chip">
           {wordsOf(c).toLocaleString('ru-RU')} {t('chWords')}
         </span>
-      </button>
+      </div>
 
       {open && (
         <div className="acc-body">
