@@ -11,11 +11,11 @@ function BookCard({ b, lang }: { b: BookRow; lang: 'ru' | 'en' }) {
   return (
     <Link href={`/book/${b.id}`} className="group anim-fade">
       <div className="card overflow-hidden transition-transform duration-200 group-hover:-translate-y-1">
-        <div className="h-44">
+        <div className="w-full overflow-hidden" style={{ aspectRatio: '3 / 4' }}>
           {b.coverBase64 ? (
             <img src={b.coverBase64} alt="" className="w-full h-full object-cover" />
           ) : (
-            <div className="cover-ph w-full h-full text-4xl font-write">
+            <div className="cover-ph w-full h-full text-5xl font-write">
               {b.title.charAt(0).toUpperCase()}
             </div>
           )}
@@ -120,7 +120,7 @@ export default async function Home() {
                 {g.name}
                 <span className="chip">{tr(lang, 'homeSeriesCount', { n: g.books.length })}</span>
               </h2>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
                 {g.books.map((b) => (
                   <BookCard key={b.id} b={b} lang={lang} />
                 ))}
@@ -135,7 +135,7 @@ export default async function Home() {
                   {tr(lang, 'homeSeriesless')}
                 </h2>
               )}
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
                 {loose.map((b) => (
                   <BookCard key={b.id} b={b} lang={lang} />
                 ))}
