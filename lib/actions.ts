@@ -7,6 +7,13 @@ import { ROLES } from './roles'
 const validRole = (role: string): string =>
   ROLES.some((r) => r.key === role) ? role : 'secondary'
 
+function parseAliases(input: string): string[] {
+  return (input ?? '')
+    .split(/[,;\n]+/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 1)
+}
+
 // --- BOOKS ---
 export async function getBooks() {
   return prisma.book.findMany({ orderBy: { createdAt: 'desc' } })
@@ -77,16 +84,21 @@ export async function saveChapter(chapterId: string, title: string, content: str
   const bookId = chapter.bookId
 
   const mentions = content.match(/\[@(.*?)\]/g) || []
-  const uniqueNames = [...new Set(mentions.map((m) => m.replace(/[@\[\]]/g, '').trim()))]
-  const entities = await prisma.character.findMany({ where: { bookId, name: { in: uniqueNames } } })
-  const locations = await prisma.location.findMany({ where: { bookId, name: { in: uniqueNames } } })
+  const uniqueNames = [...new Set(mentions.map((m) => m.replace(/[\[@\]]/g, '').trim()))]
+  const lowerNames = uniqueNames.map((n) => n.toLowerCase())
+  const characters = await prisma.character.findMany({ where: { bookId } })
+  const matchedChars = characters.filter((ch) =>
+    [ch.name, ...parseAliases(ch.aliases)].some((k) => lowerNames.includes(k.toLowerCase())),
+  )
+  const locations = await prisma.location.findMany({ where: { bookId } })
+  const matchedLocs = locations.filter((l) => lowerNames.includes(l.name.toLowerCase()))
 
   await prisma.chapterMention.deleteMany({ where: { chapterId } })
   const mentionsToCreate: { chapterId: string; characterId?: string; locationId?: string; snippet: string }[] = []
-  for (const entity of entities) {
+  for (const entity of matchedChars) {
     mentionsToCreate.push({ chapterId, characterId: entity.id, snippet: content.substring(0, 100) })
   }
-  for (const loc of locations) {
+  for (const loc of matchedLocs) {
     mentionsToCreate.push({ chapterId, locationId: loc.id, snippet: content.substring(0, 100) })
   }
   if (mentionsToCreate.length > 0) {
@@ -95,16 +107,15 @@ export async function saveChapter(chapterId: string, title: string, content: str
 
   const eventMarks = content.match(/\[#(.*?)\]/g) || []
   const eventNames = [...new Set(eventMarks.map((m) => m.replace(/[#\[\]]/g, '').trim()))]
-  const events = await prisma.timelineEvent.findMany({
-    where: { bookId, description: { in: eventNames } },
-  })
+  const lowerEventNames = eventNames.map((n) => n.toLowerCase())
+  const events = await prisma.timelineEvent.findMany({ where: { bookId } })
+  const matchedEvents = events.filter((e) => lowerEventNames.includes(e.description.toLowerCase()))
   await prisma.eventMention.deleteMany({ where: { chapterId } })
-  if (events.length > 0) {
+  if (matchedEvents.length > 0) {
     await prisma.eventMention.createMany({
-      data: events.map((ev) => ({ chapterId, eventId: ev.id })),
+      data: matchedEvents.map((ev) => ({ chapterId, eventId: ev.id })),
     })
   }
-
   revalidatePath(`/book/${bookId}`)
 }
 
@@ -125,6 +136,7 @@ export type CharacterInput = {
   personality: string
   decisions: string
   arc: string
+  aliases?: string
 }
 
 export async function getCharacters(bookId: string) {
@@ -150,7 +162,11 @@ export async function createCharacter(bookId: string, name: string, role: string
 export async function saveCharacter(id: string, data: CharacterInput) {
   await prisma.character.update({
     where: { id },
-    data: { ...data, role: validRole(data.role) },
+    data: {
+      ...data,
+      role: validRole(data.role),
+      ...(data.aliases !== undefined ? { aliases: data.aliases } : {}),
+    },
   })
   revalidatePath(await characterBookPath(id))
 }

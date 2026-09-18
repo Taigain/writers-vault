@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -35,15 +35,17 @@ export default function ChapterSearch({
   const query = q.trim()
 
   const results = useMemo(() => {
-    if (query.length < 2) return []
+    if (query.length < 2) return [] as { ch: ChapterLite; count: number; snippets: string[]; firstPos: number }[]
     const lower = query.toLowerCase()
-    const out: { ch: ChapterLite; count: number; snippets: string[] }[] = []
+    const out: { ch: ChapterLite; count: number; snippets: string[]; firstPos: number }[] = []
     for (const ch of chapters) {
       const re = new RegExp(escapeReg(query), 'gi')
       let count = 0
+      let firstPos = -1
       const snippets: string[] = []
       let m: RegExpExecArray | null
       while ((m = re.exec(ch.content)) !== null) {
+        if (firstPos < 0) firstPos = m.index
         count++
         if (snippets.length < 3) {
           const start = Math.max(0, m.index - 60)
@@ -57,7 +59,7 @@ export default function ChapterSearch({
         if (count > 99) break
       }
       const titleHit = ch.title.toLowerCase().includes(lower)
-      if (count > 0 || titleHit) out.push({ ch, count, snippets })
+      if (count > 0 || titleHit) out.push({ ch, count, snippets, firstPos })
     }
     return out
   }, [query, chapters])
@@ -94,7 +96,11 @@ export default function ChapterSearch({
                 key={r.ch.id}
                 type="button"
                 className="ch-search-item"
-                onClick={() => router.push(`/book/${bookId}?tab=chapters&ch=${r.ch.id}`)}
+                onClick={() =>
+                  router.push(
+                    `/book/${bookId}?tab=chapters&ch=${r.ch.id}&q=${encodeURIComponent(query)}&pos=${r.firstPos}`,
+                  )
+                }
               >
                 <div className="flex items-center gap-2">
                   <span className="nav-ch-num">{r.ch.index + 1}</span>

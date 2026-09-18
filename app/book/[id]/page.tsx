@@ -42,10 +42,10 @@ export default async function BookPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ tab?: string; ch?: string }>
+  searchParams: Promise<{ tab?: string; ch?: string; q?: string; pos?: string }>
 }) {
   const { id } = await params
-  const { tab, ch: chParam } = await searchParams
+  const { tab, ch: chParam, q, pos } = await searchParams
   const view = tab && VIEWS.includes(tab) ? tab : 'passport'
   const lang = await getLang()
 
@@ -120,6 +120,8 @@ export default async function BookPage({
              title={b.ch.title}
              content={b.ch.content}
              autoOpen={chParam === b.ch.id}
+             highlight={chParam === b.ch.id ? q : undefined}
+             focusPos={chParam === b.ch.id && pos !== undefined ? Number(pos) : undefined}
              actNames={actNames}
              actName={b.ch.actName}
              bookId={id}
@@ -138,6 +140,8 @@ export default async function BookPage({
                  title={ch.title}
                  content={ch.content}
                  autoOpen={chParam === ch.id}
+                 highlight={chParam === ch.id ? q : undefined}
+                 focusPos={chParam === ch.id && pos !== undefined ? Number(pos) : undefined}
                  actNames={actNames}
                  actName={ch.actName}
                  bookId={id}

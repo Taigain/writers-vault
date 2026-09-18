@@ -46,6 +46,7 @@ export default async function CharacterCard({
               name: (fd.get('name') as string) || character.name,
               role: (fd.get('role') as string) || character.role,
               bio: (fd.get('bio') as string) ?? '',
+              aliases: (fd.get('aliases') as string) ?? '',
               appearance: (fd.get('appearance') as string) ?? '',
               personality: (fd.get('personality') as string) ?? '',
               decisions: (fd.get('decisions') as string) ?? '',
@@ -73,10 +74,21 @@ export default async function CharacterCard({
               label={tr(lang, 'ccDelete')}
               confirmText={tr(lang, 'ccDeleteConfirm', { name: character.name })}
             />
-            <button type="submit" className="btn btn-primary btn-sm">
-              <Save size={14} /> {tr(lang, 'ccSave')}
-            </button>
-          </div>
+
+        <button type="submit" className="btn btn-primary btn-sm">
+          <Save size={14} /> {tr(lang, 'ccSave')}
+        </button>
+        </div>
+      <div>
+        <label className="field-label">{tr(lang, 'charAliases')}</label>
+        <input
+          name="aliases"
+          defaultValue={character.aliases}
+          className="input"
+          placeholder={tr(lang, 'charAliasesPh')}
+        />
+      </div>
+      <div className="grid md:grid-cols-2 gap-4"></div>
 
           <div className="grid md:grid-cols-2 gap-4">
             {FIELDS.map((f) => (

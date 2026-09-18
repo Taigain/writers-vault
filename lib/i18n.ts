@@ -206,6 +206,11 @@ export const STR = {
     pgActAddChapter: 'Добавить главу в акт',
     pgActMoveUp: 'Переместить акт выше',
     pgActMoveDown: 'Переместить акт ниже',
+    chTbChar: 'Персонаж [@…]',
+    chTbEvent: 'Событие [#…]',
+    charAliases: 'Тэги и псевдонимы',
+    charAliasesPh: 'Имя, фамилия, прозвище — через запятую',
+    chMatchNav: 'Совпадение {i} из {n}',
   },
   en: {
     tagline: "author's cabinet",
@@ -411,6 +416,11 @@ export const STR = {
     pgActAddChapter: 'Add chapter to act',
     pgActMoveUp: 'Move act up',
     pgActMoveDown: 'Move act down',
+    chTbChar: 'Character [@…]',
+    chTbEvent: 'Event [#…]',
+    charAliases: 'Tags & aliases',
+    charAliasesPh: 'First name, last name, nickname — comma separated',
+    chMatchNav: 'Match {i} of {n}',
   },
 } as const
 

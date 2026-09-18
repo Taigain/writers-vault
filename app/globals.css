@@ -693,3 +693,10 @@ button.acc-head, .acc-head-btn {
   border-radius: .6rem;
   background: var(--card);
 }
+
+.search-mark {
+  background: rgba(169, 129, 47, .35);
+  color: inherit;
+  border-radius: .2rem;
+  padding: 0 .05rem;
+}

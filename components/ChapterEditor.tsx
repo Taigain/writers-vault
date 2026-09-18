@@ -1,7 +1,10 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import { Save, Trash2, Bold, Italic, AlignLeft, AlignCenter, AlignRight, Eye, EyeOff, ChevronRight, Eraser, ArrowUp, ArrowDown, Check, Plus } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import {
+  Save, Trash2, Bold, Italic, AlignLeft, AlignCenter, AlignRight,
+  Eye, EyeOff, ChevronRight, Eraser, ArrowUp, ArrowDown, Check, Plus, AtSign, Hash,
+} from 'lucide-react'
 import RichPreview from './RichPreview'
 import { useLang } from '@/lib/useLang'
 import { saveChapter, deleteChapter, moveChapter, moveBlock, setChapterAct } from '@/lib/actions'
@@ -21,6 +24,8 @@ export default function ChapterEditor({
   blockTotal,
   actIndex,
   actTotal,
+  highlight,
+  focusPos,
 }: {
   id: string
   title: string
@@ -33,9 +38,11 @@ export default function ChapterEditor({
   blockTotal?: number
   actIndex?: number
   actTotal?: number
+  highlight?: string
+  focusPos?: number
 }) {
-  const [newActOpen, setNewActOpen] = useState(false)
   const { t } = useLang()
+  const [newActOpen, setNewActOpen] = useState(false)
   const inBlock = actName === null
   const upDisabled = inBlock ? (blockIndex ?? 0) <= 0 : (actIndex ?? 0) <= 0
   const downDisabled = inBlock
@@ -48,49 +55,93 @@ export default function ChapterEditor({
   const taRef = useRef<HTMLTextAreaElement | null>(null)
   const rootRef = useRef<HTMLDivElement | null>(null)
 
-  useEffect(() => {
-    if (autoOpen && rootRef.current) {
-      rootRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  const positions = useMemo(() => {
+    const q = highlight?.trim() ?? ''
+    if (q.length < 2) return [] as number[]
+    const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi')
+    const out: number[] = []
+    let m: RegExpExecArray | null
+    while ((m = re.exec(c)) !== null) {
+      out.push(m.index)
+      if (out.length > 200) break
     }
-  }, [autoOpen])
+    return out
+  }, [highlight, c])
+  const [cur, setCur] = useState(0)
 
-  const applyWrap = (start: number, end: number, before: string, after: string) => {
-    const next = c.slice(0, start) + before + c.slice(start, end) + after + c.slice(end)
-    setC(next)
+  const jumpTo = (pos: number, len: number) => {
+    const ta = taRef.current
+    if (!ta) return
+    ta.focus()
+    ta.setSelectionRange(pos, pos + len)
+    const lineH = parseFloat(getComputedStyle(ta).lineHeight) || 24
+    const line = ta.value.slice(0, pos).split('\n').length - 1
+    ta.scrollTop = Math.max(0, line * lineH - ta.clientHeight / 3)
+  }
+
+  useEffect(() => {
+    if (focusPos != null && focusPos >= 0) {
+      const idx = positions.indexOf(focusPos)
+      setCur(idx >= 0 ? idx : 0)
+    }
+  }, [focusPos, positions])
+
+  useEffect(() => {
+    if (autoOpen) {
+      setOpen(true)
+      setTimeout(() => {
+        rootRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        if (focusPos != null && focusPos >= 0) jumpTo(focusPos, highlight?.length ?? 0)
+      }, 80)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoOpen, focusPos])
+
+  const go = (d: number) => {
+    if (positions.length === 0) return
+    const n = (cur + d + positions.length) % positions.length
+    setCur(n)
+    jumpTo(positions[n], highlight?.trim().length ?? 0)
+  }
+
+  const restore = (ta: HTMLTextAreaElement, s: number, e: number, scroll: number) => {
     requestAnimationFrame(() => {
-      const ta = taRef.current
-      if (!ta) return
       ta.focus()
-      ta.selectionStart = start + before.length
-      ta.selectionEnd = end + before.length
+      ta.selectionStart = s
+      ta.selectionEnd = e
+      ta.scrollTop = scroll
     })
   }
 
+  const applyWrap = (start: number, end: number, before: string, after: string) => {
+    const ta = taRef.current
+    const scroll = ta ? ta.scrollTop : 0
+    const next = c.slice(0, start) + before + c.slice(start, end) + after + c.slice(end)
+    setC(next)
+    if (ta) restore(ta, start + before.length, end + before.length, scroll)
+  }
   const starsBack = (pos: number) => {
     let k = 0
     while (pos - k - 1 >= 0 && c[pos - k - 1] === '*') k++
     return k
   }
-
   const starsFwd = (pos: number) => {
     let k = 0
     while (pos + k < c.length && c[pos + k] === '*') k++
     return k
   }
-
   const wrapSelection = (before: string, after: string) => {
     const ta = taRef.current
     if (!ta) return
     applyWrap(ta.selectionStart ?? c.length, ta.selectionEnd ?? c.length, before, after)
   }
-
   const toggleWrap = (before: string, after: string) => {
     const ta = taRef.current
     if (!ta) return
+    const scroll = ta.scrollTop
     const start = ta.selectionStart ?? c.length
     const end = ta.selectionEnd ?? c.length
     const single = before === '*'
-
     const outerMatch =
       start >= before.length &&
       end + after.length <= c.length &&
@@ -105,14 +156,9 @@ export default function ChapterEditor({
       const next =
         c.slice(0, start - before.length) + c.slice(start, end) + c.slice(end + after.length)
       setC(next)
-      requestAnimationFrame(() => {
-        ta.focus()
-        ta.selectionStart = start - before.length
-        ta.selectionEnd = end - before.length
-      })
+      restore(ta, start - before.length, end - before.length, scroll)
       return
     }
-
     const innerMatch =
       end - start >= before.length + after.length &&
       c.slice(start, start + before.length) === before &&
@@ -121,47 +167,35 @@ export default function ChapterEditor({
     if (innerOk) {
       const next = c.slice(0, start) + c.slice(start + before.length, end - after.length) + c.slice(end)
       setC(next)
-      requestAnimationFrame(() => {
-        ta.focus()
-        ta.selectionStart = start
-        ta.selectionEnd = end - before.length - after.length
-      })
+      restore(ta, start, end - before.length - after.length, scroll)
       return
     }
-
     applyWrap(start, end, before, after)
   }
-
-  const setSel = (s: number, e: number) => {
-    requestAnimationFrame(() => {
-      const ta = taRef.current
-      if (!ta) return
-      ta.focus()
-      ta.selectionStart = s
-      ta.selectionEnd = e
-    })
+  const setSel = (s: number, e: number, scroll: number) => {
+    const ta = taRef.current
+    if (ta) restore(ta, s, e, scroll)
   }
-
   const applySize = (size: number) => {
     const ta = taRef.current
     if (!ta) return
+    const scroll = ta.scrollTop
     const start = ta.selectionStart ?? c.length
     const end = ta.selectionEnd ?? c.length
     const CLOSE = '[/size]'
-
     const beforePart = c.slice(0, start)
     const mOpen = beforePart.match(/\[size=(\d+)\]$/)
     const afterPart = c.slice(end)
     if (mOpen && afterPart.startsWith(CLOSE)) {
-      const cur = parseInt(mOpen[1], 10)
+      const curSize = parseInt(mOpen[1], 10)
       const openOld = mOpen[0].length
-      if (cur === size) {
+      if (curSize === size) {
         const next =
           beforePart.slice(0, beforePart.length - openOld) +
           c.slice(start, end) +
           afterPart.slice(CLOSE.length)
         setC(next)
-        setSel(start - openOld, end - openOld)
+        setSel(start - openOld, end - openOld, scroll)
       } else {
         const next =
           beforePart.slice(0, beforePart.length - openOld) +
@@ -170,39 +204,35 @@ export default function ChapterEditor({
           afterPart
         const delta = -openOld + `[size=${size}]`.length
         setC(next)
-        setSel(start + delta, end + delta)
+        setSel(start + delta, end + delta, scroll)
       }
       return
     }
-
     const selText = c.slice(start, end)
     const mIn = selText.match(/^\[size=(\d+)\]([\s\S]*)\[\/size\]$/)
     if (mIn) {
-      const cur = parseInt(mIn[1], 10)
+      const curSize = parseInt(mIn[1], 10)
       const inner = mIn[2]
-      if (cur === size) {
+      if (curSize === size) {
         setC(c.slice(0, start) + inner + c.slice(end))
-        setSel(start, start + inner.length)
+        setSel(start, start + inner.length, scroll)
       } else {
         setC(c.slice(0, start) + `[size=${size}]` + inner + CLOSE + c.slice(end))
-        setSel(start + `[size=${size}]`.length, start + `[size=${size}]`.length + inner.length)
+        setSel(start + `[size=${size}]`.length, start + `[size=${size}]`.length + inner.length, scroll)
       }
       return
     }
-
     applyWrap(start, end, `[size=${size}]`, CLOSE)
   }
-
   const clearFormatting = () => {
     const ta = taRef.current
     if (!ta) return
+    const scroll = ta.scrollTop
     const start = ta.selectionStart ?? c.length
     const end = ta.selectionEnd ?? c.length
     if (end <= start) return
-
     let sel = c.slice(start, end)
     const original = sel
-
     sel = sel.replace(/\[size=\d+\]/g, '').replace(/\[\/size\]/g, '')
     for (let i = 0; i < 5; i++) {
       const next = sel.replace(/\*\*([\s\S]+?)\*\*/g, '$1')
@@ -215,27 +245,34 @@ export default function ChapterEditor({
       sel = next
     }
     sel = sel.replace(/^(\s*)\[(left|center|right)\]\s*/gim, '$1')
-
     if (sel === original) return
     setC(c.slice(0, start) + sel + c.slice(end))
-    setSel(start, start + sel.length)
+    setSel(start, start + sel.length, scroll)
   }
-
   const setAlign = (align: 'left' | 'center' | 'right') => {
     const ta = taRef.current
+    const scroll = ta ? ta.scrollTop : 0
     const pos = ta ? ta.selectionStart : 0
     const before = c.slice(0, pos)
     const pIdx = before.lastIndexOf('\n\n')
     const start = pIdx === -1 ? 0 : pIdx + 2
     const rest = c.slice(start)
     const stripped = rest.replace(/^\[(left|center|right)\]\s*/i, '')
-    const prefix = align === 'left' ? '' : `[${align}] `
+    const prefix = align === 'left' ? '' : `[${align}]`
     setC(c.slice(0, start) + prefix + stripped)
-    requestAnimationFrame(() => ta?.focus())
+    const delta = prefix.length - (rest.length - stripped.length)
+    requestAnimationFrame(() => {
+      if (!ta) return
+      ta.focus()
+      const np = Math.max(start, pos + delta)
+      ta.selectionStart = np
+      ta.selectionEnd = np
+      ta.scrollTop = scroll
+    })
   }
 
   return (
-      <div className="acc" ref={rootRef}>
+    <div className="acc" ref={rootRef}>
       <div
         role="button"
         tabIndex={0}
@@ -319,7 +356,6 @@ export default function ChapterEditor({
           {wordsOf(c).toLocaleString('ru-RU')} {t('chWords')}
         </span>
       </div>
-
       {open && (
         <div className="acc-body">
           <form
@@ -335,13 +371,30 @@ export default function ChapterEditor({
               className="input font-semibold"
               placeholder={t('chTitlePh')}
             />
-
+            {positions.length > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="chip">{t('chMatchNav', { i: cur + 1, n: positions.length })}</span>
+                <button type="button" className="mini-btn" title={t('chMoveUp')} onClick={() => go(-1)}>
+                  <ArrowUp size={13} />
+                </button>
+                <button type="button" className="mini-btn" title={t('chMoveDown')} onClick={() => go(1)}>
+                  <ArrowDown size={13} />
+                </button>
+              </div>
+            )}
             <div className="tb">
               <button type="button" title={t('chTbBold')} onClick={() => toggleWrap('**', '**')}>
                 <Bold size={15} />
               </button>
               <button type="button" title={t('chTbItalic')} onClick={() => toggleWrap('*', '*')}>
                 <Italic size={15} />
+              </button>
+              <span className="tb-sep" />
+              <button type="button" title={t('chTbChar')} onClick={() => wrapSelection('[@', ']')}>
+                <AtSign size={15} />
+              </button>
+              <button type="button" title={t('chTbEvent')} onClick={() => wrapSelection('[#', ']')}>
+                <Hash size={15} />
               </button>
               <span className="tb-sep" />
               <button type="button" title={t('chTbLeft')} onClick={() => setAlign('left')}>
@@ -381,7 +434,6 @@ export default function ChapterEditor({
                 {showPreview ? <EyeOff size={15} /> : <Eye size={15} />}
               </button>
             </div>
-
             <textarea
               ref={taRef}
               value={c}
@@ -389,13 +441,11 @@ export default function ChapterEditor({
               className="textarea textarea-write"
               placeholder={t('chTaPh')}
             />
-
             {showPreview && c.trim() !== '' && (
               <div className="pt-3 border-t" style={{ borderColor: 'var(--line)' }}>
-                <RichPreview text={c} />
+                <RichPreview text={c} highlight={highlight} />
               </div>
             )}
-
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-xs" style={{ color: 'var(--soft)' }}>
                 {t('chCounters', { w: wordsOf(c).toLocaleString('ru-RU'), c: c.length.toLocaleString('ru-RU') })}

@@ -21,6 +21,10 @@ async function ensureSchema() {
     if (!bookCols.some((c) => c.name === 'structure')) {
       await prisma.$executeRawUnsafe(`ALTER TABLE "Book" ADD COLUMN "structure" TEXT`)
     }
+        const charCols = await prisma.$queryRawUnsafe<Array<{ name: string }>>(`PRAGMA table_info("Character")`)
+    if (!charCols.some((c) => c.name === 'aliases')) {
+      await prisma.$executeRawUnsafe(`ALTER TABLE "Character" ADD COLUMN "aliases" TEXT NOT NULL DEFAULT ''`)
+    }
     const chCols = await prisma.$queryRawUnsafe<Array<{ name: string }>>(`PRAGMA table_info("Chapter")`)
     if (!chCols.some((c) => c.name === 'actName')) {
       await prisma.$executeRawUnsafe(`ALTER TABLE "Chapter" ADD COLUMN "actName" TEXT`)
