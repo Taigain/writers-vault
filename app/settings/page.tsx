@@ -1,11 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Sun, Type, FolderOpen, Trash2, Languages, Feather } from 'lucide-react'
+import { Sun, Type, FolderOpen, Trash2, Languages, Feather, Heart } from 'lucide-react'
 import { saveDirHandle, getSavedDirName, clearSavedDir } from '@/lib/fsAccess'
 import { useLang, setLangEverywhere } from '@/lib/useLang'
 import type { Lang, StrKey } from '@/lib/i18n'
-import { APP_NAME, APP_VERSION, APP_AUTHOR, APP_YEAR } from '@/lib/appinfo'
+import { APP_NAME, APP_VERSION, APP_AUTHOR, APP_YEAR, DONATE_LINKS } from '@/lib/appinfo'
 
 const UI_FONTS: { key: string; labelKey: StrKey; stack: string }[] = [
   { key: 'system', labelKey: 'fontSystem', stack: '"Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif' },
@@ -173,6 +173,22 @@ export default function SettingsPage() {
           <div>{APP_NAME} · {t('aboutVersion')} {APP_VERSION}</div>
           <div>{t('aboutAuthor')}: {APP_AUTHOR}</div>
           <div>© {APP_YEAR} {APP_AUTHOR}. {t('aboutRights')}</div>
+        </div>
+        <div className="mt-4 pt-3 border-t" style={{ borderColor: 'var(--line)' }}>
+          <div className="text-xs mb-2" style={{ color: 'var(--soft)' }}>{t('aboutThanksHint')}</div>
+          <div className="flex flex-wrap gap-2">
+            {DONATE_LINKS.map((l) => (
+              <a
+                key={l.url}
+                href={l.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-primary btn-sm"
+              >
+                <Heart size={13} /> {l.label}
+              </a>
+            ))}
+          </div>
         </div>
       </section>
     </div>
