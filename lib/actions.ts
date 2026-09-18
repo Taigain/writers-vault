@@ -499,6 +499,7 @@ export async function moveChapter(chapterId: string, dir: number) {
   await prisma.$transaction(
     ids.map((id, i) => prisma.chapter.update({ where: { id }, data: { order: i + 1 } })),
   )
+  await renumberBook(ch.bookId)
   revalidatePath(`/book/${ch.bookId}`)
 }
 
@@ -523,6 +524,7 @@ export async function setChapterAct(chapterId: string, actName: string | null) {
     where: { id: chapterId },
     data: { actName, order: (maxOrd._max.order ?? 0) + 1 },
   })
+  await renumberBook(ch.bookId)
   revalidatePath(`/book/${ch.bookId}`)
 }
 
@@ -547,5 +549,119 @@ export async function createChapterInAct(bookId: string, actName: string) {
   await prisma.chapter.create({
     data: { bookId, actName, title: `Глава ${count + 1}`, order: (maxOrd._max.order ?? 0) + 1 },
   })
+  await renumberBook(bookId)
   revalidatePath(`/book/${bookId}`)
+}
+
+type BlockKey = { t: 'c' | 'a'; id: string }
+const keyOf = (k: BlockKey) => k.t + ':' + k.id
+
+async function readStructure(bookId: string): Promise<BlockKey[]> {
+  const book = await prisma.book.findUnique({ where: { id: bookId }, select: { structure: true } })
+  const chapters = await prisma.chapter.findMany({
+    where: { bookId },
+    orderBy: { order: 'asc' },
+    select: { id: true, actName: true },
+  })
+  let list: BlockKey[] = []
+  if (book?.structure) {
+    try {
+      list = JSON.parse(book.structure) as BlockKey[]
+    } catch {
+      list = []
+    }
+  }
+  const looseIds = new Set(chapters.filter((c) => !c.actName).map((c) => c.id))
+  const actNames: string[] = []
+  for (const c of chapters) {
+    if (c.actName && !actNames.includes(c.actName)) actNames.push(c.actName)
+  }
+  list = list.filter((k) => (k.t === 'c' ? looseIds.has(k.id) : actNames.includes(k.id)))
+  const seen = new Set(list.map(keyOf))
+  for (const c of chapters) {
+    if (!c.actName && !seen.has('c:' + c.id)) list.push({ t: 'c', id: c.id })
+  }
+  for (const n of actNames) {
+    if (!seen.has('a:' + n)) list.push({ t: 'a', id: n })
+  }
+  return list
+}
+
+async function writeStructure(bookId: string, list: BlockKey[]) {
+  await prisma.book.update({ where: { id: bookId }, data: { structure: JSON.stringify(list) } })
+}
+
+async function renumberBook(bookId: string) {
+  const list = await readStructure(bookId)
+  const chapters = await prisma.chapter.findMany({
+    where: { bookId },
+    orderBy: { order: 'asc' },
+    select: { id: true, actName: true },
+  })
+  const loose: string[] = []
+  const byAct = new Map<string, string[]>()
+  for (const c of chapters) {
+    if (c.actName) {
+      const arr = byAct.get(c.actName) ?? []
+      arr.push(c.id)
+      byAct.set(c.actName, arr)
+    } else {
+      loose.push(c.id)
+    }
+  }
+  const looseSet = new Set(loose)
+  const updates: { id: string; order: number }[] = []
+  let n = 1
+  for (const k of list) {
+    if (k.t === 'c') {
+      if (looseSet.has(k.id)) updates.push({ id: k.id, order: n++ })
+    } else {
+      for (const cid of byAct.get(k.id) ?? []) updates.push({ id: cid, order: n++ })
+    }
+  }
+  if (updates.length > 0) {
+    await prisma.$transaction(
+      updates.map((u) => prisma.chapter.update({ where: { id: u.id }, data: { order: u.order } })),
+    )
+  }
+}
+
+export async function moveBlock(bookId: string, key: string, dir: number) {
+  await schemaReady
+  const list = await readStructure(bookId)
+  const idx = list.findIndex((k) => keyOf(k) === key)
+  const target = idx + dir
+  if (idx < 0 || target < 0 || target >= list.length) return
+  const [m] = list.splice(idx, 1)
+  list.splice(target, 0, m)
+  await writeStructure(bookId, list)
+  await renumberBook(bookId)
+  revalidatePath(`/book/${bookId}`)
+}
+
+export async function getBookBlocks(bookId: string) {
+  await schemaReady
+  const list = await readStructure(bookId)
+  const chapters = await prisma.chapter.findMany({ where: { bookId }, orderBy: { order: 'asc' } })
+  const chMap = new Map(chapters.map((c) => [c.id, c]))
+  const byAct = new Map<string, typeof chapters>()
+  for (const c of chapters) {
+    if (!c.actName) continue
+    const arr = byAct.get(c.actName) ?? []
+    arr.push(c)
+    byAct.set(c.actName, arr)
+  }
+  const blocks: (
+    | { kind: 'chapter'; ch: (typeof chapters)[number] }
+    | { kind: 'act'; name: string; chs: typeof chapters }
+  )[] = []
+  for (const k of list) {
+    if (k.t === 'c') {
+      const ch = chMap.get(k.id)
+      if (ch) blocks.push({ kind: 'chapter', ch })
+    } else {
+      blocks.push({ kind: 'act', name: k.id, chs: byAct.get(k.id) ?? [] })
+    }
+  }
+  return blocks
 }

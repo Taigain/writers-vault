@@ -4,32 +4,43 @@ import { useEffect, useRef, useState } from 'react'
 import { Save, Trash2, Bold, Italic, AlignLeft, AlignCenter, AlignRight, Eye, EyeOff, ChevronRight, Eraser, ArrowUp, ArrowDown, Check, Plus } from 'lucide-react'
 import RichPreview from './RichPreview'
 import { useLang } from '@/lib/useLang'
-import { saveChapter, deleteChapter, moveChapter, setChapterAct } from '@/lib/actions'
+import { saveChapter, deleteChapter, moveChapter, moveBlock, setChapterAct } from '@/lib/actions'
 
 const wordsOf = (s: string) => (s.trim() ? s.trim().split(/\s+/).length : 0)
 const SIZES = [14, 16, 18, 20, 24, 32]
 
 export default function ChapterEditor({
   id,
-  index,
-  total,
   title,
   content,
   autoOpen,
   actNames,
   actName,
+  bookId,
+  blockIndex,
+  blockTotal,
+  actIndex,
+  actTotal,
 }: {
   id: string
-  index: number
-  total: number
   title: string
   content: string
   autoOpen?: boolean
   actNames: string[]
   actName: string | null
+  bookId: string
+  blockIndex?: number
+  blockTotal?: number
+  actIndex?: number
+  actTotal?: number
 }) {
   const [newActOpen, setNewActOpen] = useState(false)
   const { t } = useLang()
+  const inBlock = actName === null
+  const upDisabled = inBlock ? (blockIndex ?? 0) <= 0 : (actIndex ?? 0) <= 0
+  const downDisabled = inBlock
+    ? (blockIndex ?? 0) >= (blockTotal ?? 1) - 1
+    : (actIndex ?? 0) >= (actTotal ?? 1) - 1
   const [chTitle, setChTitle] = useState(title)
   const [c, setC] = useState(content)
   const [open, setOpen] = useState(Boolean(autoOpen))
@@ -238,16 +249,16 @@ export default function ChapterEditor({
         }}
       >
         <ChevronRight size={18} className={`acc-chev ${open ? 'acc-chev-open' : ''}`} />
-        <div className="ch-num">{index + 1}</div>
         <span className="acc-title">{chTitle || t('chUntitled')}</span>
         <span className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
           <button
             type="button"
             className="mini-btn"
             title={t('chMoveUp')}
-            disabled={index === 0}
+            disabled={upDisabled}
             onClick={async () => {
-              await moveChapter(id, -1)
+              if (inBlock) await moveBlock(bookId, 'c:' + id, -1)
+              else await moveChapter(id, -1)
             }}
           >
             <ArrowUp size={14} />
@@ -256,9 +267,10 @@ export default function ChapterEditor({
             type="button"
             className="mini-btn"
             title={t('chMoveDown')}
-            disabled={index === total - 1}
+            disabled={downDisabled}
             onClick={async () => {
-              await moveChapter(id, 1)
+              if (inBlock) await moveBlock(bookId, 'c:' + id, 1)
+              else await moveChapter(id, 1)
             }}
           >
             <ArrowDown size={14} />

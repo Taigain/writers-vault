@@ -682,3 +682,14 @@ button.acc-head, .acc-head-btn {
   background: rgba(169,129,47,.25); color: inherit;
   border-radius: .2rem; padding: 0 .1rem;
 }
+
+.act-bar {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .55rem .8rem;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--gold);
+  border-radius: .6rem;
+  background: var(--card);
+}

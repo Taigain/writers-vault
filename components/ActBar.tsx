@@ -1,17 +1,21 @@
 'use client'
 
 import { useState } from 'react'
-import { Landmark, Pencil, Check, Plus } from 'lucide-react'
+import { Landmark, Pencil, Check, Plus, ArrowUp, ArrowDown } from 'lucide-react'
 import DeleteButton from './DeleteButton'
-import { renameActInBook, deleteActInBook, createChapterInAct } from '@/lib/actions'
+import { renameActInBook, deleteActInBook, createChapterInAct, moveBlock } from '@/lib/actions'
 import { useLang } from '@/lib/useLang'
 
 export default function ActBar({
   bookId,
   name,
+  blockIndex,
+  blockTotal,
 }: {
   bookId: string
   name: string
+  blockIndex: number
+  blockTotal: number
 }) {
   const { t } = useLang()
   const [editing, setEditing] = useState(false)
@@ -34,7 +38,7 @@ export default function ActBar({
             className="btn btn-ghost btn-sm"
             onClick={async () => {
               const v = draft.trim()
-              if (v) await renameActInBook(bookId, name, v)
+              if (v && v !== name) await renameActInBook(bookId, name, v)
               setEditing(false)
             }}
           >
@@ -44,6 +48,28 @@ export default function ActBar({
       ) : (
         <>
           <span className="font-bold flex-1 truncate">{name}</span>
+          <button
+            type="button"
+            className="mini-btn"
+            title={t('pgActMoveUp')}
+            disabled={blockIndex <= 0}
+            onClick={async () => {
+              await moveBlock(bookId, 'a:' + name, -1)
+            }}
+          >
+            <ArrowUp size={13} />
+          </button>
+          <button
+            type="button"
+            className="mini-btn"
+            title={t('pgActMoveDown')}
+            disabled={blockIndex >= blockTotal - 1}
+            onClick={async () => {
+              await moveBlock(bookId, 'a:' + name, 1)
+            }}
+          >
+            <ArrowDown size={13} />
+          </button>
           <button
             type="button"
             className="mini-btn"
@@ -68,7 +94,9 @@ export default function ActBar({
         <Plus size={13} />
       </button>
       <DeleteButton
-        onConfirm={() => deleteActInBook(bookId, name)}
+        onConfirm={async () => {
+          await deleteActInBook(bookId, name)
+        }}
         label=""
         confirmText={t('pgActDeleteConfirm', { name })}
         className="btn btn-ghost btn-sm"

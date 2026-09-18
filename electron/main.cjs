@@ -1,4 +1,5 @@
-const { app, BrowserWindow, shell } = require('electron')
+const { app, BrowserWindow, shell, dialog } = require('electron')
+const { autoUpdater } = require('electron-updater')
 const { spawn } = require('child_process')
 const path = require('path')
 const fs = require('fs')
@@ -154,6 +155,32 @@ function showFailure(reason) {
   }
 }
 
+function setupAutoUpdate() {
+  if (!app.isPackaged) return
+  autoUpdater.autoDownload = true
+  autoUpdater.autoInstallOnAppQuit = true
+  autoUpdater.on('error', (e) => log('updater error: ' + (e && e.message)))
+  autoUpdater.on('update-available', (info) => log('update available: ' + info.version))
+  autoUpdater.on('update-downloaded', (info) => {
+    log('update downloaded: ' + info.version)
+    dialog
+      .showMessageBox({
+        type: 'info',
+        title: "Writer's Vault",
+        message: 'Обновление готово',
+        detail: 'Версия ' + info.version + ' загружена. Перезапустить приложение сейчас?',
+        buttons: ['Перезапустить', 'Позже'],
+        defaultId: 0,
+      })
+      .then(({ response }) => {
+        if (response === 0) autoUpdater.quitAndInstall()
+      })
+  })
+  setTimeout(() => {
+    autoUpdater.checkForUpdatesAndNotify().catch((e) => log('update check failed: ' + (e && e.message)))
+  }, 5000)
+}
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1440,
@@ -192,6 +219,7 @@ app.whenReady().then(async () => {
     () => {
       log('loading app url')
       mainWindow.loadURL(`http://${HOST}:${PORT}/`)
+      setupAutoUpdate()
     },
     () => showFailure('Сервер не ответил за отведённое время.'),
   )

@@ -204,6 +204,8 @@ export const STR = {
     pgActSave: 'Сохранить',
     pgActDeleteConfirm: 'Удалить акт «{name}»? Главы останутся без акта.',
     pgActAddChapter: 'Добавить главу в акт',
+    pgActMoveUp: 'Переместить акт выше',
+    pgActMoveDown: 'Переместить акт ниже',
   },
   en: {
     tagline: "author's cabinet",
@@ -407,6 +409,8 @@ export const STR = {
     pgActSave: 'Save',
     pgActDeleteConfirm: 'Delete act "{name}"? Chapters will become act-free.',
     pgActAddChapter: 'Add chapter to act',
+    pgActMoveUp: 'Move act up',
+    pgActMoveDown: 'Move act down',
   },
 } as const
 
