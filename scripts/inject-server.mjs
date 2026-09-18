@@ -20,3 +20,19 @@ if (!fs.existsSync(path.join(dest, 'node_modules', 'next', 'package.json'))) {
 }
 
 console.log('Сервер инжектирован в dist/win-unpacked/resources/server')
+
+// --- гарантия app-update.yml в ресурсах (канал автообновления) ---
+import { existsSync, writeFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+
+const ymlPath = resolve('dist/win-unpacked/resources/app-update.yml')
+if (!existsSync(ymlPath)) {
+  writeFileSync(
+    ymlPath,
+    'provider: github\nowner: Taigain\nrepo: writers-vault\nupdaterCacheDirName: writer-app-updater\n',
+    'utf8',
+  )
+  console.log('[inject] app-update.yml created')
+} else {
+  console.log('[inject] app-update.yml present')
+}
