@@ -33,7 +33,8 @@ model Character {
   personality String              @default("")
   decisions   String              @default("")
   arc         String              @default("")
-  aliases     String                @default("")
+  aliases     String              @default("")
+  portraitBase64 String?
   bookId      String
   book        Book                @relation(fields: [bookId], references: [id], onDelete: Cascade)
   mentions    ChapterMention[]
@@ -126,6 +127,7 @@ model LoreEntry {
   id        String   @id @default(cuid())
   text      String
   tags      String
+  imageBase64 String?
   createdAt DateTime @default(now())
   bookId    String
   book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)

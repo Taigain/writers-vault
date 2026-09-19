@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { Save, Plus, MapPin, Globe2, Image as ImageIcon, BookOpen, Feather, Users, Type, ChevronRight } from 'lucide-react'
+import { Save, Plus, MapPin, Globe2, BookOpen, Feather, Users, Type, ChevronRight } from 'lucide-react'
 import CharacterCard from '@/components/CharacterCard'
 import LoreSection from '@/components/LoreSection'
 import TimelineSection from '@/components/TimelineSection'
@@ -11,6 +11,9 @@ import DeleteButton from '@/components/DeleteButton'
 import ExportButton from '@/components/ExportButton'
 import ChapterSearch from '@/components/ChapterSearch'
 import ActBar from '@/components/ActBar'
+import {readImageField} from '@/lib/actions'
+import ZoomImage from '@/components/ZoomImage'
+import ImageAttach from '@/components/ImageAttach'
 import { ROLES } from '@/lib/roles'
 import { getLang } from '@/lib/lang-server'
 import { tr } from '@/lib/i18n'
@@ -247,7 +250,7 @@ export default async function BookPage({
             <div className="acc-body">
               {loc.imageBase64 && (
                 <div className="loc-img mt-4 mb-3">
-                  <img src={loc.imageBase64} alt="" className="w-full h-full object-cover" />
+                  <ZoomImage src={loc.imageBase64} />
                 </div>
               )}
 
@@ -273,30 +276,23 @@ export default async function BookPage({
                     ))}
                   </div>
                 )}
-                <div className="flex items-center justify-between gap-2">
-                  <label className="btn btn-ghost btn-sm cursor-pointer">
-                    <ImageIcon size={13} /> {loc.imageBase64 ? tr(lang, 'pgLocImgReplace') : tr(lang, 'pgLocImgAttach')}
-                    <input type="file" name="image" accept="image/*" className="hidden" />
-                  </label>
-                  <button type="submit" className="btn btn-primary btn-sm">
-                    <Save size={13} /> {tr(lang, 'pgLocSave')}
-                  </button>
-                </div>
+            <ImageAttach
+              name="image"
+              value={loc.imageBase64}
+              maxDim={1400}
+              labelAttach={tr(lang, 'pgLocImgAttach')}
+              labelReplace={tr(lang, 'pgLocImgReplace')}
+              labelRemove={tr(lang, 'pgLocImgRemove')}
+            />
+            <div className="flex justify-end">
+              <button type="submit" className="btn btn-primary btn-sm">
+                <Save size={13} /> {tr(lang, 'pgLocSave')}
+              </button>
+            </div>
               </form>
 
               <div className="flex flex-wrap justify-between gap-2 mt-2">
-                {loc.imageBase64 ? (
-                  <form
-                    action={async () => {
-                      'use server'
-                      await removeLocationImage(loc.id)
-                    }}
-                  >
-                    <button type="submit" className="btn btn-ghost btn-sm">{tr(lang, 'pgLocImgRemove')}</button>
-                  </form>
-                ) : (
-                  <span />
-                )}
+
                 <DeleteButton
                   onConfirm={async () => {
                     'use server'

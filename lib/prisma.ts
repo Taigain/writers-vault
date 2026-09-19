@@ -30,6 +30,14 @@ async function ensureSchema() {
       await prisma.$executeRawUnsafe(`ALTER TABLE "Chapter" ADD COLUMN "actName" TEXT`)
       await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "Chapter_actName_idx" ON "Chapter"("actName")`)
     }
+        const charCols2 = await prisma.$queryRawUnsafe<Array<{ name: string }>>(`PRAGMA table_info("Character")`)
+    if (!charCols2.some((c) => c.name === 'portraitBase64')) {
+      await prisma.$executeRawUnsafe(`ALTER TABLE "Character" ADD COLUMN "portraitBase64" TEXT`)
+    }
+    const loreCols = await prisma.$queryRawUnsafe<Array<{ name: string }>>(`PRAGMA table_info("LoreEntry")`)
+    if (!loreCols.some((c) => c.name === 'imageBase64')) {
+      await prisma.$executeRawUnsafe(`ALTER TABLE "LoreEntry" ADD COLUMN "imageBase64" TEXT`)
+    }
   } catch (e) {
     console.error('ensureSchema failed:', e)
   }

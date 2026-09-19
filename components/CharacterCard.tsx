@@ -1,9 +1,11 @@
 import { Save, Plus, X, Link2, Clock, ChevronRight } from 'lucide-react'
-import { getCharacters, saveCharacter, addCharacterRelation, removeCharacterRelation, deleteCharacter } from '@/lib/actions'
+import { getCharacters, saveCharacter, addCharacterRelation, removeCharacterRelation, deleteCharacter, readImageField } from '@/lib/actions'
 import DeleteButton from './DeleteButton'
 import { ROLES, roleLabel } from '@/lib/roles'
 import { getLang } from '@/lib/lang-server'
 import { tr, type StrKey } from '@/lib/i18n'
+import ImageAttach from './ImageAttach'
+import ZoomImage from './ZoomImage'
 
 type CharacterDetailed = Awaited<ReturnType<typeof getCharacters>>[number]
 
@@ -34,7 +36,13 @@ export default async function CharacterCard({
     <details className="acc">
       <summary className="acc-head">
         <ChevronRight size={18} className="acc-chev" />
-        <div className="avatar">{character.name.charAt(0).toUpperCase()}</div>
+        {character.portraitBase64 ? (
+          <span className="avatar avatar-img">
+            <ZoomImage src={character.portraitBase64} />
+          </span>
+        ) : (
+          <div className="avatar">{character.name.charAt(0).toUpperCase()}</div>
+        )}
         <span className="acc-title">{character.name}</span>
         <span className="chip">{roleLabel(character.role, lang)}</span>
       </summary>
@@ -42,6 +50,7 @@ export default async function CharacterCard({
         <form
           action={async (fd: FormData) => {
             'use server'
+            const img = await readImageField(fd, 'portrait')
             await saveCharacter(character.id, {
               name: (fd.get('name') as string) || character.name,
               role: (fd.get('role') as string) || character.role,
@@ -51,6 +60,7 @@ export default async function CharacterCard({
               personality: (fd.get('personality') as string) ?? '',
               decisions: (fd.get('decisions') as string) ?? '',
               arc: (fd.get('arc') as string) ?? '',
+              portraitBase64: img.clear ? null : img.keep ? undefined : img.value,
             })
           }}
           className="space-y-4 pt-4"
@@ -89,7 +99,15 @@ export default async function CharacterCard({
         />
       </div>
       <div className="grid md:grid-cols-2 gap-4"></div>
-
+        <ImageAttach
+          name="portrait"
+          value={character.portraitBase64}
+          aspect={3 / 4}
+          maxDim={900}
+          labelAttach={tr(lang, 'ccPortraitAttach')}
+          labelReplace={tr(lang, 'ccPortraitReplace')}
+          labelRemove={tr(lang, 'ccPortraitRemove')}
+        />
           <div className="grid md:grid-cols-2 gap-4">
             {FIELDS.map((f) => (
               <div key={f.key} className={f.wide ? 'md:col-span-2' : ''}>

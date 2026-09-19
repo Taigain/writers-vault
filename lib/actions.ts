@@ -14,6 +14,23 @@ function parseAliases(input: string): string[] {
     .filter((s) => s.length > 1)
 }
 
+export async function readImageField(
+  fd: FormData,
+  name: string,
+): Promise<{ value: string | null; clear: boolean; keep: boolean }> {
+  if (fd.get(name + '_clear') === '1') return { value: null, clear: true, keep: false }
+  const raw = fd.get(name)
+  if (typeof raw === 'string') {
+    if (raw.startsWith('data:image')) return { value: raw, clear: false, keep: false }
+    return { value: null, clear: false, keep: true }
+  }
+  if (raw instanceof File && raw.size > 0) {
+    const buf = Buffer.from(await raw.arrayBuffer())
+    return { value: `data:${raw.type};base64,${buf.toString('base64')}`, clear: false, keep: false }
+  }
+  return { value: null, clear: false, keep: true }
+}
+
 // --- BOOKS ---
 export async function getBooks() {
   return prisma.book.findMany({ orderBy: { createdAt: 'desc' } })
@@ -137,6 +154,7 @@ export type CharacterInput = {
   decisions: string
   arc: string
   aliases?: string
+  portraitBase64?: string | null
 }
 
 export async function getCharacters(bookId: string) {
@@ -194,17 +212,14 @@ export async function getLocations(bookId: string) {
 export async function saveLocation(id: string, fd: FormData) {
   const name = (fd.get('name') as string) || ''
   const desc = (fd.get('desc') as string) ?? ''
-  const file = fd.get('image') as File | null
-
-  let imageBase64: string | null = null
-  if (file && file.size > 0) {
-    const buffer = Buffer.from(await file.arrayBuffer())
-    imageBase64 = `data:${file.type};base64,${buffer.toString('base64')}`
-  }
-
+  const img = await readImageField(fd, 'image')
   await prisma.location.update({
     where: { id },
-    data: imageBase64 ? { name, desc, imageBase64 } : { name, desc },
+    data: img.clear
+      ? { name, desc, imageBase64: null }
+      : img.keep
+        ? { name, desc }
+        : { name, desc, imageBase64: img.value },
   })
   const loc = await prisma.location.findUnique({ where: { id }, select: { bookId: true } })
   if (loc) revalidatePath(`/book/${loc.bookId}`)
@@ -334,6 +349,7 @@ export async function getLoreEntries(bookId: string) {
     text: r.text,
     tags: parseTags(r.tags),
     createdAt: r.createdAt.toISOString(),
+    imageBase64: r.imageBase64,
   }))
 }
 
@@ -653,6 +669,35 @@ export async function moveBlock(bookId: string, key: string, dir: number) {
   await writeStructure(bookId, list)
   await renumberBook(bookId)
   revalidatePath(`/book/${bookId}`)
+}
+
+export async function saveLoreEntryFull(fd: FormData) {
+  await schemaReady
+  const id = ((fd.get('id') as string) ?? '').trim() || null
+  const bookId = ((fd.get('bookId') as string) ?? '').trim()
+  const text = (fd.get('text') as string) ?? ''
+  const tagsRaw = (fd.get('tags') as string) ?? ''
+  const img = await readImageField(fd, 'image')
+  const tags = parseTags(tagsRaw)
+  if (!text.trim() || tags.length === 0) return
+  if (id) {
+    const entry = await prisma.loreEntry.findUnique({ where: { id }, select: { bookId: true, imageBase64: true } })
+    await prisma.loreEntry.update({
+      where: { id },
+      data: {
+        text: text.trim(),
+        tags: tags.join(' '),
+        ...(img.clear ? { imageBase64: null } : img.keep ? {} : { imageBase64: img.value }),
+      },
+    })
+    if (entry) revalidatePath(`/book/${entry.bookId}`)
+  } else {
+    if (!bookId) return
+    await prisma.loreEntry.create({
+      data: { bookId, text: text.trim(), tags: tags.join(' '), imageBase64: img.clear ? null : img.value },
+    })
+    revalidatePath(`/book/${bookId}`)
+  }
 }
 
 export async function getBookBlocks(bookId: string) {

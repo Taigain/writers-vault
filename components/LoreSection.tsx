@@ -2,14 +2,17 @@
 
 import { useMemo, useState } from 'react'
 import { Hash, Plus, Save, Trash2, ChevronRight } from 'lucide-react'
-import { createLoreEntry, updateLoreEntry, deleteLoreEntry } from '@/lib/actions'
+import { deleteLoreEntry, saveLoreEntryFull } from '@/lib/actions'
+import ImageAttach from './ImageAttach'
 import { useLang } from '@/lib/useLang'
+import ZoomImage from './ZoomImage'
 
 export type LoreEntryData = {
   id: string
   text: string
   tags: string[]
   createdAt: string
+  imageBase64: string | null
 }
 
 export default function LoreSection({
@@ -37,10 +40,11 @@ export default function LoreSection({
     <div className="space-y-6">
       <form
         action={async (fd: FormData) => {
-          await createLoreEntry(bookId, fd.get('text') as string, fd.get('tags') as string)
+          await saveLoreEntryFull(fd)
         }}
         className="card p-5 space-y-3"
       >
+        <input type="hidden" name="bookId" value={bookId} />
         <div className="field-label">{t('loreNew')}</div>
         <textarea
           name="text"
@@ -48,6 +52,14 @@ export default function LoreSection({
           rows={3}
           className="textarea text-sm"
           placeholder={t('lorePh')}
+        />
+        <ImageAttach
+          name="image"
+          value={null}
+          maxDim={1200}
+          labelAttach={t('loreImgAttach')}
+          labelReplace={t('loreImgReplace')}
+          labelRemove={t('loreImgRemove')}
         />
         <div className="flex flex-wrap gap-2">
           <input
@@ -133,17 +145,33 @@ export default function LoreSection({
                   </button>
                 </div>
 
+                {e.imageBase64 && (
+                  <div className="img-attach-preview mb-3" style={{ width: '10rem' }}>
+                    <ZoomImage src={e.imageBase64} />
+                  </div>
+                )}
+
                 <form
                   action={async (fd: FormData) => {
-                    await updateLoreEntry(e.id, fd.get('text') as string, fd.get('tags') as string)
+                    await saveLoreEntryFull(fd)
                   }}
                   className="space-y-3"
                 >
+                  <input type="hidden" name="id" value={e.id} />
+                  <input type="hidden" name="bookId" value={bookId} />
                   <textarea
                     name="text"
                     defaultValue={e.text}
                     rows={Math.max(2, e.text.split('\n').length)}
                     className="textarea text-sm"
+                  />
+                  <ImageAttach
+                    name="image"
+                    value={e.imageBase64}
+                    maxDim={1200}
+                    labelAttach={t('loreImgAttach')}
+                    labelReplace={t('loreImgReplace')}
+                    labelRemove={t('loreImgRemove')}
                   />
                   <div className="flex flex-wrap gap-2 items-center">
                     <input
