@@ -1,4 +1,4 @@
-const { app, BrowserWindow, shell, dialog } = require('electron')
+const { app, BrowserWindow, shell, dialog, ipcMain } = require('electron')
 const { autoUpdater } = require('electron-updater')
 const { spawn } = require('child_process')
 const path = require('path')
@@ -163,6 +163,10 @@ function setupAutoUpdate() {
   autoUpdater.autoInstallOnAppQuit = true
   autoUpdater.on('error', (e) => log('updater error: ' + (e && e.message)))
   autoUpdater.on('update-available', (info) => log('update available: ' + info.version))
+  autoUpdater.on('update-available', () => sendUpdateStatus('available'))
+  autoUpdater.on('update-not-available', () => sendUpdateStatus('not-available'))
+  autoUpdater.on('update-downloaded', () => sendUpdateStatus('downloaded'))
+  autoUpdater.on('error', () => sendUpdateStatus('error'))
   autoUpdater.on('update-downloaded', (info) => {
     log('update downloaded: ' + info.version)
     dialog
@@ -181,6 +185,24 @@ function setupAutoUpdate() {
   setTimeout(() => {
     autoUpdater.checkForUpdatesAndNotify().catch((e) => log('update check failed: ' + (e && e.message)))
   }, 5000)
+}
+
+function sendUpdateStatus(status) {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('update:status', status)
+  }
+}
+
+function setupUpdateBridge() {
+  ipcMain.handle('update:check', async () => {
+    if (!app.isPackaged) return { ok: false, reason: 'dev' }
+    try {
+      const res = await autoUpdater.checkForUpdates()
+      return { ok: true, version: (res && res.updateInfo && res.updateInfo.version) || null }
+    } catch (e) {
+      return { ok: false, reason: 'error', message: String((e && e.message) || e) }
+    }
+  })
 }
 
 function setupCloseGuard() {
@@ -236,7 +258,11 @@ function createWindow() {
     height: 900,
     backgroundColor: '#f6f3ec',
     autoHideMenuBar: true,
-    webPreferences: { contextIsolation: true, nodeIntegration: false },
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.cjs'),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
   })
   mainWindow.loadURL(loadingPage())
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
@@ -263,6 +289,7 @@ app.whenReady().then(async () => {
   }
   createWindow()
   setupCloseGuard()
+  setupUpdateBridge()
   startServer(PORT)
   waitForServer(
     PORT,

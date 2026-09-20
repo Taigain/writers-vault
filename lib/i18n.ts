@@ -230,6 +230,13 @@ export const STR = {
     tlTagPh: 'Метка события: #код или название',
     tlYearZero: 'Год 0 не существует: используйте 1 или −1',
     tlDayRange: 'День года: от 1 до 365',
+    updCheck: 'Проверить обновления',
+    updChecking: 'Проверка…',
+    updLatest: 'У вас последняя версия',
+    updAvailable: 'Найдено обновление — скачивается в фоне',
+    updDownloaded: 'Обновление готово — появится предложение перезапуска',
+    updError: 'Ошибка проверки — попробуйте позже',
+    updDev: 'Обновления работают в установленной версии',
   },
   en: {
     tagline: "author's cabinet",
@@ -459,6 +466,13 @@ export const STR = {
     tlTagPh: 'Event tag: #code or name',
     tlYearZero: 'There is no year 0: use 1 or −1',
     tlDayRange: 'Day of year: 1 to 365',
+    updCheck: 'Check for updates',
+    updChecking: 'Checking…',
+    updLatest: 'You are on the latest version',
+    updAvailable: 'Update found — downloading in background',
+    updDownloaded: 'Update ready — restart prompt will appear',
+    updError: 'Check failed — try again later',
+    updDev: 'Updates work in the installed build',
   },
 } as const
 

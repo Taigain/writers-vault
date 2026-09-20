@@ -7,7 +7,7 @@ import {
 } from 'lucide-react'
 import RichPreview from './RichPreview'
 import { useLang } from '@/lib/useLang'
-import { saveChapter, deleteChapter, moveChapter, moveBlock, setChapterAct } from '@/lib/actions'
+import { saveChapter, deleteChapter, moveChapter, moveBlock, setChapterAct, checkChapterExists } from '@/lib/actions'
 import { registerEditor, setEditorDirty, unregisterEditor } from '@/lib/autosave'
 
 const wordsOf = (s: string) => (s.trim() ? s.trim().split(/\s+/).length : 0)
@@ -62,14 +62,26 @@ export default function ChapterEditor({
   const lastAutoRef = useRef(0)
   const saveRef = useRef<() => Promise<void>>(async () => {})
 
+  const savingRef = useRef(false)
+
   const saveNow = async () => {
-    await saveChapter(id, chTitle, c)
-    await saveNow()
-    baseRef.current = { title: chTitle, content: c }
-    lastAutoRef.current = Date.now()
-    setIsDirty(false)
-    setEditorDirty(id, false)
-    setSavedAt(new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }))
+    if (savingRef.current) return
+    savingRef.current = true
+    try {
+      const exists = await checkChapterExists(id)
+      if (!exists) {
+        unregisterEditor(id)
+        return
+      }
+      await saveChapter(id, chTitle, c)
+      baseRef.current = { title: chTitle, content: c }
+      lastAutoRef.current = Date.now()
+      setIsDirty(false)
+      setEditorDirty(id, false)
+      setSavedAt(new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }))
+    } finally {
+      savingRef.current = false
+    }
   }
 
   useEffect(() => {
@@ -97,7 +109,7 @@ export default function ChapterEditor({
       if (now - lastAutoRef.current < sec * 1000) return
       lastAutoRef.current = now
       void saveRef.current()
-    }, 5000)
+    }, 15000) // было 5000
     return () => clearInterval(iv)
   }, [])
 

@@ -6,6 +6,7 @@ import { usePathname, useSearchParams } from 'next/navigation'
 import { ChevronRight, BookOpenText, Feather, Users, Globe2, MapPin, Clock, Share2, Settings, CircleHelp } from 'lucide-react'
 import { useLang } from '@/lib/useLang'
 import type { StrKey } from '@/lib/i18n'
+import LangFlags from '@/components/LangFlags'
 
 type BookItem = { id: string; title: string; chapters: { id: string; title: string }[] }
 
@@ -120,6 +121,9 @@ export default function SidebarNav({ books }: { books: BookItem[] }) {
       })}
 
       <div className="mt-auto pt-3 border-t border-white/10 flex flex-col gap-2">
+        <div className="px-2">
+          <LangFlags />
+        </div>
         <Link href="/help" className="nav-link">
           <CircleHelp size={15} /> {t('navHelp')}
         </Link>

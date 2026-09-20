@@ -462,10 +462,26 @@ export async function deleteBook(id: string) {
   revalidatePath('/')
 }
 
-export async function deleteChapter(chapterId: string) {
-  const ch = await prisma.chapter.findUnique({ where: { id: chapterId }, select: { bookId: true } })
-  await prisma.chapter.delete({ where: { id: chapterId } })
-  if (ch) revalidatePath(`/book/${ch.bookId}`)
+export async function checkChapterExists(id: string): Promise<boolean> {
+  const chapter = await prisma.chapter.findUnique({ where: { id }, select: { id: true } })
+  return chapter !== null
+}
+
+export async function deleteChapter(id: string) {
+  const chapter = await prisma.chapter.findUnique({
+    where: { id },
+    select: { bookId: true }
+  })
+  
+  if (!chapter) return
+
+  await prisma.$transaction([
+    prisma.chapterMention.deleteMany({ where: { chapterId: id } }),
+    prisma.eventMention.deleteMany({ where: { chapterId: id } }),
+    prisma.chapter.delete({ where: { id } })
+  ])
+
+  revalidatePath(`/book/${chapter.bookId}`)
 }
 
 export async function deleteCharacter(id: string) {
