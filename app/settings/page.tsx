@@ -6,6 +6,7 @@ import { saveDirHandle, getSavedDirName, clearSavedDir } from '@/lib/fsAccess'
 import { useLang, setLangEverywhere } from '@/lib/useLang'
 import type { Lang, StrKey } from '@/lib/i18n'
 import { APP_NAME, APP_VERSION, APP_AUTHOR, APP_YEAR, DONATE_LINKS } from '@/lib/appinfo'
+import AutosaveSetting from '@/components/AutosaveSetting'
 
 const UI_FONTS: { key: string; labelKey: StrKey; stack: string }[] = [
   { key: 'system', labelKey: 'fontSystem', stack: '"Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif' },
@@ -165,6 +166,11 @@ export default function SettingsPage() {
         <p className="text-xs mt-3" style={{ color: 'var(--soft)' }}>{t('setFolderHint')}</p>
       </section>
 
+      <section className="card p-5">
+        <div className="text-sm font-bold mb-2">{t('setEditor')}</div>
+        <AutosaveSetting />
+      </section>
+      
       <section className="card p-5 mt-6">
         <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
           <Feather size={16} /> {t('aboutTitle')}

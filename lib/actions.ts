@@ -123,10 +123,14 @@ export async function saveChapter(chapterId: string, title: string, content: str
   }
 
   const eventMarks = content.match(/\[#(.*?)\]/g) || []
-  const eventNames = [...new Set(eventMarks.map((m) => m.replace(/[#\[\]]/g, '').trim()))]
-  const lowerEventNames = eventNames.map((n) => n.toLowerCase())
+  const eventNames = [
+    ...new Set(eventMarks.map((m) => m.replace(/[\[#\]]/g, '').trim().toLowerCase())),
+  ]
   const events = await prisma.timelineEvent.findMany({ where: { bookId } })
-  const matchedEvents = events.filter((e) => lowerEventNames.includes(e.description.toLowerCase()))
+  const matchedEvents = events.filter((e) => {
+    const tag = (e.tag ?? '').replace(/^#/, '').toLowerCase()
+    return (tag !== '' && eventNames.includes(tag)) || eventNames.includes(e.description.toLowerCase())
+  })
   await prisma.eventMention.deleteMany({ where: { chapterId } })
   if (matchedEvents.length > 0) {
     await prisma.eventMention.createMany({
@@ -245,6 +249,7 @@ export type TimelineInput = {
   description: string
   summary: string
   chapterId: string | null
+  tag: string | null
 }
 
 export type TimelineRow = {
@@ -260,6 +265,7 @@ export type TimelineRow = {
   chapterFirstSentence: string | null
   participantIds: string[]
   mentionChapters: string[]
+  tag: string | null
 }
 
 function extractFirstSentence(text: string): string | null {
@@ -292,6 +298,7 @@ export async function getTimeline(bookId: string) {
     chapterFirstSentence: r.chapter ? extractFirstSentence(r.chapter.content) : null,
     participantIds: r.participants.map((p) => p.characterId),
     mentionChapters: r.mentions.map((m) => m.chapter.title),
+    tag: r.tag,
   }))
 }
 

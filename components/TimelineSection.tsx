@@ -23,6 +23,19 @@ const toInt = (v: FormDataEntryValue | null): number | null => {
   return Number.isFinite(n) ? n : null
 }
 
+function readBookDate(fd: FormData): {
+  ok: boolean
+  year: number | null
+  day: number | null
+  err?: 'year' | 'day'
+} {
+  const year = toInt(fd.get('bookYear'))
+  const day = toInt(fd.get('bookDay'))
+  if (year === 0) return { ok: false, year, day, err: 'year' }
+  if (day !== null && (day < 1 || day > 365)) return { ok: false, year, day, err: 'day' }
+  return { ok: true, year, day }
+}
+
 function TypeSwitch({ value, onChange }: { value: TypeKey; onChange: (v: TypeKey) => void }) {
   const { t } = useLang()
   return (
@@ -47,7 +60,17 @@ function TypeSwitch({ value, onChange }: { value: TypeKey; onChange: (v: TypeKey
   )
 }
 
-function DateFields({ type, date, bookYear, bookDay }: { type: TypeKey; date: string; bookYear: number | null; bookDay: number | null }) {
+function DateFields({
+  type,
+  date,
+  bookYear,
+  bookDay,
+}: {
+  type: TypeKey
+  date: string
+  bookYear: number | null
+  bookDay: number | null
+}) {
   const { t } = useLang()
   return (
     <>
@@ -57,15 +80,39 @@ function DateFields({ type, date, bookYear, bookDay }: { type: TypeKey; date: st
       </div>
       <div hidden={type !== 'book'} className="flex flex-wrap items-center gap-2">
         <span className="field-label" style={{ marginBottom: 0 }}>{t('tlYear')}</span>
-        <input type="number" min={0} name="bookYear" defaultValue={bookYear ?? ''} className="input w-24" placeholder="—" />
+        <input
+          type="number"
+          min={-9999}
+          max={9999}
+          name="bookYear"
+          defaultValue={bookYear ?? ''}
+          className="input w-24"
+          placeholder="—"
+        />
         <span className="field-label" style={{ marginBottom: 0 }}>{t('tlDay')}</span>
-        <input type="number" min={0} name="bookDay" defaultValue={bookDay ?? ''} className="input w-28" placeholder="0" />
+        <input
+          type="number"
+          min={1}
+          max={365}
+          name="bookDay"
+          defaultValue={bookDay ?? ''}
+          className="input w-28"
+          placeholder="1–365"
+        />
       </div>
     </>
   )
 }
 
-function ParticipantChips({ eventId, participantIds, characters }: { eventId: string; participantIds: string[]; characters: { id: string; name: string }[] }) {
+function ParticipantChips({
+  eventId,
+  participantIds,
+  characters,
+}: {
+  eventId: string
+  participantIds: string[]
+  characters: { id: string; name: string }[]
+}) {
   const { t } = useLang()
   if (characters.length === 0) return null
   return (
@@ -97,18 +144,30 @@ function CreateForm({ bookId, chapters }: { bookId: string; chapters: { id: stri
   const { t } = useLang()
   const [type, setType] = useState<TypeKey>('calendar')
   const today = new Date().toISOString().split('T')[0]
-
   return (
     <form
       action={async (fd: FormData) => {
+        const dateType = (fd.get('dateType') as string) === 'book' ? 'book' : 'calendar'
+        let bookYear: number | null = null
+        let bookDay: number | null = null
+        if (dateType === 'book') {
+          const rd = readBookDate(fd)
+          if (!rd.ok) {
+            window.alert(rd.err === 'year' ? t('tlYearZero') : t('tlDayRange'))
+            return
+          }
+          bookYear = rd.year
+          bookDay = rd.day
+        }
         await createTimelineEvent(bookId, {
-          dateType: (fd.get('dateType') as string) === 'book' ? 'book' : 'calendar',
+          dateType,
           date: (fd.get('date') as string) ?? '',
-          bookYear: toInt(fd.get('bookYear')),
-          bookDay: toInt(fd.get('bookDay')),
+          bookYear,
+          bookDay,
           description: (fd.get('description') as string) ?? '',
           summary: (fd.get('summary') as string) ?? '',
           chapterId: (fd.get('chapterId') as string) || null,
+          tag: ((fd.get('tag') as string) ?? '').trim() || null,
         })
       }}
       className="card p-4 space-y-3 mb-6"
@@ -128,6 +187,7 @@ function CreateForm({ bookId, chapters }: { bookId: string; chapters: { id: stri
           ))}
         </select>
       </div>
+      <input name="tag" className="input" placeholder={t('tlTagPh')} />
       <input name="summary" className="input" placeholder={t('tlSummaryPh')} />
       <div className="flex justify-end">
         <button className="btn btn-primary btn-sm">
@@ -138,22 +198,42 @@ function CreateForm({ bookId, chapters }: { bookId: string; chapters: { id: stri
   )
 }
 
-function EventCard({ event, chapters, characters }: { event: TimelineRow; chapters: { id: string; title: string }[]; characters: { id: string; name: string }[] }) {
+function EventCard({
+  event,
+  chapters,
+  characters,
+}: {
+  event: TimelineRow
+  chapters: { id: string; title: string }[]
+  characters: { id: string; name: string }[]
+}) {
   const { t } = useLang()
   const [type, setType] = useState<TypeKey>(event.dateType)
-
   return (
     <div className="tl-item">
       <form
         action={async (fd: FormData) => {
+          const dateType = (fd.get('dateType') as string) === 'book' ? 'book' : 'calendar'
+          let bookYear: number | null = null
+          let bookDay: number | null = null
+          if (dateType === 'book') {
+            const rd = readBookDate(fd)
+            if (!rd.ok) {
+              window.alert(rd.err === 'year' ? t('tlYearZero') : t('tlDayRange'))
+              return
+            }
+            bookYear = rd.year
+            bookDay = rd.day
+          }
           await saveTimelineEvent(event.id, {
-            dateType: (fd.get('dateType') as string) === 'book' ? 'book' : 'calendar',
+            dateType,
             date: (fd.get('date') as string) ?? '',
-            bookYear: toInt(fd.get('bookYear')),
-            bookDay: toInt(fd.get('bookDay')),
+            bookYear,
+            bookDay,
             description: (fd.get('description') as string) ?? '',
             summary: (fd.get('summary') as string) ?? '',
             chapterId: (fd.get('chapterId') as string) || null,
+            tag: ((fd.get('tag') as string) ?? '').trim() || null,
           })
         }}
         className="card p-4 space-y-3"
@@ -186,9 +266,15 @@ function EventCard({ event, chapters, characters }: { event: TimelineRow; chapte
             ))}
           </select>
         </div>
+        <input name="tag" defaultValue={event.tag ?? ''} className="input" placeholder={t('tlTagPh')} />
         <input name="summary" defaultValue={event.summary} className="input" placeholder={t('tlSummaryPh')} />
       </form>
       <div className="mt-2 pl-2 space-y-2">
+        {event.tag && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="chip chip-mention">{event.tag}</span>
+          </div>
+        )}
         <ParticipantChips eventId={event.id} participantIds={event.participantIds} characters={characters} />
         {event.mentionChapters.length > 0 && (
           <div className="flex flex-wrap items-center gap-1.5">
@@ -216,7 +302,6 @@ export default function TimelineSection({
 }) {
   const { t } = useLang()
   const [view, setView] = useState<'all' | 'calendar' | 'book'>('all')
-
   const cal = useMemo(
     () => events.filter((e) => e.dateType === 'calendar').sort((a, b) => a.date.localeCompare(b.date)),
     [events],
@@ -225,14 +310,11 @@ export default function TimelineSection({
     () => events.filter((e) => e.dateType === 'book').sort((a, b) => bookKey(a) - bookKey(b)),
     [events],
   )
-
   const showCal = view !== 'book'
   const showBook = view !== 'calendar'
-
   return (
     <div>
       <CreateForm bookId={bookId} chapters={chapters} />
-
       <div className="flex flex-wrap items-center gap-2 mb-6">
         <span className="text-xs font-semibold" style={{ color: 'var(--soft)' }}>{t('tlView')}</span>
         <button type="button" onClick={() => setView('all')} className={`chip-btn ${view === 'all' ? 'chip-btn-active' : ''}`}>
@@ -245,13 +327,11 @@ export default function TimelineSection({
           <BookOpen size={11} /> {t('tlBook')} ({book.length})
         </button>
       </div>
-
       {events.length === 0 && (
         <div className="card p-10 text-center text-sm" style={{ color: 'var(--soft)' }}>
           {t('tlEmpty')}
         </div>
       )}
-
       {showCal && cal.length > 0 && (
         <section className="mb-10">
           {view === 'all' && book.length > 0 && (
@@ -262,7 +342,6 @@ export default function TimelineSection({
           <TimelineVisual events={cal} type="calendar" />
         </section>
       )}
-
       {showBook && book.length > 0 && (
         <section className="mb-10">
           {view === 'all' && cal.length > 0 && (
@@ -273,7 +352,6 @@ export default function TimelineSection({
           <TimelineVisual events={book} type="book" />
         </section>
       )}
-
       <div className="mt-12">
         <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
           <Feather size={16} /> {t('tlEditHead')}

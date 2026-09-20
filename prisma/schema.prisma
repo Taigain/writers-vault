@@ -113,6 +113,7 @@ model TimelineEvent {
   bookYear     Int?
   bookDay      Int?
   description  String
+  tag          String?
   summary      String           @default("")
   createdAt    DateTime         @default(now())
   bookId       String

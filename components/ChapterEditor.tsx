@@ -8,6 +8,7 @@ import {
 import RichPreview from './RichPreview'
 import { useLang } from '@/lib/useLang'
 import { saveChapter, deleteChapter, moveChapter, moveBlock, setChapterAct } from '@/lib/actions'
+import { registerEditor, setEditorDirty, unregisterEditor } from '@/lib/autosave'
 
 const wordsOf = (s: string) => (s.trim() ? s.trim().split(/\s+/).length : 0)
 const SIZES = [14, 16, 18, 20, 24, 32]
@@ -54,6 +55,51 @@ export default function ChapterEditor({
   const [showPreview, setShowPreview] = useState(true)
   const taRef = useRef<HTMLTextAreaElement | null>(null)
   const rootRef = useRef<HTMLDivElement | null>(null)
+    const [isDirty, setIsDirty] = useState(false)
+  const [savedAt, setSavedAt] = useState<string | null>(null)
+  const baseRef = useRef({ title, content })
+  const liveRef = useRef({ dirty: false })
+  const lastAutoRef = useRef(0)
+  const saveRef = useRef<() => Promise<void>>(async () => {})
+
+  const saveNow = async () => {
+    await saveChapter(id, chTitle, c)
+    await saveNow()
+    baseRef.current = { title: chTitle, content: c }
+    lastAutoRef.current = Date.now()
+    setIsDirty(false)
+    setEditorDirty(id, false)
+    setSavedAt(new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }))
+  }
+
+  useEffect(() => {
+    liveRef.current = { dirty: c !== baseRef.current.content || chTitle !== baseRef.current.title }
+    saveRef.current = saveNow
+  })
+
+  useEffect(() => {
+    const d = c !== baseRef.current.content || chTitle !== baseRef.current.title
+    setIsDirty(d)
+    setEditorDirty(id, d)
+  }, [c, chTitle, id])
+
+  useEffect(() => {
+    registerEditor(id, () => saveRef.current())
+    return () => unregisterEditor(id)
+  }, [id])
+
+  useEffect(() => {
+    const iv = setInterval(() => {
+      const sec = Number(localStorage.getItem('wv-autosave') ?? '60')
+      if (!sec || sec <= 0) return
+      if (!liveRef.current.dirty) return
+      const now = Date.now()
+      if (now - lastAutoRef.current < sec * 1000) return
+      lastAutoRef.current = now
+      void saveRef.current()
+    }, 5000)
+    return () => clearInterval(iv)
+  }, [])
 
   const positions = useMemo(() => {
     const q = highlight?.trim() ?? ''
@@ -433,6 +479,17 @@ export default function ChapterEditor({
               >
                 {showPreview ? <EyeOff size={15} /> : <Eye size={15} />}
               </button>
+                            <span className="tb-sep" />
+              <button
+                type="button"
+                title={t('chSave')}
+                onClick={() => {
+                  void saveNow()
+                }}
+                style={isDirty ? { color: 'var(--gold)' } : undefined}
+              >
+                <Save size={15} />
+              </button>
             </div>
             <textarea
               ref={taRef}
@@ -449,6 +506,8 @@ export default function ChapterEditor({
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-xs" style={{ color: 'var(--soft)' }}>
                 {t('chCounters', { w: wordsOf(c).toLocaleString('ru-RU'), c: c.length.toLocaleString('ru-RU') })}
+                {' · '}
+                {isDirty ? t('chUnsaved') : savedAt ? t('chSavedAt', { time: savedAt }) : t('chSaved')}
               </span>
               <div className="flex flex-wrap gap-2">
                 <button

@@ -38,6 +38,10 @@ async function ensureSchema() {
     if (!loreCols.some((c) => c.name === 'imageBase64')) {
       await prisma.$executeRawUnsafe(`ALTER TABLE "LoreEntry" ADD COLUMN "imageBase64" TEXT`)
     }
+        const evCols = await prisma.$queryRawUnsafe<Array<{ name: string }>>(`PRAGMA table_info("TimelineEvent")`)
+    if (!evCols.some((c) => c.name === 'tag')) {
+      await prisma.$executeRawUnsafe(`ALTER TABLE "TimelineEvent" ADD COLUMN "tag" TEXT`)
+    }
   } catch (e) {
     console.error('ensureSchema failed:', e)
   }

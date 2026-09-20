@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from 'docx'
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, LineRuleType } from 'docx'
 import { prisma, schemaReady } from '@/lib/prisma'
 import { parseRichText } from '@/lib/richtext'
 import { getBookBlocks } from '@/lib/actions'
@@ -39,7 +39,6 @@ export async function GET(_req: Request, { params }: { params: Promise<{ bookId:
       new Paragraph({
         text: cleanPlain(book.annotation),
         alignment: AlignmentType.CENTER,
-        spacing: { after: 400 },
       }),
     )
   }
@@ -52,7 +51,6 @@ export async function GET(_req: Request, { params }: { params: Promise<{ bookId:
       new Paragraph({
         text: cleanPlain(ch.title),
         heading,
-        spacing: { before: 360, after: 240 },
       }),
     )
 
@@ -76,7 +74,6 @@ export async function GET(_req: Request, { params }: { params: Promise<{ bookId:
         new Paragraph({
           alignment: ALIGN_MAP[block.align],
           children: runs,
-          spacing: { after: 120 },
         }),
       )
     }
@@ -88,7 +85,6 @@ export async function GET(_req: Request, { params }: { params: Promise<{ bookId:
         new Paragraph({
           text: cleanPlain(b.name),
           heading: HeadingLevel.HEADING_1,
-          spacing: { before: 480, after: 240 },
         }),
       )
       for (const ch of b.chs) pushChapter(ch, HeadingLevel.HEADING_2)
@@ -102,6 +98,41 @@ export async function GET(_req: Request, { params }: { params: Promise<{ bookId:
     lastModifiedBy: 'Taiga Develop',
     title: cleanPlain(book.title),
     description: cleanPlain(book.annotation),
+    styles: {
+      default: {
+        document: {
+          run: { font: 'Times New Roman', size: 22 },
+          paragraph: {
+            spacing: { after: 160, line: 259, lineRule: LineRuleType.AUTO },
+          },
+        },
+      },
+      paragraphStyles: [
+        {
+          id: 'Title',
+          name: 'Title',
+          basedOn: 'Normal',
+          run: { font: 'Times New Roman', size: 48, bold: true },
+          paragraph: { alignment: AlignmentType.CENTER, spacing: { before: 240, after: 240 } },
+        },
+        {
+          id: 'Heading1',
+          name: 'Heading 1',
+          basedOn: 'Normal',
+          next: 'Normal',
+          run: { font: 'Times New Roman', size: 32, bold: true },
+          paragraph: { spacing: { before: 360, after: 240 }, outlineLevel: 0 },
+        },
+        {
+          id: 'Heading2',
+          name: 'Heading 2',
+          basedOn: 'Normal',
+          next: 'Normal',
+          run: { font: 'Times New Roman', size: 26, bold: true },
+          paragraph: { spacing: { before: 240, after: 160 }, outlineLevel: 1 },
+        },
+      ],
+    },
     sections: [{ properties: {}, children }],
   })
   const buffer = await Packer.toBuffer(doc)

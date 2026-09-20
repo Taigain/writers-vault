@@ -6,6 +6,8 @@ const fs = require('fs')
 const http = require('http')
 const net = require('net')
 
+let forceQuit = false
+
 const HOST = '127.0.0.1'
 
 let serverProcess = null
@@ -181,6 +183,53 @@ function setupAutoUpdate() {
   }, 5000)
 }
 
+function setupCloseGuard() {
+  if (!mainWindow) return
+  mainWindow.on('close', (e) => {
+    if (forceQuit) return
+    e.preventDefault()
+    ;(async () => {
+      let dirty = 0
+      try {
+        dirty = await mainWindow.webContents.executeJavaScript('window.__wvDirtyCount || 0')
+      } catch (err) {
+        dirty = 0
+      }
+      if (!dirty) {
+        forceQuit = true
+        mainWindow.close()
+        return
+      }
+      const { response } = await dialog.showMessageBox(mainWindow, {
+        type: 'question',
+        title: "Writer's Vault",
+        message: 'Несохранённые изменения / Unsaved changes',
+        detail:
+          'В редакторе есть несохранённый текст. Сохранить перед выходом?\nThere is unsaved text in the editor. Save before exit?',
+        buttons: [
+          'Сохранить и выйти / Save and exit',
+          'Выйти без сохранения / Exit without saving',
+          'Отмена / Cancel',
+        ],
+        defaultId: 0,
+        cancelId: 2,
+      })
+      if (response === 0) {
+        try {
+          await mainWindow.webContents.executeJavaScript(
+            'window.__wvSaveAll ? window.__wvSaveAll() : Promise.resolve()',
+          )
+        } catch (err) {}
+        forceQuit = true
+        mainWindow.close()
+      } else if (response === 1) {
+        forceQuit = true
+        mainWindow.close()
+      }
+    })()
+  })
+}
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1440,
@@ -213,6 +262,7 @@ app.whenReady().then(async () => {
     PORT = 31111
   }
   createWindow()
+  setupCloseGuard()
   startServer(PORT)
   waitForServer(
     PORT,
