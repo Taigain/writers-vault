@@ -58,15 +58,18 @@ function buildGraph(data: GraphData, mode: Mode) {
     return [`ev:${a}`, `char:${b}`]
   }
 
-  const seen = new Set<string>()
-  const edges: { a: string; b: string }[] = []
+  const weights = new Map<string, number>()
   for (const e of data.edges) {
     if (!wanted.includes(e.kind)) continue
     const [a, b] = mapEdge(e.kind, e.a, e.b)
+    if (a === b) continue
     const key = a < b ? `${a}|${b}` : `${b}|${a}`
-    if (seen.has(key) || a === b) continue
-    seen.add(key)
-    edges.push({ a, b })
+    weights.set(key, (weights.get(key) ?? 0) + 1)
+  }
+  const edges: { a: string; b: string; w: number }[] = []
+  for (const [key, w] of weights) {
+    const [a, b] = key.split('|')
+    edges.push({ a, b, w })
   }
 
   const connected = new Set<string>()
@@ -97,33 +100,87 @@ function buildGraph(data: GraphData, mode: Mode) {
   return { nodes, edges, radius }
 }
 
-function simulate(nodes: NodeT[], edges: { a: string; b: string }[], radius: (n: NodeT) => number) {
-  const idx = new Map(nodes.map((n, i) => [n.id, i]))
-  const pos = nodes.map((_, i) => {
-    const a = (i / Math.max(1, nodes.length)) * Math.PI * 2 + (i % 5) * 0.35
-    const r = 180 + (i % 4) * 45
-    return { x: Math.cos(a) * r, y: Math.sin(a) * r }
-  })
+type EdgeT = { a: string; b: string; w: number }
 
-  const iterations = 260
+function clusterCenters(kinds: Kind[]): Map<Kind, { x: number; y: number }> {
+  const m = new Map<Kind, { x: number; y: number }>()
+  if (kinds.length === 1) {
+    m.set(kinds[0], { x: 500, y: 310 })
+  } else if (kinds.length === 2) {
+    m.set(kinds[0], { x: 320, y: 310 })
+    m.set(kinds[1], { x: 680, y: 310 })
+  } else {
+    m.set(kinds[0], { x: 500, y: 185 })
+    m.set(kinds[1], { x: 275, y: 435 })
+    m.set(kinds[2], { x: 725, y: 435 })
+  }
+  return m
+}
+
+function simulate(nodes: NodeT[], edges: EdgeT[], radius: (n: NodeT) => number) {
+  const W = 1000
+  const H = 620
+  const PAD = 70
+  if (nodes.length === 0) return []
+  const idx = new Map(nodes.map((n, i) => [n.id, i]))
+  const kindsPresent = (['chapter', 'character', 'event'] as Kind[]).filter((k) =>
+    nodes.some((n) => n.kind === k),
+  )
+  const centers = clusterCenters(kindsPresent)
+  const byKind = new Map<Kind, number[]>()
+  nodes.forEach((n, i) => {
+    const arr = byKind.get(n.kind) ?? []
+    arr.push(i)
+    byKind.set(n.kind, arr)
+  })
+  const ringR = (count: number) => Math.min(190, 60 + count * 13)
+
+  const pos = nodes.map(() => ({ x: 0, y: 0 }))
+  for (const [kind, arr] of byKind) {
+    const c = centers.get(kind)!
+    const R = ringR(arr.length)
+    arr.forEach((ni, k) => {
+      const a = (k / arr.length) * Math.PI * 2 - Math.PI / 2
+      pos[ni].x = c.x + Math.cos(a) * R
+      pos[ni].y = c.y + Math.sin(a) * R
+    })
+  }
+
+  const neigh = nodes.map(() => [] as { j: number; w: number }[])
+  for (const e of edges) {
+    const a = idx.get(e.a)
+    const b = idx.get(e.b)
+    if (a == null || b == null) continue
+    neigh[a].push({ j: b, w: e.w })
+    neigh[b].push({ j: a, w: e.w })
+  }
+  for (const [kind, arr] of byKind) {
+    const c = centers.get(kind)!
+    const scored = arr.map((ni, fallback) => {
+      let wx = 0
+      let wy = 0
+      for (const { j, w } of neigh[ni]) {
+        wx += (pos[j].x - c.x) * w
+        wy += (pos[j].y - c.y) * w
+      }
+      return {
+        ni,
+        angle: neigh[ni].length ? Math.atan2(wy, wx) : (fallback / arr.length) * Math.PI * 2,
+      }
+    })
+    scored.sort((p, q) => p.angle - q.angle)
+    const R = ringR(arr.length)
+    scored.forEach((s, k) => {
+      const a = (k / scored.length) * Math.PI * 2 - Math.PI / 2
+      pos[s.ni].x = c.x + Math.cos(a) * R
+      pos[s.ni].y = c.y + Math.sin(a) * R
+    })
+  }
+
+  const iterations = 90
   for (let it = 0; it < iterations; it++) {
     const cool = 1 - it / iterations
     const f = nodes.map(() => ({ x: 0, y: 0 }))
-
-    for (let i = 0; i < nodes.length; i++) {
-      for (let j = i + 1; j < nodes.length; j++) {
-        const dx = pos[i].x - pos[j].x
-        const dy = pos[i].y - pos[j].y
-        const d2 = dx * dx + dy * dy || 1
-        const d = Math.sqrt(d2)
-        const rep = 3200 / d2
-        f[i].x += (dx / d) * rep
-        f[i].y += (dy / d) * rep
-        f[j].x -= (dx / d) * rep
-        f[j].y -= (dy / d) * rep
-      }
-    }
-
     for (const e of edges) {
       const a = idx.get(e.a)
       const b = idx.get(e.b)
@@ -131,35 +188,46 @@ function simulate(nodes: NodeT[], edges: { a: string; b: string }[], radius: (n:
       const dx = pos[b].x - pos[a].x
       const dy = pos[b].y - pos[a].y
       const d = Math.sqrt(dx * dx + dy * dy) || 1
-      const rest = 110 + radius(nodes[a]) + radius(nodes[b])
-      const force = (d - rest) * 0.02
+      const rest = Math.max(70, 170 - e.w * 22)
+      const force = (d - rest) * 0.015
       f[a].x += (dx / d) * force
       f[a].y += (dy / d) * force
       f[b].x -= (dx / d) * force
       f[b].y -= (dy / d) * force
     }
-
     for (let i = 0; i < nodes.length; i++) {
-      f[i].x -= pos[i].x * 0.012
-      f[i].y -= pos[i].y * 0.012
-      pos[i].x += Math.max(-18, Math.min(18, f[i].x)) * cool
-      pos[i].y += Math.max(-18, Math.min(18, f[i].y)) * cool
+      const c = centers.get(nodes[i].kind)!
+      const arr = byKind.get(nodes[i].kind)!
+      const R = ringR(arr.length)
+      const dx = pos[i].x - c.x
+      const dy = pos[i].y - c.y
+      const d = Math.sqrt(dx * dx + dy * dy) || 1
+      const pull = (R - d) * 0.06
+      f[i].x += (dx / d) * pull
+      f[i].y += (dy / d) * pull
+    }
+    for (let i = 0; i < nodes.length; i++) {
+      pos[i].x += Math.max(-14, Math.min(14, f[i].x)) * cool
+      pos[i].y += Math.max(-14, Math.min(14, f[i].y)) * cool
     }
   }
 
-  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity
+  let minX = Infinity
+  let maxX = -Infinity
+  let minY = Infinity
+  let maxY = -Infinity
   for (const p of pos) {
     minX = Math.min(minX, p.x)
     maxX = Math.max(maxX, p.x)
     minY = Math.min(minY, p.y)
     maxY = Math.max(maxY, p.y)
   }
-  const W = 1000, H = 620, PAD = 70
-  const sx = maxX - minX || 1
-  const sy = maxY - minY || 1
+  const s = Math.min((W - PAD * 2) / (maxX - minX || 1), (H - PAD * 2) / (maxY - minY || 1))
+  const cx = (minX + maxX) / 2
+  const cy = (minY + maxY) / 2
   return pos.map((p) => ({
-    x: PAD + ((p.x - minX) / sx) * (W - PAD * 2),
-    y: PAD + ((p.y - minY) / sy) * (H - PAD * 2),
+    x: W / 2 + (p.x - cx) * s,
+    y: H / 2 + (p.y - cy) * s,
   }))
 }
 
@@ -320,7 +388,8 @@ export default function GraphCloud({ data }: { data: GraphData }) {
                       x2={pb.x}
                       y2={pb.y}
                       stroke={active ? '#8c3a2b' : 'rgba(111,102,92,.32)'}
-                      strokeWidth={active ? 2.2 : 1.2}
+                      strokeWidth={active ? 2.4 : Math.min(1 + e.w * 0.5, 3.5)}
+                      strokeOpacity={active ? 1 : Math.min(0.35 + e.w * 0.12, 0.8)}
                     />
                   )
                 })}

@@ -1,6 +1,7 @@
 export const APP_NAME = "Writer's Vault"
-export const APP_VERSION = '1.1.6'
+export const APP_VERSION = '1.2.0'
 export const APP_AUTHOR = 'Taiga Develop'
+export const APP_SUPPORT_EMAIL = 'taigadevelop@ya.ru'
 export const APP_YEAR = '2026'
 
 export const DONATE_LINKS: { label: string; url: string }[] = [

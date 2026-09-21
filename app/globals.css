@@ -772,3 +772,43 @@ button.acc-head, .acc-head-btn {
 }
 .lang-flag svg { display: block; border-radius: .2rem; }
 .lang-flag-active { outline: 2px solid var(--gold); outline-offset: 1px; }
+
+.fold-head {
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+}
+
+.tb-find {
+  width: 9rem;
+  font-size: .8rem;
+  padding: .25rem .5rem;
+  border: 1px solid var(--line);
+  border-radius: .4rem;
+  background: var(--card);
+  color: var(--ink);
+}
+.zen-wrap {
+  position: fixed;
+  inset: 0;
+  z-index: 130;
+  background: var(--bg);
+  padding: 1.5rem 1rem;
+  overflow: auto;
+}
+.zen-inner {
+  width: 100%;
+  max-width: 52rem;
+  margin: 0 auto;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+}
+.zen-inner .textarea-write {
+  flex: 1;
+  resize: none;
+  min-height: 0;
+}

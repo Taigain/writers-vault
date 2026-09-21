@@ -4,6 +4,7 @@ import { getBooksWithSeries, createBook, createSeries, deleteSeries, getSeriesLi
 import DeleteButton from '@/components/DeleteButton'
 import { getLang } from '@/lib/lang-server'
 import { tr } from '@/lib/i18n'
+import CollapsibleSection from '@/components/CollapsibleSection'
 
 type BookRow = Awaited<ReturnType<typeof getBooksWithSeries>>[number]
 
@@ -114,33 +115,33 @@ export default async function Home() {
       ) : (
         <div className="space-y-10">
           {groups.map((g) => (
-            <section key={g.id}>
-              <h2 className="flex items-center gap-2 text-lg font-bold mb-4">
-                <Library size={17} style={{ color: 'var(--gold)' }} />
-                {g.name}
-                <span className="chip">{tr(lang, 'homeSeriesCount', { n: g.books.length })}</span>
-              </h2>
+            <CollapsibleSection
+              key={g.id}
+              id={'s-' + g.id}
+              title={g.name}
+              count={tr(lang, 'homeSeriesCount', { n: g.books.length })}
+              icon={<Library size={17} style={{ color: 'var(--gold)' }} />}
+            >
               <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
                 {g.books.map((b) => (
                   <BookCard key={b.id} b={b} lang={lang} />
                 ))}
               </div>
-            </section>
+            </CollapsibleSection>
           ))}
 
           {loose.length > 0 && (
-            <section>
-              {groups.length > 0 && (
-                <h2 className="text-lg font-bold mb-4" style={{ color: 'var(--soft)' }}>
-                  {tr(lang, 'homeSeriesless')}
-                </h2>
-              )}
+            <CollapsibleSection
+              id="standalone"
+              title={tr(lang, 'homeSeriesless')}
+              icon={<BookOpenText size={17} style={{ color: 'var(--soft)' }} />}
+            >
               <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
                 {loose.map((b) => (
                   <BookCard key={b.id} b={b} lang={lang} />
                 ))}
               </div>
-            </section>
+            </CollapsibleSection>
           )}
         </div>
       )}

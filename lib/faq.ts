@@ -33,6 +33,18 @@ export const FAQ: Record<Lang, FaqItem[]> = {
       a: 'Редактор сохраняет изменения сам: частота настраивается в «Настройки → Редактор» (по умолчанию 1 минута, можно выключить). Кнопка Save на панели главы сохраняет мгновенно и подсвечивается золотым, пока есть несохранённые изменения. При закрытии приложения с несохранённым текстом появится диалог: сохранить и выйти, выйти без сохранения или отмена. Статус внизу редактора: «сохранено в ЧЧ:ММ» или «есть несохранённые изменения».',
     },
     {
+      q: 'Дзен-режим: как писать без отвлекающих элементов?',
+      a: 'Кнопка с квадратом и стрелками на панели главы разворачивает редактор на весь экран: белый лист шириной 80%, сверху тонкая шапка с названием, статусом сохранения и панелью инструментов. Выход — та же кнопка, кнопка свернуть в шапке или Esc. Текст, автосохранение и поиск продолжают работать.',
+    },
+    {
+      q: 'Поиск: по книге и внутри главы',
+      a: 'Строка «Поиск по тексту книги» сверху раздела «Главы» ищет по названиям и тексту всех глав: клик по результату раскрывает главу, прокручивает к совпадению и выделяет его, счётчик «Совпадение N из M» листает вхождения. Внутри главы есть собственная строка «Поиск в главе…»: Enter и стрелки переходят по совпадениям, F3/Shift+F3 работают прямо из текста, Esc возвращает курсор в строку поиска.',
+    },
+    {
+      q: 'Как считаются слова и знаки?',
+      a: 'Объём главы = слова названия плюс слова текста; знаки — длина названия плюс длина текста. Чип в шапке главы, счётчики панели и дзена показывают это значение, суммы актов и всей книги складываются из него. Переименование главы пересчитывает всё мгновенно.',
+    },
+    {
       q: 'Изображения: локации, портреты, мир',
       a: 'К картинкам прикрепляются: локации (изображение в карточке), персонажи (вертикальный портрет 3:4, виден в аватаре карточки), записи о мире. Большие файлы сжимаются на вашем устройстве перед сохранением, поэтому база не раздувается. Клик по изображению открывает полноэкранный просмотр; Esc, клик по фону или крестик закрывают его.',
     },
@@ -42,7 +54,7 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     },
     {
       q: 'Что такое серии и циклы?',
-      a: 'Серия — общий заголовок для нескольких книг (например, «Трилогия огня»). Создаётся на главной странице в разделе «Серии и циклы». В паспорте книги привязываете её к серии — на главной книги автоматически группируются под заголовком серии со счётчиком. Удаление серии не удаляет книги, а возвращает их в «Вне серии».',
+      a: 'Серия — общий заголовок для нескольких книг (например, «Трилогия огня»). Создаётся на главной странице в разделе «Серии и циклы». В паспорте книги привязываете её к серии — на главной книги автоматически группируются под заголовком серии со счётчиком. Группы серий и блок «Без серии» сворачиваются кликом по заголовку — удобно при большом количестве книг, состояние запоминается. Удаление серии не удаляет книги, а возвращает их в «Вне серии».',
     },
     {
       q: 'Что такое акты внутри книги?',
@@ -51,10 +63,6 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     {
       q: 'Как менять порядок глав и актов?',
       a: 'Стрелки ↑↓ в шапке главы перемещают её внутри акта (или среди глав вне актов). Стрелки на панели акта двигают акт блоком вместе с главами. Перемещать можно и в свёрнутом виде. Порядок в списке, в сайдбаре и в экспорте всегда одинаковый; привязки таймлайна и упоминания не страдают.',
-    },
-    {
-      q: 'Поиск по книге',
-      a: 'В разделе «Главы» сверху закреплена строка поиска: введите 2+ символа — получите главы с совпадениями, числом совпадений и сниппетами с подсветкой. Клик по результату раскрывает главу, прокручивает к совпадению и выделяет его. Внутри главы работает счётчик «Совпадение N из M» со стрелками для перехода между вхождениями, а в предпросмотре все совпадения подсвечены. Поиск учитывает названия глав и их текст; регистр не важен.',
     },
     {
       q: 'Чем календарное время отличается от книжного?',
@@ -70,11 +78,15 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     },
     {
       q: 'Как сменить язык, тему, шрифты?',
-      a: 'Раздел «Настройки»: язык интерфейса (RU/EN), тема (светлая/тёмная), шрифт интерфейса и шрифт текста глав, папка экспорта по умолчанию, частота автосохранения. Всё применяется мгновенно и запоминается.',
+      a: 'Флажки RU/EN в боковой панели над пунктом «Помощь» переключают язык мгновенно, без захода в настройки. В разделе «Настройки»: язык интерфейса, тема (светлая/тёмная), шрифт интерфейса и шрифт текста глав, папка экспорта по умолчанию, частота автосохранения. Всё применяется сразу и запоминается.',
     },
     {
       q: 'Как обновить приложение и не потерять книги?',
-      a: 'Начиная с версии 1.1.2 приложение обновляется само: находит новую версию, скачивает в фоне и предлагает перезапуск. Ручная установка поверх старой тоже безопасна: книги лежат отдельно от файлов программы (в %APPDATA%\\writer-app) и установщиком не затрагиваются. База мигрирует автоматически: новые колонки добавляются без потери книг. Перед крупными обновлениями делайте копию dev.db.',
+      a: 'Начиная с версии 1.1.2 приложение обновляется само: находит новую версию, скачивает в фоне и предлагает перезапуск. Кнопка «Проверить обновления» в «Настройки → О программе» запускает проверку вручную. Ручная установка поверх старой тоже безопасна: книги лежат отдельно от файлов программы (в %APPDATA%\\writer-app) и установщиком не затрагиваются. База мигрирует автоматически: новые колонки добавляются без потери книг. Перед крупными обновлениями делайте копию dev.db.',
+    },
+    {
+      q: 'Как сообщить об ошибке или предложить идею?',
+      a: 'В «Настройки → О программе» есть форма связи: опишите проблему или идею и нажмите «Открыть в почтовой программе» — письмо уйдёт автору с автоматически приложенными версией приложения и системой. Кнопки рядом копируют адрес и текст письма в буфер, если почтовый клиент не настроен. Адрес автора продублирован там же.',
     },
     {
       q: 'Как перенести книги на другой компьютер?',
@@ -115,6 +127,18 @@ export const FAQ: Record<Lang, FaqItem[]> = {
       a: 'The editor saves changes by itself: frequency is set in Settings → Editor (1 minute by default, can be turned off). The Save button on the chapter toolbar saves instantly and glows gold while there are unsaved changes. Closing the app with unsaved text shows a dialog: save and exit, exit without saving, or cancel. Status at the editor footer: "saved at HH:MM" or "unsaved changes".',
     },
     {
+      q: 'Zen mode: how do I write without distractions?',
+      a: 'The expand button on the chapter toolbar opens the editor fullscreen: a white sheet 80% wide with a thin header holding the title, save status and toolbar. Exit via the same button, the minimize button in the header, or Esc. Text, auto-save and search keep working.',
+    },
+    {
+      q: 'Search: book-wide and inside a chapter',
+      a: 'The "Search book text" bar pinned at the top of the Chapters section searches all chapter titles and texts: clicking a result opens the chapter, scrolls to the match and selects it, and the "Match N of M" counter cycles occurrences. Inside a chapter there is its own "Find in chapter…" field: Enter and arrows cycle matches, F3/Shift+F3 work from the text, Esc returns the cursor to the find field.',
+    },
+    {
+      q: 'How are words and characters counted?',
+      a: 'A chapter volume = words of the title plus words of the text; characters = title length plus text length. The header chip, toolbar counters and zen counters show this value; act and book totals sum it. Renaming a chapter recalculates everything instantly.',
+    },
+    {
       q: 'Images: locations, portraits, world',
       a: 'Images can be attached to locations (image on the card), characters (vertical 3:4 portrait shown in the card avatar) and world lore entries. Large files are downscaled on your device before saving, so the database stays lean. Clicking an image opens full-screen view; Esc, backdrop click or the cross closes it.',
     },
@@ -124,7 +148,7 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     },
     {
       q: 'What are series and cycles?',
-      a: 'A series is a shared title for several books (e.g. "Fire Trilogy"). Create one on the home page in "Series and cycles". Link a book to a series in its passport — books on the home page automatically group under the series heading with a count. Deleting a series does not delete books, it returns them to "Standalone".',
+      a: 'A series is a shared title for several books (e.g. "Fire Trilogy"). Create one on the home page in "Series and cycles". Link a book to a series in its passport — books on the home page automatically group under the series heading with a count. Series groups and the "Standalone" block collapse by clicking their headings — handy with many books; the state is remembered. Deleting a series does not delete books, it returns them to "Standalone".',
     },
     {
       q: 'What are acts inside a book?',
@@ -133,10 +157,6 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     {
       q: 'How do I reorder chapters and acts?',
       a: 'The ↑↓ arrows in a chapter header move it within its act (or among act-free chapters). The arrows on the act panel move the act as a block with its chapters. Reordering works from the collapsed state. The order in the list, the sidebar and the export is always the same; timeline links and mentions are preserved.',
-    },
-    {
-      q: 'Book-wide search',
-      a: 'In the Chapters section the search bar is pinned at the top: type 2+ characters to get chapters with matches, counts and highlighted snippets. Clicking a result opens the chapter, scrolls to the match and selects it. Inside the chapter a "Match N of M" counter with arrows cycles through occurrences, and the preview highlights all matches. Search covers titles and text; case is ignored.',
     },
     {
       q: 'Calendar time vs book time?',
@@ -152,11 +172,15 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     },
     {
       q: 'How do I change language, theme, fonts?',
-      a: 'Settings section: interface language (RU/EN), theme (light/dark), interface font and chapter text font, default export folder, auto-save frequency. Everything applies instantly and is remembered.',
+      a: 'RU/EN flags in the sidebar above Help switch the language instantly, without opening Settings. The Settings section holds interface language, theme (light/dark), interface font and chapter text font, default export folder and auto-save frequency. Everything applies instantly and is remembered.',
     },
     {
       q: 'How do I update without losing books?',
-      a: 'Since version 1.1.2 the app updates itself: it finds a new version, downloads it in the background and offers a restart. Manual install over the old version is also safe: books live separately from program files (in %APPDATA%\\writer-app) and are untouched by the installer. The database auto-migrates: new columns are added without losing books. Make a dev.db copy before major updates.',
+      a: 'Since version 1.1.2 the app updates itself: it finds a new version, downloads it in the background and offers a restart. The "Check for updates" button in Settings → About triggers a manual check. Manual install over the old version is also safe: books live separately from program files (in %APPDATA%\\writer-app) and are untouched by the installer. The database auto-migrates: new columns are added without losing books. Make a dev.db copy before major updates.',
+    },
+    {
+      q: 'How do I report a bug or suggest an idea?',
+      a: 'Settings → About has a contact form: describe the issue or idea and press "Open in mail app" — the letter goes to the author with the app version and system details attached automatically. Buttons nearby copy the address and the letter text to the clipboard if no mail client is configured. The author email is shown there as well.',
     },
     {
       q: 'How do I move books to another PC?',

@@ -2,12 +2,36 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
-  Save, Trash2, Bold, Italic, AlignLeft, AlignCenter, AlignRight,
-  Eye, EyeOff, ChevronRight, Eraser, ArrowUp, ArrowDown, Check, Plus, AtSign, Hash,
+  Save,
+  Trash2,
+  Bold,
+  Italic,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  Eye,
+  EyeOff,
+  ChevronRight,
+  Eraser,
+  ArrowUp,
+  ArrowDown,
+  Check,
+  Plus,
+  AtSign,
+  Hash,
+  Expand,
+  Minimize,
 } from 'lucide-react'
 import RichPreview from './RichPreview'
 import { useLang } from '@/lib/useLang'
-import { saveChapter, deleteChapter, moveChapter, moveBlock, setChapterAct, checkChapterExists } from '@/lib/actions'
+import {
+  saveChapter,
+  deleteChapter,
+  moveChapter,
+  moveBlock,
+  setChapterAct,
+  checkChapterExists,
+} from '@/lib/actions'
 import { registerEditor, setEditorDirty, unregisterEditor } from '@/lib/autosave'
 
 const wordsOf = (s: string) => (s.trim() ? s.trim().split(/\s+/).length : 0)
@@ -49,20 +73,23 @@ export default function ChapterEditor({
   const downDisabled = inBlock
     ? (blockIndex ?? 0) >= (blockTotal ?? 1) - 1
     : (actIndex ?? 0) >= (actTotal ?? 1) - 1
+
   const [chTitle, setChTitle] = useState(title)
   const [c, setC] = useState(content)
   const [open, setOpen] = useState(Boolean(autoOpen))
   const [showPreview, setShowPreview] = useState(true)
   const taRef = useRef<HTMLTextAreaElement | null>(null)
   const rootRef = useRef<HTMLDivElement | null>(null)
-    const [isDirty, setIsDirty] = useState(false)
+  const zenRef = useRef<HTMLDivElement | null>(null)
+
+  const [isDirty, setIsDirty] = useState(false)
   const [savedAt, setSavedAt] = useState<string | null>(null)
   const baseRef = useRef({ title, content })
   const liveRef = useRef({ dirty: false })
   const lastAutoRef = useRef(0)
   const saveRef = useRef<() => Promise<void>>(async () => {})
-
   const savingRef = useRef(false)
+  const findRef = useRef<HTMLInputElement | null>(null)
 
   const saveNow = async () => {
     if (savingRef.current) return
@@ -109,7 +136,7 @@ export default function ChapterEditor({
       if (now - lastAutoRef.current < sec * 1000) return
       lastAutoRef.current = now
       void saveRef.current()
-    }, 15000) // было 5000
+    }, 15000)
     return () => clearInterval(iv)
   }, [])
 
@@ -125,16 +152,39 @@ export default function ChapterEditor({
     }
     return out
   }, [highlight, c])
+
   const [cur, setCur] = useState(0)
+
+  const scrollToPos = (ta: HTMLTextAreaElement, pos: number) => {
+    const mirror = document.createElement('div')
+    const cs = getComputedStyle(ta)
+    mirror.style.position = 'absolute'
+    mirror.style.visibility = 'hidden'
+    mirror.style.left = '-9999px'
+    mirror.style.width = ta.clientWidth + 'px'
+    mirror.style.font = cs.font
+    mirror.style.lineHeight = cs.lineHeight
+    mirror.style.padding = cs.padding
+    mirror.style.border = cs.border
+    mirror.style.boxSizing = cs.boxSizing
+    mirror.style.whiteSpace = 'pre-wrap'
+    mirror.style.overflowWrap = 'break-word'
+    mirror.textContent = ta.value.slice(0, pos)
+    const marker = document.createElement('span')
+    marker.textContent = ta.value.slice(pos, pos + 1)
+    mirror.appendChild(marker)
+    document.body.appendChild(mirror)
+    const top = marker.offsetTop
+    document.body.removeChild(mirror)
+    ta.scrollTop = Math.max(0, top - ta.clientHeight / 2)
+  }
 
   const jumpTo = (pos: number, len: number) => {
     const ta = taRef.current
     if (!ta) return
     ta.focus()
     ta.setSelectionRange(pos, pos + len)
-    const lineH = parseFloat(getComputedStyle(ta).lineHeight) || 24
-    const line = ta.value.slice(0, pos).split('\n').length - 1
-    ta.scrollTop = Math.max(0, line * lineH - ta.clientHeight / 3)
+    scrollToPos(ta, pos)
   }
 
   useEffect(() => {
@@ -162,6 +212,71 @@ export default function ChapterEditor({
     jumpTo(positions[n], highlight?.trim().length ?? 0)
   }
 
+  const [zen, setZen] = useState(false)
+
+  const enterZen = () => {
+    setZen(true)
+    zenRef.current?.requestFullscreen?.().catch(() => {})
+  }
+
+  const exitZen = async () => {
+    if (document.fullscreenElement) {
+      try {
+        await document.exitFullscreen()
+      } catch {
+        /* уже вне полноэкранного режима */
+      }
+    }
+    setZen(false)
+  }
+
+  useEffect(() => {
+    const onFs = () => {
+      if (!document.fullscreenElement) setZen(false)
+    }
+    document.addEventListener('fullscreenchange', onFs)
+    return () => document.removeEventListener('fullscreenchange', onFs)
+  }, [])
+
+  const [lq, setLq] = useState('')
+  const [lcur, setLcur] = useState(0)
+
+  const lpos = useMemo(() => {
+    const q = lq.trim().toLowerCase()
+    if (!q) return [] as number[]
+    const out: number[] = []
+    const low = c.toLowerCase()
+    let i = low.indexOf(q)
+    while (i !== -1 && out.length < 500) {
+      out.push(i)
+      i = low.indexOf(q, i + q.length)
+    }
+    return out
+  }, [lq, c])
+
+  useEffect(() => {
+    setLcur(0)
+  }, [lq])
+
+  const step = (d: number) => {
+    if (lpos.length === 0) return
+    const n = (lcur + d + lpos.length) % lpos.length
+    setLcur(n)
+    jumpTo(lpos[n], lq.trim().length)
+  }
+
+  useEffect(() => {
+    if (!zen) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      const el = e.target as HTMLElement | null
+      if (el && el.dataset && el.dataset.ls === '1') return
+      void exitZen()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [zen])
+
   const restore = (ta: HTMLTextAreaElement, s: number, e: number, scroll: number) => {
     requestAnimationFrame(() => {
       ta.focus()
@@ -178,21 +293,25 @@ export default function ChapterEditor({
     setC(next)
     if (ta) restore(ta, start + before.length, end + before.length, scroll)
   }
+
   const starsBack = (pos: number) => {
     let k = 0
-    while (pos - k - 1 >= 0 && c[pos - k - 1] === '*') k++
+    while (pos - k - 1 >= 0 && c[pos - k - 1] === ' ') k++
     return k
   }
+
   const starsFwd = (pos: number) => {
     let k = 0
-    while (pos + k < c.length && c[pos + k] === '*') k++
+    while (pos + k < c.length && c[pos + k] === ' ') k++
     return k
   }
+
   const wrapSelection = (before: string, after: string) => {
     const ta = taRef.current
     if (!ta) return
     applyWrap(ta.selectionStart ?? c.length, ta.selectionEnd ?? c.length, before, after)
   }
+
   const toggleWrap = (before: string, after: string) => {
     const ta = taRef.current
     if (!ta) return
@@ -221,19 +340,22 @@ export default function ChapterEditor({
       end - start >= before.length + after.length &&
       c.slice(start, start + before.length) === before &&
       c.slice(end - after.length, end) === after
-    const innerOk = innerMatch && (!single || (c[start + 1] !== '*' && c[end - 2] !== '*'))
+    const innerOk = innerMatch && (!single || (c[start + 1] !== ' ' && c[end - 2] !== ' '))
     if (innerOk) {
-      const next = c.slice(0, start) + c.slice(start + before.length, end - after.length) + c.slice(end)
+      const next =
+        c.slice(0, start) + c.slice(start + before.length, end - after.length) + c.slice(end)
       setC(next)
       restore(ta, start, end - before.length - after.length, scroll)
       return
     }
     applyWrap(start, end, before, after)
   }
+
   const setSel = (s: number, e: number, scroll: number) => {
     const ta = taRef.current
     if (ta) restore(ta, s, e, scroll)
   }
+
   const applySize = (size: number) => {
     const ta = taRef.current
     if (!ta) return
@@ -267,7 +389,7 @@ export default function ChapterEditor({
       return
     }
     const selText = c.slice(start, end)
-    const mIn = selText.match(/^\[size=(\d+)\]([\s\S]*)\[\/size\]$/)
+    const mIn = selText.match(/^\[size=(\d+)\]([\s\S]*?)\[\/size\]$/)
     if (mIn) {
       const curSize = parseInt(mIn[1], 10)
       const inner = mIn[2]
@@ -276,12 +398,17 @@ export default function ChapterEditor({
         setSel(start, start + inner.length, scroll)
       } else {
         setC(c.slice(0, start) + `[size=${size}]` + inner + CLOSE + c.slice(end))
-        setSel(start + `[size=${size}]`.length, start + `[size=${size}]`.length + inner.length, scroll)
+        setSel(
+          start + `[size=${size}]`.length,
+          start + `[size=${size}]`.length + inner.length,
+          scroll,
+        )
       }
       return
     }
     applyWrap(start, end, `[size=${size}]`, CLOSE)
   }
+
   const clearFormatting = () => {
     const ta = taRef.current
     if (!ta) return
@@ -307,6 +434,7 @@ export default function ChapterEditor({
     setC(c.slice(0, start) + sel + c.slice(end))
     setSel(start, start + sel.length, scroll)
   }
+
   const setAlign = (align: 'left' | 'center' | 'right') => {
     const ta = taRef.current
     const scroll = ta ? ta.scrollTop : 0
@@ -328,6 +456,9 @@ export default function ChapterEditor({
       ta.scrollTop = scroll
     })
   }
+
+  const words = wordsOf(chTitle) + wordsOf(c)
+  const chars = chTitle.length + c.length
 
   return (
     <div className="acc" ref={rootRef}>
@@ -380,7 +511,9 @@ export default function ChapterEditor({
           >
             <option value="">{t('chNoAct')}</option>
             {actNames.map((n) => (
-              <option key={n} value={n}>{n}</option>
+              <option key={n} value={n}>
+                {n}
+              </option>
             ))}
           </select>
           {newActOpen ? (
@@ -411,7 +544,7 @@ export default function ChapterEditor({
           )}
         </span>
         <span className="chip">
-          {wordsOf(c).toLocaleString('ru-RU')} {t('chWords')}
+          {words.toLocaleString('ru-RU')} {t('chWords')}
         </span>
       </div>
       {open && (
@@ -420,7 +553,7 @@ export default function ChapterEditor({
             className="space-y-4 pt-4"
             onSubmit={async (e) => {
               e.preventDefault()
-              await saveChapter(id, chTitle, c)
+              await saveNow()
             }}
           >
             <input
@@ -440,84 +573,223 @@ export default function ChapterEditor({
                 </button>
               </div>
             )}
-            <div className="tb">
-              <button type="button" title={t('chTbBold')} onClick={() => toggleWrap('**', '**')}>
-                <Bold size={15} />
-              </button>
-              <button type="button" title={t('chTbItalic')} onClick={() => toggleWrap('*', '*')}>
-                <Italic size={15} />
-              </button>
-              <span className="tb-sep" />
-              <button type="button" title={t('chTbChar')} onClick={() => wrapSelection('[@', ']')}>
-                <AtSign size={15} />
-              </button>
-              <button type="button" title={t('chTbEvent')} onClick={() => wrapSelection('[#', ']')}>
-                <Hash size={15} />
-              </button>
-              <span className="tb-sep" />
-              <button type="button" title={t('chTbLeft')} onClick={() => setAlign('left')}>
-                <AlignLeft size={15} />
-              </button>
-              <button type="button" title={t('chTbCenter')} onClick={() => setAlign('center')}>
-                <AlignCenter size={15} />
-              </button>
-              <button type="button" title={t('chTbRight')} onClick={() => setAlign('right')}>
-                <AlignRight size={15} />
-              </button>
-              <span className="tb-sep" />
-              <select
-                title={t('chTbSize')}
-                defaultValue=""
-                onChange={(e) => {
-                  const v = e.target.value
-                  if (v) applySize(parseInt(v, 10))
-                  e.target.value = ''
-                }}
+            <div
+              ref={zenRef}
+              style={
+                zen
+                  ? {
+                      position: 'fixed',
+                      inset: 0,
+                      zIndex: 130,
+                      background: '#ffffff',
+                      color: '#201c17',
+                      padding: '1.5rem 0',
+                      overflow: 'auto',
+                    }
+                  : undefined
+              }
+            >
+              <div
+                style={
+                  zen
+                    ? {
+                        width: '80%',
+                        maxWidth: 'none',
+                        margin: '0 auto',
+                        height: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '.75rem',
+                      }
+                    : undefined
+                }
               >
-                <option value="" disabled>{t('chTbSizePh')}</option>
-                {SIZES.map((s) => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
-              <span className="tb-sep" />
-              <button type="button" title={t('chTbClear')} onClick={clearFormatting}>
-                <Eraser size={15} />
-              </button>
-              <span className="tb-sep" />
-              <button
-                type="button"
-                title={showPreview ? t('chTbPreviewHide') : t('chTbPreviewShow')}
-                onClick={() => setShowPreview(!showPreview)}
-              >
-                {showPreview ? <EyeOff size={15} /> : <Eye size={15} />}
-              </button>
-                            <span className="tb-sep" />
-              <button
-                type="button"
-                title={t('chSave')}
-                onClick={() => {
-                  void saveNow()
-                }}
-                style={isDirty ? { color: 'var(--gold)' } : undefined}
-              >
-                <Save size={15} />
-              </button>
+                {zen && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      className="mini-btn"
+                      title={t('chZenExit')}
+                      onClick={() => {
+                        void exitZen()
+                      }}
+                    >
+                      <Minimize size={15} />
+                    </button>
+                    <input
+                      value={chTitle}
+                      onChange={(e) => setChTitle(e.target.value)}
+                      className="input flex-1 font-semibold"
+                    />
+                    <span className="text-xs" style={{ color: 'var(--soft)' }}>
+                      {isDirty ? t('chUnsaved') : savedAt ? t('chSavedAt', { time: savedAt }) : t('chSaved')}
+                    </span>
+                    <button
+                      type="button"
+                      className="mini-btn"
+                      title={t('chSave')}
+                      onClick={() => {
+                        void saveNow()
+                      }}
+                      style={isDirty ? { color: 'var(--gold)' } : undefined}
+                    >
+                      <Save size={15} />
+                    </button>
+                  </div>
+                )}
+                <div className="tb">
+                  <button type="button" title={t('chTbBold')} onClick={() => toggleWrap('**', '**')}>
+                    <Bold size={15} />
+                  </button>
+                  <button type="button" title={t('chTbItalic')} onClick={() => toggleWrap('*', '*')}>
+                    <Italic size={15} />
+                  </button>
+                  <span className="tb-sep" />
+                  <button type="button" title={t('chTbChar')} onClick={() => wrapSelection('[@', ']')}>
+                    <AtSign size={15} />
+                  </button>
+                  <button type="button" title={t('chTbEvent')} onClick={() => wrapSelection('[#', ']')}>
+                    <Hash size={15} />
+                  </button>
+                  <span className="tb-sep" />
+                  <button type="button" title={t('chTbLeft')} onClick={() => setAlign('left')}>
+                    <AlignLeft size={15} />
+                  </button>
+                  <button type="button" title={t('chTbCenter')} onClick={() => setAlign('center')}>
+                    <AlignCenter size={15} />
+                  </button>
+                  <button type="button" title={t('chTbRight')} onClick={() => setAlign('right')}>
+                    <AlignRight size={15} />
+                  </button>
+                  <span className="tb-sep" />
+                  <select
+                    title={t('chTbSize')}
+                    defaultValue=""
+                    onChange={(e) => {
+                      const v = e.target.value
+                      if (v) applySize(parseInt(v, 10))
+                      e.target.value = ''
+                    }}
+                  >
+                    <option value="" disabled>{t('chTbSizePh')}</option>
+                    {SIZES.map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                  <span className="tb-sep" />
+                  <button type="button" title={t('chTbClear')} onClick={clearFormatting}>
+                    <Eraser size={15} />
+                  </button>
+                  <span className="tb-sep" />
+                  <input
+                    ref={findRef}
+                    data-ls="1"
+                    value={lq}
+                    onChange={(e) => setLq(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        step(e.shiftKey ? -1 : 1)
+                      }
+                      if (e.key === 'Escape') {
+                        e.stopPropagation()
+                        setLq('')
+                      }
+                    }}
+                    className="tb-find"
+                    placeholder={t('chFindPh')}
+                  />
+                  <span className="text-xs" style={{ color: 'var(--soft)', minWidth: '2.5rem', textAlign: 'center' }}>
+                    {lq.trim() ? `${Math.min(lcur + 1, lpos.length || 0)}/${lpos.length}` : ''}
+                  </span>
+                  <button type="button" title={t('chFindPrev')} onClick={() => step(-1)}>
+                    <ArrowUp size={14} />
+                  </button>
+                  <button type="button" title={t('chFindNext')} onClick={() => step(1)}>
+                    <ArrowDown size={14} />
+                  </button>
+                  <span className="tb-sep" />
+                  <button
+                    type="button"
+                    title={showPreview ? t('chTbPreviewHide') : t('chTbPreviewShow')}
+                    onClick={() => setShowPreview(!showPreview)}
+                  >
+                    {showPreview ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
+                  <span className="tb-sep" />
+                  <button
+                    type="button"
+                    title={t('chSave')}
+                    onClick={() => {
+                      void saveNow()
+                    }}
+                    style={isDirty ? { color: 'var(--gold)' } : undefined}
+                  >
+                    <Save size={15} />
+                  </button>
+                  <span className="tb-sep" />
+                  <button
+                    type="button"
+                    title={zen ? t('chZenExit') : t('chZen')}
+                    onClick={() => {
+                      if (zen) void exitZen()
+                      else enterZen()
+                    }}
+                  >
+                    {zen ? <Minimize size={15} /> : <Expand size={15} />}
+                  </button>
+                </div>
+                <textarea
+                  ref={taRef}
+                  value={c}
+                  onChange={(e) => setC(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'F3') {
+                      e.preventDefault()
+                      step(e.shiftKey ? -1 : 1)
+                    } else if (e.key === 'Escape' && !zen && lq.trim()) {
+                      e.preventDefault()
+                      findRef.current?.focus()
+                    }
+                  }}
+                  className="textarea textarea-write"
+                  style={
+                    zen
+                      ? {
+                          flex: 1,
+                          resize: 'none',
+                          minHeight: 0,
+                          border: 'none',
+                          background: 'transparent',
+                          boxShadow: 'none',
+                          outline: 'none',
+                          borderRadius: 0,
+                          padding: 0,
+                          color: 'inherit',
+                          caretColor: '#201c17',
+                        }
+                      : undefined
+                  }
+                  placeholder={t('chTaPh')}
+                />
+                {zen && (
+                  <div className="text-xs" style={{ color: 'var(--soft)' }}>
+                    {t('chCounters', {
+                      w: words.toLocaleString('ru-RU'),
+                      c: chars.toLocaleString('ru-RU'),
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
-            <textarea
-              ref={taRef}
-              value={c}
-              onChange={(e) => setC(e.target.value)}
-              className="textarea textarea-write"
-              placeholder={t('chTaPh')}
-            />
-            {showPreview && c.trim() !== '' && (
+            {showPreview && !zen && c.trim() !== '' && (
               <div className="pt-3 border-t" style={{ borderColor: 'var(--line)' }}>
                 <RichPreview text={c} highlight={highlight} />
               </div>
             )}
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-xs" style={{ color: 'var(--soft)' }}>
-                {t('chCounters', { w: wordsOf(c).toLocaleString('ru-RU'), c: c.length.toLocaleString('ru-RU') })}
+                {t('chCounters', { w: words.toLocaleString('ru-RU'), c: chars.toLocaleString('ru-RU') })}
                 {' · '}
                 {isDirty ? t('chUnsaved') : savedAt ? t('chSavedAt', { time: savedAt }) : t('chSaved')}
               </span>
