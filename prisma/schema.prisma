@@ -19,6 +19,7 @@ model Book {
   locations   Location[]
   timeline    TimelineEvent[]
   lore        LoreEntry[]
+  exportMeta   Boolean  @default(true)
   seriesId String?
   structure String?
   series   Series? @relation(fields: [seriesId], references: [id], onDelete: SetNull)

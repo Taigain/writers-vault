@@ -11,9 +11,10 @@ import DeleteButton from '@/components/DeleteButton'
 import ExportButton from '@/components/ExportButton'
 import ChapterSearch from '@/components/ChapterSearch'
 import ActBar from '@/components/ActBar'
-import {readImageField} from '@/lib/actions'
+import ReadMode, { type ReadChapter } from '@/components/ReadMode'
 import ZoomImage from '@/components/ZoomImage'
 import ImageAttach from '@/components/ImageAttach'
+import { readImageField } from '@/lib/actions'
 import { ROLES } from '@/lib/roles'
 import { getLang } from '@/lib/lang-server'
 import { tr } from '@/lib/i18n'
@@ -33,11 +34,10 @@ import {
   getTimeline,
   getLoreEntries,
   getGraphData,
-  getBookBlocks
+  getBookBlocks,
 } from '@/lib/actions'
 
 const words = (t: string) => (t.trim() ? t.trim().split(/\s+/).length : 0)
-
 const VIEWS = ['chapters', 'characters', 'world', 'locations', 'timeline', 'graph']
 
 export default async function BookPage({
@@ -51,11 +51,9 @@ export default async function BookPage({
   const { tab, ch: chParam, q, pos } = await searchParams
   const view = tab && VIEWS.includes(tab) ? tab : 'passport'
   const lang = await getLang()
-
   const book = await getBook(id)
   if (!book) notFound()
   const seriesList = await getSeriesList()
-
   const [chapters, characters, locations, timeline, lore, graph] = await Promise.all([
     getChapters(id),
     getCharacters(id),
@@ -64,18 +62,25 @@ export default async function BookPage({
     getLoreEntries(id),
     getGraphData(id),
   ])
-
   const chapterOptions = chapters.map((c) => ({ id: c.id, title: c.title }))
   const characterOptions = characters.map((c) => ({ id: c.id, name: c.name }))
-  const totalWords = chapters.reduce((s, c) => s + words(c.content), 0)
-  const totalChars = chapters.reduce((s, c) => s + c.content.length, 0)
-
+  const totalWords = chapters.reduce((s, c) => s + words(c.title) + words(c.content), 0)
+  const totalChars = chapters.reduce((s, c) => s + c.title.length + c.content.length, 0)
   const actNames: string[] = []
   for (const c of chapters) {
     if (c.actName && !actNames.includes(c.actName)) actNames.push(c.actName)
   }
-
   const blocks = await getBookBlocks(id)
+  const readChapters: ReadChapter[] = []
+  for (const b of blocks) {
+    if (b.kind === 'act') {
+      for (const ch of b.chs) {
+        readChapters.push({ id: ch.id, title: ch.title, content: ch.content, act: b.name })
+      }
+    } else {
+      readChapters.push({ id: b.ch.id, title: b.ch.title, content: b.ch.content, act: null })
+    }
+  }
 
   /* ---------- ГЛАВЫ ---------- */
   const chaptersSection = (
@@ -94,6 +99,7 @@ export default async function BookPage({
           </span>
         </div>
         <div className="flex flex-wrap gap-2">
+          <ReadMode bookTitle={book.title} chapters={readChapters} />
           <ExportButton bookId={id} baseName={book.title} />
           <form
             action={async () => {
@@ -107,57 +113,54 @@ export default async function BookPage({
           </form>
         </div>
       </div>
-
       {chapters.length === 0 && (
         <div className="card p-10 text-center text-sm" style={{ color: 'var(--soft)' }}>
           {tr(lang, 'pgChaptersEmpty')}
         </div>
       )}
-
-   <div className="space-y-6">
-     {blocks.map((b, bi) =>
-       b.kind === 'chapter' ? (
-         <div key={'c' + b.ch.id}>
-           <ChapterEditor
-             id={b.ch.id}
-             title={b.ch.title}
-             content={b.ch.content}
-             autoOpen={chParam === b.ch.id}
-             highlight={chParam === b.ch.id ? q : undefined}
-             focusPos={chParam === b.ch.id && pos !== undefined ? Number(pos) : undefined}
-             actNames={actNames}
-             actName={b.ch.actName}
-             bookId={id}
-             blockIndex={bi}
-             blockTotal={blocks.length}
-           />
-         </div>
-       ) : (
-         <section key={'a' + b.name}>
-           <ActBar bookId={id} name={b.name} blockIndex={bi} blockTotal={blocks.length} />
-           <div className="space-y-4 mt-3">
-             {b.chs.map((ch, ci) => (
-               <ChapterEditor
-                 key={ch.id}
-                 id={ch.id}
-                 title={ch.title}
-                 content={ch.content}
-                 autoOpen={chParam === ch.id}
-                 highlight={chParam === ch.id ? q : undefined}
-                 focusPos={chParam === ch.id && pos !== undefined ? Number(pos) : undefined}
-                 actNames={actNames}
-                 actName={ch.actName}
-                 bookId={id}
-                 actIndex={ci}
-                 actTotal={b.chs.length}
-               />
-             ))}
-           </div>
-         </section>
-       ),
-     )}
-   </div>
-
+      <div className="space-y-6">
+        {blocks.map((b, bi) =>
+          b.kind === 'chapter' ? (
+            <div key={'c' + b.ch.id}>
+              <ChapterEditor
+                id={b.ch.id}
+                title={b.ch.title}
+                content={b.ch.content}
+                autoOpen={chParam === b.ch.id}
+                highlight={chParam === b.ch.id ? q : undefined}
+                focusPos={chParam === b.ch.id && pos !== undefined ? Number(pos) : undefined}
+                actNames={actNames}
+                actName={b.ch.actName}
+                bookId={id}
+                blockIndex={bi}
+                blockTotal={blocks.length}
+              />
+            </div>
+          ) : (
+            <section key={'a' + b.name}>
+              <ActBar bookId={id} name={b.name} blockIndex={bi} blockTotal={blocks.length} />
+              <div className="space-y-4 mt-3">
+                {b.chs.map((ch, ci) => (
+                  <ChapterEditor
+                    key={ch.id}
+                    id={ch.id}
+                    title={ch.title}
+                    content={ch.content}
+                    autoOpen={chParam === ch.id}
+                    highlight={chParam === ch.id ? q : undefined}
+                    focusPos={chParam === ch.id && pos !== undefined ? Number(pos) : undefined}
+                    actNames={actNames}
+                    actName={ch.actName}
+                    bookId={id}
+                    actIndex={ci}
+                    actTotal={b.chs.length}
+                  />
+                ))}
+              </div>
+            </section>
+          ),
+        )}
+      </div>
       <form
         action={async () => {
           'use server'
@@ -193,13 +196,11 @@ export default async function BookPage({
           <Plus size={14} /> {tr(lang, 'pgAdd')}
         </button>
       </form>
-
       {characters.length === 0 && (
         <div className="card p-10 text-center text-sm" style={{ color: 'var(--soft)' }}>
           {tr(lang, 'pgCharsEmpty')}
         </div>
       )}
-
       <div className="space-y-6">
         {characters.map((c) => (
           <CharacterCard key={c.id} character={c} allCharacters={characters} />
@@ -230,13 +231,11 @@ export default async function BookPage({
           <Plus size={14} /> {tr(lang, 'pgAdd')}
         </button>
       </form>
-
       {locations.length === 0 && (
         <div className="card p-10 text-center text-sm" style={{ color: 'var(--soft)' }}>
           {tr(lang, 'pgLocsEmpty')}
         </div>
       )}
-
       <div className="grid md:grid-cols-2 gap-5">
         {locations.map((loc) => (
           <details key={loc.id} className="acc">
@@ -253,7 +252,6 @@ export default async function BookPage({
                   <ZoomImage src={loc.imageBase64} />
                 </div>
               )}
-
               <form
                 action={async (fd: FormData) => {
                   'use server'
@@ -276,23 +274,21 @@ export default async function BookPage({
                     ))}
                   </div>
                 )}
-            <ImageAttach
-              name="image"
-              value={loc.imageBase64}
-              maxDim={1400}
-              labelAttach={tr(lang, 'pgLocImgAttach')}
-              labelReplace={tr(lang, 'pgLocImgReplace')}
-              labelRemove={tr(lang, 'pgLocImgRemove')}
-            />
-            <div className="flex justify-end">
-              <button type="submit" className="btn btn-primary btn-sm">
-                <Save size={13} /> {tr(lang, 'pgLocSave')}
-              </button>
-            </div>
+                <ImageAttach
+                  name="image"
+                  value={loc.imageBase64}
+                  maxDim={1400}
+                  labelAttach={tr(lang, 'pgLocImgAttach')}
+                  labelReplace={tr(lang, 'pgLocImgReplace')}
+                  labelRemove={tr(lang, 'pgLocImgRemove')}
+                />
+                <div className="flex justify-end">
+                  <button type="submit" className="btn btn-primary btn-sm">
+                    <Save size={13} /> {tr(lang, 'pgLocSave')}
+                  </button>
+                </div>
               </form>
-
               <div className="flex flex-wrap justify-between gap-2 mt-2">
-
                 <DeleteButton
                   onConfirm={async () => {
                     'use server'
@@ -337,8 +333,8 @@ export default async function BookPage({
             synopsis={book.synopsis}
             series={seriesList}
             seriesId={book.seriesId}
+            exportMeta={book.exportMeta}
           />
-
           <div className="flex flex-wrap gap-2 mt-4">
             <span className="chip"><BookOpen size={12} /> {tr(lang, 'pgChapters')}: {chapters.length}</span>
             <span className="chip"><Feather size={12} /> {tr(lang, 'pgWords')}: {totalWords.toLocaleString('ru-RU')}</span>
@@ -347,7 +343,6 @@ export default async function BookPage({
             <span className="chip"><Globe2 size={12} /> {tr(lang, 'pgLore')}: {lore.length}</span>
             <span className="chip"><MapPin size={12} /> {tr(lang, 'pgLocations')}: {locations.length}</span>
           </div>
-
           <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
             <DeleteButton
               onConfirm={async () => {

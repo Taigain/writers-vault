@@ -77,7 +77,7 @@ export default function ChapterEditor({
   const [chTitle, setChTitle] = useState(title)
   const [c, setC] = useState(content)
   const [open, setOpen] = useState(Boolean(autoOpen))
-  const [showPreview, setShowPreview] = useState(true)
+  const [showPreview, setShowPreview] = useState(false)
   const taRef = useRef<HTMLTextAreaElement | null>(null)
   const rootRef = useRef<HTMLDivElement | null>(null)
   const zenRef = useRef<HTMLDivElement | null>(null)
@@ -90,6 +90,21 @@ export default function ChapterEditor({
   const saveRef = useRef<() => Promise<void>>(async () => {})
   const savingRef = useRef(false)
   const findRef = useRef<HTMLInputElement | null>(null)
+
+  const [selInfo, setSelInfo] = useState<{ w: number; c: number } | null>(null)
+
+  const updateSel = () => {
+    const ta = taRef.current
+    if (!ta) return
+    const s = ta.selectionStart ?? 0
+    const e = ta.selectionEnd ?? 0
+    if (e <= s) {
+      setSelInfo(null)
+      return
+    }
+    const piece = ta.value.slice(s, e)
+    setSelInfo({ w: wordsOf(piece), c: piece.length })
+  }
 
   const saveNow = async () => {
     if (savingRef.current) return
@@ -743,6 +758,7 @@ export default function ChapterEditor({
                   ref={taRef}
                   value={c}
                   onChange={(e) => setC(e.target.value)}
+                  onSelect={updateSel}
                   onKeyDown={(e) => {
                     if (e.key === 'F3') {
                       e.preventDefault()
@@ -778,18 +794,49 @@ export default function ChapterEditor({
                       w: words.toLocaleString('ru-RU'),
                       c: chars.toLocaleString('ru-RU'),
                     })}
+                    {selInfo && (
+                      <>
+                        {' · '}
+                        {t('chSel', {
+                          w: selInfo.w.toLocaleString('ru-RU'),
+                          c: selInfo.c.toLocaleString('ru-RU'),
+                        })}
+                      </>
+                    )}
                   </div>
                 )}
               </div>
             </div>
             {showPreview && !zen && c.trim() !== '' && (
               <div className="pt-3 border-t" style={{ borderColor: 'var(--line)' }}>
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <span className="text-xs font-semibold" style={{ color: 'var(--soft)' }}>
+                    {t('chPreviewTitle')}
+                  </span>
+                  <button
+                    type="button"
+                    className="mini-btn"
+                    title={t('chTbPreviewHide')}
+                    onClick={() => setShowPreview(false)}
+                  >
+                    <EyeOff size={14} />
+                  </button>
+                </div>
                 <RichPreview text={c} highlight={highlight} />
               </div>
             )}
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-xs" style={{ color: 'var(--soft)' }}>
                 {t('chCounters', { w: words.toLocaleString('ru-RU'), c: chars.toLocaleString('ru-RU') })}
+                {selInfo && (
+                  <>
+                    {' · '}
+                    {t('chSel', {
+                      w: selInfo.w.toLocaleString('ru-RU'),
+                      c: selInfo.c.toLocaleString('ru-RU'),
+                    })}
+                  </>
+                )}
                 {' · '}
                 {isDirty ? t('chUnsaved') : savedAt ? t('chSavedAt', { time: savedAt }) : t('chSaved')}
               </span>

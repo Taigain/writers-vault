@@ -681,6 +681,12 @@ async function renumberBook(bookId: string) {
   }
 }
 
+export async function setBookExportMeta(bookId: string, value: boolean) {
+  await schemaReady
+  await prisma.book.update({ where: { id: bookId }, data: { exportMeta: value } })
+  revalidatePath(`/book/${bookId}`)
+}
+
 export async function moveBlock(bookId: string, key: string, dir: number) {
   await schemaReady
   const list = await readStructure(bookId)

@@ -14,9 +14,8 @@ async function ensureSchema() {
     )`)
     await prisma.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "Series_name_key" ON "Series"("name")`)
     const bookCols = await prisma.$queryRawUnsafe<Array<{ name: string }>>(`PRAGMA table_info("Book")`)
-    if (!bookCols.some((c) => c.name === 'seriesId')) {
-      await prisma.$executeRawUnsafe(`ALTER TABLE "Book" ADD COLUMN "seriesId" TEXT REFERENCES "Series"("id") ON DELETE SET NULL ON UPDATE CASCADE`)
-      await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "Book_seriesId_idx" ON "Book"("seriesId")`)
+    if (!bookCols.some((c) => c.name === 'exportMeta')) {
+      await prisma.$executeRawUnsafe(`ALTER TABLE "Book" ADD COLUMN "exportMeta" BOOLEAN NOT NULL DEFAULT 1`)
     }
     if (!bookCols.some((c) => c.name === 'structure')) {
       await prisma.$executeRawUnsafe(`ALTER TABLE "Book" ADD COLUMN "structure" TEXT`)

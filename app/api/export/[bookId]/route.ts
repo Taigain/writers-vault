@@ -18,7 +18,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ bookId:
 
   const book = await prisma.book.findUnique({
     where: { id: bookId },
-    select: { id: true, title: true, annotation: true },
+    select: { id: true, title: true, annotation: true, exportMeta: true },
   })
   if (!book) {
     return NextResponse.json({ error: 'Книга не найдена' }, { status: 404 })
@@ -27,20 +27,22 @@ export async function GET(_req: Request, { params }: { params: Promise<{ bookId:
   const blocks = await getBookBlocks(bookId)
   const children: Paragraph[] = []
 
-  children.push(
-    new Paragraph({
-      text: cleanPlain(book.title),
-      heading: HeadingLevel.TITLE,
-      alignment: AlignmentType.CENTER,
-    }),
-  )
-  if (book.annotation.trim()) {
+  if (book.exportMeta) {
     children.push(
       new Paragraph({
-        text: cleanPlain(book.annotation),
+        text: cleanPlain(book.title),
+        heading: HeadingLevel.TITLE,
         alignment: AlignmentType.CENTER,
       }),
     )
+    if (book.annotation.trim()) {
+      children.push(
+        new Paragraph({
+          text: cleanPlain(book.annotation),
+          alignment: AlignmentType.CENTER,
+        }),
+      )
+    }
   }
 
   const pushChapter = (

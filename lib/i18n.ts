@@ -1,6 +1,7 @@
 export type Lang = 'ru' | 'en'
 export type StrKey = keyof typeof STR.ru
 
+
 export const STR = {
   ru: {
     tagline: 'кабинет автора',
@@ -253,6 +254,13 @@ export const STR = {
     chFindPh: 'Поиск в главе…',
     chFindPrev: 'Предыдущее совпадение',
     chFindNext: 'Следующее совпадение',
+    bkExportMeta: 'Включать название, аннотацию и синопсис в экспорт DOCX',
+    rdOpen: 'Читать',
+    chSel: 'выделено: {w} сл., {c} зн.',
+    rdClose: 'Закрыть режим чтения (Esc)',
+    rdPrev: 'Предыдущая глава',
+    rdNext: 'Следующая глава',
+    chPreviewTitle: 'Предпросмотр',
   },
   en: {
     tagline: "author's cabinet",
@@ -505,6 +513,13 @@ export const STR = {
     chFindPh: 'Find in chapter…',
     chFindPrev: 'Previous match',
     chFindNext: 'Next match',
+    bkExportMeta: 'Include title, annotation and synopsis in DOCX export',
+    rdOpen: 'Read',
+    chSel: 'selection: {w} words, {c} chars',
+    rdClose: 'Close reading mode (Esc)',
+    rdPrev: 'Previous chapter',
+    rdNext: 'Next chapter',
+    chPreviewTitle: 'Preview',
   },
 } as const
 

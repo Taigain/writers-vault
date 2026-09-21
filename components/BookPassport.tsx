@@ -5,6 +5,7 @@ import { Save, Image as ImageIcon, Trash2 } from 'lucide-react'
 import { saveBook, removeBookCover } from '@/lib/actions'
 import { useLang } from '@/lib/useLang'
 import SeriesPicker from './SeriesPicker'
+import ExportMetaToggle from './ExportMetaToggle'
 
 const ANN_LIMIT = 800
 const SYN_LIMIT = 5000
@@ -19,6 +20,7 @@ export default function BookPassport({
   synopsis,
   series,
   seriesId,
+  exportMeta,
 }: {
   id: string
   title: string
@@ -27,6 +29,7 @@ export default function BookPassport({
   synopsis: string
   series: SeriesOption[]
   seriesId: string | null
+  exportMeta: boolean
 }) {
   const { t } = useLang()
   const [annLen, setAnnLen] = useState(annotation.length)
@@ -104,6 +107,9 @@ export default function BookPassport({
       </div>
 
       <div className="flex flex-wrap items-center gap-2 justify-end">
+        <div className="mr-auto">
+          <ExportMetaToggle bookId={id} initial={exportMeta} />
+        </div>
         <label className="btn btn-ghost btn-sm cursor-pointer">
           <ImageIcon size={13} /> {preview ? t('bpCoverReplace') : t('bpCoverUpload')}
           <input

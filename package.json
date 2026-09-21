@@ -1,6 +1,6 @@
 {
   "name": "writer-app",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "private": true,
   "description": "Локальный кабинет писателя: главы, персонажи, мир, таймлайн и облако связей.",
   "author": {
