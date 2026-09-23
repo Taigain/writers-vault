@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
-import { ChevronRight, BookOpenText, Feather, Users, Globe2, MapPin, Clock, Share2, Settings, CircleHelp } from 'lucide-react'
+import { ChevronRight, BookOpenText, Feather, Users, Globe2, MapPin, Clock, Share2, Settings, CircleHelp, NotebookPen, GitBranch } from 'lucide-react'
 import { useLang } from '@/lib/useLang'
 import type { StrKey } from '@/lib/i18n'
 import LangFlags from '@/components/LangFlags'
@@ -17,6 +17,8 @@ const SECTIONS: { tab: string; key: StrKey; icon: typeof Feather }[] = [
   { tab: 'locations', key: 'secLocations', icon: MapPin },
   { tab: 'timeline', key: 'secTimeline', icon: Clock },
   { tab: 'graph', key: 'secGraph', icon: Share2 },
+  { tab: 'notes', key: 'secNotes', icon: NotebookPen },
+  { tab: 'plot', key: 'secPlot', icon: GitBranch },
 ]
 
 export default function SidebarNav({ books }: { books: BookItem[] }) {

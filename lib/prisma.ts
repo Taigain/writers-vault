@@ -17,6 +17,9 @@ async function ensureSchema() {
     if (!bookCols.some((c) => c.name === 'exportMeta')) {
       await prisma.$executeRawUnsafe(`ALTER TABLE "Book" ADD COLUMN "exportMeta" BOOLEAN NOT NULL DEFAULT 1`)
     }
+    if (!bookCols.some((c) => c.name === 'status')) {
+      await prisma.$executeRawUnsafe(`ALTER TABLE "Book" ADD COLUMN "status" TEXT NOT NULL DEFAULT 'active'`)
+    }
     if (!bookCols.some((c) => c.name === 'structure')) {
       await prisma.$executeRawUnsafe(`ALTER TABLE "Book" ADD COLUMN "structure" TEXT`)
     }
@@ -41,6 +44,38 @@ async function ensureSchema() {
     if (!evCols.some((c) => c.name === 'tag')) {
       await prisma.$executeRawUnsafe(`ALTER TABLE "TimelineEvent" ADD COLUMN "tag" TEXT`)
     }
+        await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "Storyline" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "bookId" TEXT NOT NULL,
+      "name" TEXT NOT NULL,
+      "order" INTEGER NOT NULL DEFAULT 0,
+      CONSTRAINT "Storyline_bookId_fkey" FOREIGN KEY ("bookId") REFERENCES "Book" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+    )`)
+    await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "PlotBeat" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "lineId" TEXT NOT NULL,
+      "title" TEXT NOT NULL DEFAULT '',
+      "summary" TEXT NOT NULL DEFAULT '',
+      "order" INTEGER NOT NULL DEFAULT 0,
+      "chapterId" TEXT,
+      "eventId" TEXT,
+      CONSTRAINT "PlotBeat_lineId_fkey" FOREIGN KEY ("lineId") REFERENCES "Storyline" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+      CONSTRAINT "PlotBeat_chapterId_fkey" FOREIGN KEY ("chapterId") REFERENCES "Chapter" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
+      CONSTRAINT "PlotBeat_eventId_fkey" FOREIGN KEY ("eventId") REFERENCES "TimelineEvent" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+    )`)
+    await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "Note" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "bookId" TEXT NOT NULL,
+      "title" TEXT NOT NULL DEFAULT '',
+      "text" TEXT NOT NULL DEFAULT '',
+      "kind" TEXT NOT NULL DEFAULT 'other',
+      "done" BOOLEAN NOT NULL DEFAULT 0,
+      "imageBase64" TEXT,
+      "posX" INTEGER,
+      "posY" INTEGER,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "Note_bookId_fkey" FOREIGN KEY ("bookId") REFERENCES "Book" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+    )`)
   } catch (e) {
     console.error('ensureSchema failed:', e)
   }

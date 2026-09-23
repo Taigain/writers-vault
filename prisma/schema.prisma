@@ -8,21 +8,38 @@ datasource db {
 }
 
 model Book {
-  id          String          @id @default(cuid())
-  title       String
-  coverBase64 String?
-  annotation  String          @default("")
-  synopsis    String          @default("")
-  createdAt   DateTime        @default(now())
-  chapters    Chapter[]
-  characters  Character[]
-  locations   Location[]
-  timeline    TimelineEvent[]
-  lore        LoreEntry[]
-  exportMeta   Boolean  @default(true)
-  seriesId String?
-  structure String?
-  series   Series? @relation(fields: [seriesId], references: [id], onDelete: SetNull)
+  id              String            @id @default(cuid())
+  title           String
+  coverBase64     String?
+  annotation      String            @default("")
+  synopsis        String            @default("")
+  structure       String?
+  exportMeta      Boolean           @default(true)
+  seriesId        String?
+  series          Series?           @relation(fields: [seriesId], references: [id], onDelete: SetNull)
+  createdAt       DateTime          @default(now())
+  chapters        Chapter[]
+  characters      Character[]
+  locations       Location[]
+  timelineEvents  TimelineEvent[]
+  loreEntries     LoreEntry[]
+  notes           Note[]
+  status          String          @default("active")
+  storylines      Storyline[]
+}
+
+model Note {
+  id          String   @id @default(cuid())
+  bookId      String
+  book        Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  title       String   @default("")
+  text        String   @default("")
+  kind        String   @default("other")
+  done        Boolean  @default(false)
+  imageBase64 String?
+  posX        Int?
+  posY        Int?
+  createdAt   DateTime @default(now())
 }
 
 model Character {
@@ -93,6 +110,7 @@ model Chapter {
   mentions       ChapterMention[]
   eventMentions  EventMention[]
   timelinePins   TimelineEvent[]
+  plotBeats       PlotBeat[]
   actName String?
 }
 
@@ -122,6 +140,7 @@ model TimelineEvent {
   chapterId    String?
   chapter      Chapter?         @relation(fields: [chapterId], references: [id], onDelete: SetNull)
   participants EventCharacter[]
+  plotBeats       PlotBeat[]
   mentions     EventMention[]
 }
 
@@ -140,4 +159,26 @@ model Series {
   name      String   @unique
   createdAt DateTime @default(now())
   books     Book[]
+}
+
+model Storyline {
+  id     String     @id @default(cuid())
+  bookId String
+  book   Book       @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  name   String
+  order  Int        @default(0)
+  beats  PlotBeat[]
+}
+
+model PlotBeat {
+  id        String         @id @default(cuid())
+  lineId    String
+  line      Storyline      @relation(fields: [lineId], references: [id], onDelete: Cascade)
+  title     String         @default("")
+  summary   String         @default("")
+  order     Int            @default(0)
+  chapterId String?
+  chapter   Chapter?       @relation(fields: [chapterId], references: [id], onDelete: SetNull)
+  eventId   String?
+  event     TimelineEvent? @relation(fields: [eventId], references: [id], onDelete: SetNull)
 }

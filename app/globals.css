@@ -812,3 +812,33 @@ button.acc-head, .acc-head-btn {
   resize: none;
   min-height: 0;
 }
+
+.note-board {
+  position: relative;
+  min-height: 640px;
+  height: 640px;
+  border: 1px solid var(--line);
+  border-radius: .8rem;
+  overflow: hidden;
+  background: var(--card);
+  background-image: radial-gradient(var(--line) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+.note-card {
+  position: absolute;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: .6rem;
+  padding: .6rem .7rem;
+  cursor: grab;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .08);
+  user-select: none;
+}
+.note-card:active { cursor: grabbing; }
+.note-clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

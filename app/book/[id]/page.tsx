@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { Save, Plus, MapPin, Globe2, BookOpen, Feather, Users, Type, ChevronRight } from 'lucide-react'
+import { Save, Plus, MapPin, Globe2, BookOpen, Feather, Users, Type, ChevronRight, Upload } from 'lucide-react'
 import CharacterCard from '@/components/CharacterCard'
 import LoreSection from '@/components/LoreSection'
 import TimelineSection from '@/components/TimelineSection'
@@ -14,6 +14,8 @@ import ActBar from '@/components/ActBar'
 import ReadMode, { type ReadChapter } from '@/components/ReadMode'
 import ZoomImage from '@/components/ZoomImage'
 import ImageAttach from '@/components/ImageAttach'
+import NotesSection from '@/components/NotesSection'
+import StorylineSection from '@/components/StorylineSection'
 import { readImageField } from '@/lib/actions'
 import { ROLES } from '@/lib/roles'
 import { getLang } from '@/lib/lang-server'
@@ -35,10 +37,14 @@ import {
   getLoreEntries,
   getGraphData,
   getBookBlocks,
+  getNotes,
+  getStorylines,
+  importChaptersFromDocx,
 } from '@/lib/actions'
+import ImportDocxButton from '@/components/ImportDocxButton'
 
 const words = (t: string) => (t.trim() ? t.trim().split(/\s+/).length : 0)
-const VIEWS = ['chapters', 'characters', 'world', 'locations', 'timeline', 'graph']
+const VIEWS = ['chapters', 'characters', 'world', 'locations', 'timeline', 'graph', 'notes', 'plot']
 
 export default async function BookPage({
   params,
@@ -62,6 +68,8 @@ export default async function BookPage({
     getLoreEntries(id),
     getGraphData(id),
   ])
+  const notes = await getNotes(id)
+  const lines = await getStorylines(id)
   const chapterOptions = chapters.map((c) => ({ id: c.id, title: c.title }))
   const characterOptions = characters.map((c) => ({ id: c.id, name: c.name }))
   const totalWords = chapters.reduce((s, c) => s + words(c.title) + words(c.content), 0)
@@ -83,6 +91,10 @@ export default async function BookPage({
   }
 
   /* ---------- ГЛАВЫ ---------- */
+  const importChaptersAction = async (fd: FormData) => {
+    'use server'
+    return importChaptersFromDocx(id, fd)
+  } 
   const chaptersSection = (
     <div className="space-y-6">
       <ChapterSearch
@@ -99,6 +111,7 @@ export default async function BookPage({
           </span>
         </div>
         <div className="flex flex-wrap gap-2">
+          <ImportDocxButton label={tr(lang, 'chImportDocx')} onFile={importChaptersAction} />
           <ReadMode bookTitle={book.title} chapters={readChapters} />
           <ExportButton bookId={id} baseName={book.title} />
           <form
@@ -313,6 +326,24 @@ export default async function BookPage({
   /* ---------- СВЯЗИ ---------- */
   const graphSection = <GraphCloud data={graph} />
 
+  /* ---------- ЗАМЕТКИ ---------- */
+  const notesSection = <NotesSection bookId={id} notes={notes} />
+
+  /* ---------- СЮЖЕТ ---------- */
+  const plotSection = (
+    <StorylineSection
+      bookId={id}
+      lines={lines}
+      chapters={chapters.map((c) => ({ id: c.id, title: c.title, order: c.order }))}
+      events={timeline.map((ev) => ({
+        id: ev.id,
+        label: ev.description,
+        bookYear: ev.bookYear,
+        bookDay: ev.bookDay,
+      }))}
+    />
+  )
+
   /* ---------- СБОРКА ---------- */
   return (
     <div className="max-w-6xl mx-auto px-8 py-8 anim-fade">
@@ -333,6 +364,7 @@ export default async function BookPage({
             synopsis={book.synopsis}
             series={seriesList}
             seriesId={book.seriesId}
+            status={book.status}
             exportMeta={book.exportMeta}
           />
           <div className="flex flex-wrap gap-2 mt-4">
@@ -364,6 +396,8 @@ export default async function BookPage({
           {view === 'locations' && locationsSection}
           {view === 'timeline' && timelineSection}
           {view === 'graph' && graphSection}
+          {view === 'notes' && notesSection}
+          {view === 'plot' && plotSection}
         </>
       )}
     </div>

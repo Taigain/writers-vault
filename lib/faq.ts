@@ -42,15 +42,23 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     },
     {
       q: 'Как считаются слова и знаки?',
-      a: 'Объём главы = слова названия плюс слова текста; знаки — длина названия плюс длина текста. Чип в шапке главы, счётчики панели и дзена показывают это значение, суммы актов и всей книги складываются из него. Переименование главы пересчитывает всё мгновенно.',
+      a: 'Объём главы = слова названия плюс слова текста; знаки — длина названия плюс длина текста. Чип в шапке главы, счётчики панели и дзена показывают это значение, суммы актов и всей книги складываются из него. Переименование главы пересчитывает всё мгновенно. Когда в редакторе выделен фрагмент, внизу дополнительно показываются слова и знаки выделения — удобно считать объём цитаты или сцены.',
     },
     {
       q: 'Изображения: локации, портреты, мир',
-      a: 'К картинкам прикрепляются: локации (изображение в карточке), персонажи (вертикальный портрет 3:4, виден в аватаре карточки), записи о мире. Большие файлы сжимаются на вашем устройстве перед сохранением, поэтому база не раздувается. Клик по изображению открывает полноэкранный просмотр; Esc, клик по фону или крестик закрывают его.',
+      a: 'К картинкам прикрепляются: локации (изображение в карточке), персонажи (вертикальный портрет 3:4, виден в аватаре карточки), записи о мире, заметки. Большие файлы сжимаются на вашем устройстве перед сохранением, поэтому база не раздувается. Клик по изображению открывает полноэкранный просмотр; Esc, клик по фону или крестик закрывают его.',
     },
     {
       q: 'Как работает экспорт в DOCX?',
-      a: 'Кнопка «Экспорт в DOCX» в разделе «Главы» и на паспорте книги. В документ попадают заголовок книги, аннотация, акты (заголовки 1 уровня) и главы внутри актов (уровень 2), одиночные главы — уровнем 1. Формат по умолчанию — стандарт сдаваемых рукописей: Times New Roman 11 pt, интервал после абзаца 8 pt, межстрочный 1.08. Жирный, курсив и выравнивание сохраняются; явный [size=NN] в тексте перебивает кегль по умолчанию. Служебные символы (@, #, звёздочки) не попадают. Куда сохраняется: в папку из настроек (Chrome/Edge) или в «Загрузки».',
+      a: 'Кнопка «Экспорт в DOCX» в разделе «Главы» и на паспорте книги. В документ попадают заголовок книги, аннотация, акты (заголовки 1 уровня) и главы внутри актов (уровень 2), одиночные главы — уровнем 1. Формат по умолчанию — стандарт сдаваемых рукописей: Times New Roman 11 pt, интервал после абзаца 8 pt, межстрочный 1.08. Жирный, курсив и выравнивание сохраняются; явный [size=NN] в тексте перебивает кегль по умолчанию. Служебные символы (@, #, звёздочки) не попадают. Тумблер «Включать название, аннотацию и синопсис в экспорт DOCX» на паспорте книги управляет составом титульного блока: настройка каждой книги, запоминается. Куда сохраняется: в папку из настроек (Chrome/Edge) или в «Загрузки».',
+    },
+    {
+      q: 'Как импортировать книгу из DOCX?',
+      a: 'Кнопка «Импорт из DOCX» на главной создаёт новую книгу из файла: главы разбиваются по заголовкам H1 и H2, текст до первого заголовка попадает в «Главу 1», жирный и курсив сохраняются. Изображение обложки с первой страницы (картинка до первого текста) подтягивается автоматически и нормализуется до 1400 px. Кнопка «Импорт глав из DOCX» в разделе «Главы» дописывает главы в конец существующей книги, её обложка не трогается. Старый формат .doc не поддерживается: сохраните файл как .docx в Word или LibreOffice и повторите.',
+    },
+    {
+      q: 'Режим чтения: как прочитать написанное как книгу?',
+      a: 'Кнопка «Читать» в разделе «Главы» открывает полноэкранный книжный экран: главы в порядке книги с актами, навигация списком глав, стрелками на экране и клавишами ←/→, выход по Esc. Текст показывается форматированным, как в готовой книге — удобно вычитывать рукопись целиком.',
     },
     {
       q: 'Что такое серии и циклы?',
@@ -62,7 +70,19 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     },
     {
       q: 'Как менять порядок глав и актов?',
-      a: 'Стрелки ↑↓ в шапке главы перемещают её внутри акта (или среди глав вне актов). Стрелки на панели акта двигают акт блоком вместе с главами. Перемещать можно и в свёрнутом виде. Порядок в списке, в сайдбаре и в экспорте всегда одинаковый; привязки таймлайна и упоминания не страдают.',
+      a: 'Стрелки ↑↓ в шапке главы перемещают её внутри акта (или среди глав вне актов). Стрелки на панели акта двигают акт блоком вместе с главами. Перемещать можно и в свёрнутом виде. Порядок в списке, в сайдбаре, в режиме чтения и в экспорте всегда одинаковый; привязки таймлайна и упоминания не страдают.',
+    },
+    {
+      q: 'Группы книг: задумки, в работе, архив',
+      a: 'Главная страница делит книги на три сворачиваемые группы: «Задумки», «В работе» и «Архив». Книга переносится между ними переключателем статуса на её паспорте — новая книга по умолчанию попадает в «В работе». Серия архивируется и возвращается целиком кнопкой с иконкой архива на её чипе в блоке «Серии и циклы»: это переводит все книги серии сразу. Пустые группы не отображаются, состояние групп запоминается.',
+    },
+    {
+      q: 'Заметки: список и доска',
+      a: 'Раздел «Заметки» книги — рабочий журнал автора: у заметки есть тип (персонажи, локации, события, сюжет, другое), чекбокс «Готово» с зачёркиванием и прикрепляемое изображение. Два вида: список (сворачиваемые карточки с редактором) и доска (карточки свободно перетаскиваются мышью, раскладка запоминается). Клик по карточке на доске открывает окошко с подробностями, редактором и удалением. Выбранный вид запоминается отдельно для каждой книги.',
+    },
+    {
+      q: 'Сюжетные линии и биты',
+      a: 'Раздел «Сюжет» держит движение линий произведения: создайте линии (основную и второстепенные) и разложите внутри каждой биты — сцены в нужном порядке. Бит связывается с главой и с событием таймлайна: чипы «Глава N» и «книжное: год X, день Y» показывают позицию бита в изложении и в хронологии рядом — сюжетные скачки и одновременные события видны сразу. Бит без главы — запланированная сцена (черновое движение линии); поставьте ссылку, когда сцена написана. Стрелки меняют порядок битов и линий.',
     },
     {
       q: 'Чем календарное время отличается от книжного?',
@@ -82,7 +102,7 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     },
     {
       q: 'Как обновить приложение и не потерять книги?',
-      a: 'Начиная с версии 1.1.2 приложение обновляется само: находит новую версию, скачивает в фоне и предлагает перезапуск. Кнопка «Проверить обновления» в «Настройки → О программе» запускает проверку вручную. Ручная установка поверх старой тоже безопасна: книги лежат отдельно от файлов программы (в %APPDATA%\\writer-app) и установщиком не затрагиваются. База мигрирует автоматически: новые колонки добавляются без потери книг. Перед крупными обновлениями делайте копию dev.db.',
+      a: 'Начиная с версии 1.1.2 приложение обновляется само: находит новую версию, скачивает в фоне и предлагает перезапуск. Кнопка «Проверить обновления» в «Настройки → О программе» запускает проверку вручную. Ручная установка поверх старой тоже безопасна: книги лежат отдельно от файлов программы (в %APPDATA%\\writer-app) и установщиком не затрагиваются. База мигрирует автоматически: новые колонки и таблицы добавляются без потери книг. Перед крупными обновлениями делайте копию dev.db.',
     },
     {
       q: 'Как сообщить об ошибке или предложить идею?',
@@ -136,15 +156,23 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     },
     {
       q: 'How are words and characters counted?',
-      a: 'A chapter volume = words of the title plus words of the text; characters = title length plus text length. The header chip, toolbar counters and zen counters show this value; act and book totals sum it. Renaming a chapter recalculates everything instantly.',
+      a: 'A chapter volume = words of the title plus words of the text; characters = title length plus text length. The header chip, toolbar counters and zen counters show this value; act and book totals sum it. Renaming a chapter recalculates everything instantly. When a fragment is selected in the editor, the footer additionally shows the selection\'s words and characters — handy for quoting or scene sizing.',
     },
     {
       q: 'Images: locations, portraits, world',
-      a: 'Images can be attached to locations (image on the card), characters (vertical 3:4 portrait shown in the card avatar) and world lore entries. Large files are downscaled on your device before saving, so the database stays lean. Clicking an image opens full-screen view; Esc, backdrop click or the cross closes it.',
+      a: 'Images can be attached to locations (image on the card), characters (vertical 3:4 portrait shown in the card avatar), world lore entries and notes. Large files are downscaled on your device before saving, so the database stays lean. Clicking an image opens full-screen view; Esc, backdrop click or the cross closes it.',
     },
     {
       q: 'How does DOCX export work?',
-      a: 'The "Export to DOCX" button in the Chapters section and on the book passport. The document receives the book title, annotation, acts (level-1 headings) and their chapters (level 2); standalone chapters are level 1. Default format matches submission standards: Times New Roman 11 pt, 8 pt after paragraphs, 1.08 line spacing. Bold, italic and alignment are preserved; explicit [size=NN] overrides the default size. Service symbols (@, #, asterisks) are excluded. Saved to the folder from settings (Chrome/Edge) or to Downloads.',
+      a: 'The "Export to DOCX" button in the Chapters section and on the book passport. The document receives the book title, annotation, acts (level-1 headings) and their chapters (level 2); standalone chapters are level 1. Default format matches submission standards: Times New Roman 11 pt, 8 pt after paragraphs, 1.08 line spacing. Bold, italic and alignment are preserved; explicit [size=NN] overrides the default size. Service symbols (@, #, asterisks) are excluded. The "Include title, annotation and synopsis in DOCX export" toggle on the book passport controls the title block contents: per-book and persisted. Saved to the folder from settings (Chrome/Edge) or to Downloads.',
+    },
+    {
+      q: 'How do I import a book from DOCX?',
+      a: 'The "Import from DOCX" button on the home page creates a new book from a file: chapters are split by H1 and H2 headings, text before the first heading goes into "Chapter 1", bold and italic are preserved. A cover image from the first page (an image before the first text) is pulled in automatically and normalized to 1400 px. The "Import chapters from DOCX" button in the Chapters section appends chapters to an existing book without touching its cover. Legacy .doc is not supported: save the file as .docx in Word or LibreOffice and retry.',
+    },
+    {
+      q: 'Reading mode: how do I read my work like a book?',
+      a: 'The "Read" button in the Chapters section opens a fullscreen book view: chapters in book order with acts, navigation via the chapter list, on-screen arrows and ←/→ keys, Esc to close. The text is shown formatted, like a finished book — convenient for proofreading the whole manuscript.',
     },
     {
       q: 'What are series and cycles?',
@@ -156,7 +184,19 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     },
     {
       q: 'How do I reorder chapters and acts?',
-      a: 'The ↑↓ arrows in a chapter header move it within its act (or among act-free chapters). The arrows on the act panel move the act as a block with its chapters. Reordering works from the collapsed state. The order in the list, the sidebar and the export is always the same; timeline links and mentions are preserved.',
+      a: 'The ↑↓ arrows in a chapter header move it within its act (or among act-free chapters). The arrows on the act panel move the act as a block with its chapters. Reordering works from the collapsed state. The order in the list, the sidebar, reading mode and the export is always the same; timeline links and mentions are preserved.',
+    },
+    {
+      q: 'Book groups: ideas, in progress, archive',
+      a: 'The home page splits books into three collapsible groups: "Ideas", "In progress" and "Archive". A book moves between them via the status switch on its passport — new books land in "In progress" by default. A series is archived and restored as a whole via the archive icon button on its chip in the "Series and cycles" block: it moves all books of the series at once. Empty groups are hidden; group state is remembered.',
+    },
+    {
+      q: 'Notes: list and board',
+      a: 'The book\'s "Notes" section is the author\'s working journal: a note has a type (characters, locations, events, plot, other), a "Done" checkbox with strikethrough and an attachable image. Two views: list (collapsible cards with an editor) and board (cards dragged freely with the mouse, layout persisted). Clicking a card on the board opens a details window with the editor and delete. The chosen view is remembered per book.',
+    },
+    {
+      q: 'Storylines and beats',
+      a: 'The "Plot" section tracks the movement of storylines: create lines (main and secondary) and lay out beats — scenes in the order you need — inside each. A beat links to a chapter and to a timeline event: the chips "Chapter N" and "book time: year X, day Y" show the beat\'s position in narration and in chronology side by side, so plot jumps and simultaneous events become visible. A beat without a chapter is a planned scene (draft movement); set the link once the scene is written. Arrows reorder beats and lines.',
     },
     {
       q: 'Calendar time vs book time?',
@@ -176,7 +216,7 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     },
     {
       q: 'How do I update without losing books?',
-      a: 'Since version 1.1.2 the app updates itself: it finds a new version, downloads it in the background and offers a restart. The "Check for updates" button in Settings → About triggers a manual check. Manual install over the old version is also safe: books live separately from program files (in %APPDATA%\\writer-app) and are untouched by the installer. The database auto-migrates: new columns are added without losing books. Make a dev.db copy before major updates.',
+      a: 'Since version 1.1.2 the app updates itself: it finds a new version, downloads it in the background and offers a restart. The "Check for updates" button in Settings → About triggers a manual check. Manual install over the old version is also safe: books live separately from program files (in %APPDATA%\\writer-app) and are untouched by the installer. The database auto-migrates: new columns and tables are added without losing books. Make a dev.db copy before major updates.',
     },
     {
       q: 'How do I report a bug or suggest an idea?',

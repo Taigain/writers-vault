@@ -1,6 +1,6 @@
 {
   "name": "writer-app",
-  "version": "1.2.1",
+  "version": "1.3.0",
   "private": true,
   "description": "Локальный кабинет писателя: главы, персонажи, мир, таймлайн и облако связей.",
   "author": {
@@ -20,7 +20,9 @@
     "@prisma/client": "^5.22.0",
     "docx": "^9.1.1",
     "electron-updater": "^6.8.9",
+    "jimp": "^0.22.12",
     "lucide-react": "^0.468.0",
+    "mammoth": "^1.12.3",
     "next": "^16.3.5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -53,7 +55,10 @@
       "repo": "writers-vault",
       "releaseType": "draft"
     },
-    "electronLanguages": ["en", "ru"],
+    "electronLanguages": [
+      "en",
+      "ru"
+    ],
     "files": [
       "electron/**/*",
       "package.json"

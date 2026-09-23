@@ -755,3 +755,312 @@ export async function getBookBlocks(bookId: string) {
   }
   return blocks
 }
+
+// --- NOTES ---
+export type NoteRow = {
+  id: string
+  title: string
+  text: string
+  kind: string
+  done: boolean
+  imageBase64: string | null
+  posX: number | null
+  posY: number | null
+}
+
+export async function getNotes(bookId: string): Promise<NoteRow[]> {
+  await schemaReady
+  const rows = await prisma.note.findMany({ where: { bookId }, orderBy: { createdAt: 'asc' } })
+  return rows.map((r) => ({
+    id: r.id,
+    title: r.title,
+    text: r.text,
+    kind: r.kind,
+    done: r.done,
+    imageBase64: r.imageBase64,
+    posX: r.posX,
+    posY: r.posY,
+  }))
+}
+
+export async function createNote(bookId: string, fd?: FormData) {
+  await schemaReady
+  const title = ((fd?.get('title') as string) ?? '').trim()
+  await prisma.note.create({ data: { bookId, title } })
+  revalidatePath(`/book/${bookId}`)
+}
+
+export async function saveNote(id: string, fd: FormData) {
+  await schemaReady
+  const title = ((fd.get('title') as string) ?? '').trim()
+  const text = (fd.get('text') as string) ?? ''
+  const kind = (fd.get('kind') as string) ?? 'other'
+  const done = fd.get('done') === '1'
+  const img = await readImageField(fd, 'image')
+  const note = await prisma.note.findUnique({ where: { id }, select: { bookId: true } })
+  if (!note) return
+  await prisma.note.update({
+    where: { id },
+    data: {
+      title,
+      text,
+      kind,
+      done,
+      ...(img.clear ? { imageBase64: null } : img.keep ? {} : { imageBase64: img.value }),
+    },
+  })
+  revalidatePath(`/book/${note.bookId}`)
+}
+
+export async function toggleNoteDone(id: string) {
+  await schemaReady
+  const n = await prisma.note.findUnique({ where: { id }, select: { bookId: true, done: true } })
+  if (!n) return
+  await prisma.note.update({ where: { id }, data: { done: !n.done } })
+  revalidatePath(`/book/${n.bookId}`)
+}
+
+export async function moveNote(id: string, x: number, y: number) {
+  await schemaReady
+  await prisma.note.update({ where: { id }, data: { posX: x, posY: y } })
+}
+
+export async function deleteNote(id: string) {
+  await schemaReady
+  const n = await prisma.note.findUnique({ where: { id }, select: { bookId: true } })
+  if (!n) return
+  await prisma.note.delete({ where: { id } })
+  revalidatePath(`/book/${n.bookId}`)
+}
+
+export async function setBookStatus(bookId: string, status: string) {
+  await schemaReady
+  const st = status === 'idea' || status === 'archive' ? status : 'active'
+  await prisma.book.update({ where: { id: bookId }, data: { status: st } })
+  revalidatePath('/')
+  revalidatePath(`/book/${bookId}`)
+}
+
+export async function setSeriesStatus(seriesId: string, status: string) {
+  await schemaReady
+  const st = status === 'idea' || status === 'archive' ? status : 'active'
+  await prisma.book.updateMany({ where: { seriesId }, data: { status: st } })
+  revalidatePath('/')
+}
+
+// --- STORYLINES ---
+export type StorylineRow = {
+  id: string
+  name: string
+  beats: {
+    id: string
+    title: string
+    summary: string
+    chapterId: string | null
+    chapterTitle: string | null
+    chapterOrder: number | null
+    eventId: string | null
+    eventLabel: string | null
+    eventYear: number | null
+    eventDay: number | null
+  }[]
+}
+
+export async function getStorylines(bookId: string): Promise<StorylineRow[]> {
+  await schemaReady
+  const rows = await prisma.storyline.findMany({
+    where: { bookId },
+    orderBy: { order: 'asc' },
+    include: {
+      beats: {
+        orderBy: { order: 'asc' },
+        include: {
+          chapter: { select: { title: true, order: true } },
+          event: { select: { description: true, bookYear: true, bookDay: true } },
+        },
+      },
+    },
+  })
+  return rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    beats: r.beats.map((b) => ({
+      id: b.id,
+      title: b.title,
+      summary: b.summary,
+      chapterId: b.chapterId,
+      chapterTitle: b.chapter?.title ?? null,
+      chapterOrder: b.chapter?.order ?? null,
+      eventId: b.eventId,
+      eventLabel: b.event?.description ?? null,
+      eventYear: b.event?.bookYear ?? null,
+      eventDay: b.event?.bookDay ?? null,
+    })),
+  }))
+}
+
+export async function createStoryline(bookId: string, fd: FormData) {
+  await schemaReady
+  const name = ((fd.get('name') as string) ?? '').trim()
+  if (!name) return
+  const count = await prisma.storyline.count({ where: { bookId } })
+  await prisma.storyline.create({ data: { bookId, name, order: count + 1 } })
+  revalidatePath(`/book/${bookId}`)
+}
+
+export async function saveStoryline(id: string, fd: FormData) {
+  await schemaReady
+  const name = ((fd.get('name') as string) ?? '').trim()
+  if (!name) return
+  const line = await prisma.storyline.findUnique({ where: { id }, select: { bookId: true } })
+  if (!line) return
+  await prisma.storyline.update({ where: { id }, data: { name } })
+  revalidatePath(`/book/${line.bookId}`)
+}
+
+export async function deleteStoryline(id: string) {
+  await schemaReady
+  const line = await prisma.storyline.findUnique({ where: { id }, select: { bookId: true } })
+  if (!line) return
+  await prisma.storyline.delete({ where: { id } })
+  revalidatePath(`/book/${line.bookId}`)
+}
+
+export async function moveStoryline(id: string, dir: number) {
+  await schemaReady
+  const line = await prisma.storyline.findUnique({ where: { id }, select: { bookId: true } })
+  if (!line) return
+  const siblings = await prisma.storyline.findMany({
+    where: { bookId: line.bookId },
+    orderBy: { order: 'asc' },
+    select: { id: true },
+  })
+  const idx = siblings.findIndex((s) => s.id === id)
+  const target = idx + dir
+  if (idx < 0 || target < 0 || target >= siblings.length) return
+  const ids = siblings.map((s) => s.id)
+  const [m] = ids.splice(idx, 1)
+  ids.splice(target, 0, m)
+  await prisma.$transaction(ids.map((sid, i) => prisma.storyline.update({ where: { id: sid }, data: { order: i + 1 } })))
+  revalidatePath(`/book/${line.bookId}`)
+}
+
+export async function createBeat(lineId: string, fd: FormData) {
+  await schemaReady
+  const title = ((fd.get('title') as string) ?? '').trim()
+  const line = await prisma.storyline.findUnique({ where: { id: lineId }, select: { bookId: true } })
+  if (!line) return
+  const count = await prisma.plotBeat.count({ where: { lineId } })
+  await prisma.plotBeat.create({ data: { lineId, title, order: count + 1 } })
+  revalidatePath(`/book/${line.bookId}`)
+}
+
+export async function saveBeat(id: string, fd: FormData) {
+  await schemaReady
+  const title = ((fd.get('title') as string) ?? '').trim()
+  const summary = (fd.get('summary') as string) ?? ''
+  const chapterId = ((fd.get('chapterId') as string) ?? '') || null
+  const eventId = ((fd.get('eventId') as string) ?? '') || null
+  const beat = await prisma.plotBeat.findUnique({
+    where: { id },
+    select: { line: { select: { bookId: true } } },
+  })
+  if (!beat) return
+  await prisma.plotBeat.update({ where: { id }, data: { title, summary, chapterId, eventId } })
+  revalidatePath(`/book/${beat.line.bookId}`)
+}
+
+export async function deleteBeat(id: string) {
+  await schemaReady
+  const beat = await prisma.plotBeat.findUnique({
+    where: { id },
+    select: { line: { select: { bookId: true } } },
+  })
+  if (!beat) return
+  await prisma.plotBeat.delete({ where: { id } })
+  revalidatePath(`/book/${beat.line.bookId}`)
+}
+
+export async function moveBeat(lineId: string, id: string, dir: number) {
+  await schemaReady
+  const line = await prisma.storyline.findUnique({ where: { id: lineId }, select: { bookId: true } })
+  if (!line) return
+  const siblings = await prisma.plotBeat.findMany({
+    where: { lineId },
+    orderBy: { order: 'asc' },
+    select: { id: true },
+  })
+  const idx = siblings.findIndex((s) => s.id === id)
+  const target = idx + dir
+  if (idx < 0 || target < 0 || target >= siblings.length) return
+  const ids = siblings.map((s) => s.id)
+  const [m] = ids.splice(idx, 1)
+  ids.splice(target, 0, m)
+  await prisma.$transaction(ids.map((bid, i) => prisma.plotBeat.update({ where: { id: bid }, data: { order: i + 1 } })))
+  revalidatePath(`/book/${line.bookId}`)
+}
+
+import { importDocx } from './importDocx'
+
+export async function importBookFromDocx(
+  fd: FormData,
+): Promise<{ ok: true; bookId: string } | { ok: false; error: string }> {
+  await schemaReady
+  try {
+    const file = fd.get('file')
+    if (!(file instanceof File) || file.size === 0) return { ok: false, error: 'Файл не выбран или пуст' }
+    const name = file.name.toLowerCase()
+    if (!name.endsWith('.docx')) {
+      return {
+        ok: false,
+        error: 'Формат .doc не поддерживается. Сохраните файл как .docx в Word или LibreOffice и попробуйте снова.',
+      }
+    }
+    const buffer = Buffer.from(await file.arrayBuffer())
+    const { coverBase64, chapters } = await importDocx(buffer)
+    const bookTitle = file.name.replace(/\.docx?$/i, '')
+    const book = await prisma.book.create({
+      data: { title: bookTitle, coverBase64, status: 'active', exportMeta: true },
+    })
+    for (let i = 0; i < chapters.length; i++) {
+      await prisma.chapter.create({
+        data: { bookId: book.id, title: chapters[i].title, content: chapters[i].content, order: i + 1 },
+      })
+    }
+    revalidatePath('/')
+    return { ok: true, bookId: book.id }
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : 'Ошибка импорта' }
+  }
+}
+
+export async function importChaptersFromDocx(
+  bookId: string,
+  fd: FormData,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  await schemaReady
+  try {
+    const file = fd.get('file')
+    if (!(file instanceof File) || file.size === 0) return { ok: false, error: 'Файл не выбран или пуст' }
+    const name = file.name.toLowerCase()
+    if (!name.endsWith('.docx')) {
+      return {
+        ok: false,
+        error: 'Формат .doc не поддерживается. Сохраните файл как .docx в Word или LibreOffice и попробуйте снова.',
+      }
+    }
+    const book = await prisma.book.findUnique({ where: { id: bookId }, select: { id: true } })
+    if (!book) return { ok: false, error: 'Книга не найдена' }
+    const buffer = Buffer.from(await file.arrayBuffer())
+    const { chapters } = await importDocx(buffer)
+    const maxOrd = await prisma.chapter.aggregate({ where: { bookId }, _max: { order: true } })
+    let next = (maxOrd._max.order ?? 0) + 1
+    for (const ch of chapters) {
+      await prisma.chapter.create({ data: { bookId, title: ch.title, content: ch.content, order: next++ } })
+    }
+    revalidatePath(`/book/${bookId}`)
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : 'Ошибка импорта' }
+  }
+}

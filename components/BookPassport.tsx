@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react'
 import { Save, Image as ImageIcon, Trash2 } from 'lucide-react'
-import { saveBook, removeBookCover } from '@/lib/actions'
+import { saveBook, removeBookCover, setBookStatus } from '@/lib/actions'
 import { useLang } from '@/lib/useLang'
 import SeriesPicker from './SeriesPicker'
 import ExportMetaToggle from './ExportMetaToggle'
@@ -20,6 +20,7 @@ export default function BookPassport({
   synopsis,
   series,
   seriesId,
+  status,
   exportMeta,
 }: {
   id: string
@@ -29,6 +30,7 @@ export default function BookPassport({
   synopsis: string
   series: SeriesOption[]
   seriesId: string | null
+  status: string
   exportMeta: boolean
 }) {
   const { t } = useLang()
@@ -51,6 +53,22 @@ export default function BookPassport({
       }}
       className="card p-5 space-y-4"
     >
+      <div>
+        <div className="field-label">{t('bpStatus')}</div>
+        <div className="flex flex-wrap gap-2">
+          {(['idea', 'active', 'archive'] as const).map((st) => (
+            <button
+              key={st}
+              type="button"
+              className={`chip-btn ${status === st ? 'chip-btn-active' : ''}`}
+              onClick={() => setBookStatus(id, st)}
+            >
+              {t(st === 'idea' ? 'bpStatusIdea' : st === 'active' ? 'bpStatusActive' : 'bpStatusArchive')}
+            </button>
+          ))}
+        </div>
+      </div>
+      
       <div className="flex flex-wrap items-start gap-5">
         <div className="w-24 h-32 rounded-lg overflow-hidden shrink-0 shadow-md bg-[#f1e9db] flex items-center justify-center text-[#7a5c22]">
           {preview ? (
