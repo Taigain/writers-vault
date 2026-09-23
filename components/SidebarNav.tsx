@@ -1,143 +1,244 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
+import { useEffect, useMemo, useState } from 'react'
 import { usePathname, useSearchParams } from 'next/navigation'
-import { ChevronRight, BookOpenText, Feather, Users, Globe2, MapPin, Clock, Share2, Settings, CircleHelp, NotebookPen, GitBranch } from 'lucide-react'
+import {
+  BookOpenText,
+  Users,
+  Globe2,
+  MapPin,
+  CalendarDays,
+  Network,
+  Settings,
+  HelpCircle,
+  ChevronRight,
+  Lightbulb,
+  PenLine,
+  Archive,
+  Library,
+  NotebookPen,
+  GitBranch,
+  Home,
+} from 'lucide-react'
 import { useLang } from '@/lib/useLang'
-import type { StrKey } from '@/lib/i18n'
-import LangFlags from '@/components/LangFlags'
 
-type BookItem = { id: string; title: string; chapters: { id: string; title: string }[] }
+export type SidebarBook = {
+  id: string
+  title: string
+  status: string
+  series: { id: string; name: string } | null
+}
 
-const SECTIONS: { tab: string; key: StrKey; icon: typeof Feather }[] = [
-  { tab: 'chapters', key: 'secChapters', icon: Feather },
+type TabKey =
+  | 'secChapters'
+  | 'secCharacters'
+  | 'secWorld'
+  | 'secLocations'
+  | 'secTimeline'
+  | 'secGraph'
+  | 'secNotes'
+  | 'secPlot'
+
+const BOOK_TABS: { tab: string; key: TabKey; icon: React.ComponentType<{ size?: number }> }[] = [
+  { tab: 'chapters', key: 'secChapters', icon: BookOpenText },
   { tab: 'characters', key: 'secCharacters', icon: Users },
   { tab: 'world', key: 'secWorld', icon: Globe2 },
   { tab: 'locations', key: 'secLocations', icon: MapPin },
-  { tab: 'timeline', key: 'secTimeline', icon: Clock },
-  { tab: 'graph', key: 'secGraph', icon: Share2 },
+  { tab: 'timeline', key: 'secTimeline', icon: CalendarDays },
+  { tab: 'graph', key: 'secGraph', icon: Network },
   { tab: 'notes', key: 'secNotes', icon: NotebookPen },
   { tab: 'plot', key: 'secPlot', icon: GitBranch },
 ]
 
-export default function SidebarNav({ books }: { books: BookItem[] }) {
+const GROUPS = [
+  { status: 'idea', key: 'homeGroupIdeas', icon: Lightbulb, defaultOpen: true },
+  { status: 'active', key: 'homeGroupActive', icon: PenLine, defaultOpen: true },
+  { status: 'archive', key: 'homeGroupArchive', icon: Archive, defaultOpen: false },
+] as const
+
+type OpenMap = Record<string, boolean>
+
+export default function SidebarNav({ books }: { books: SidebarBook[] }) {
+  const { t } = useLang()
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const currentTab = searchParams.get('tab')
-  const currentBookId = pathname?.startsWith('/book/') ? pathname.split('/')[2] : null
-  const [open, setOpen] = useState<string | null>(currentBookId)
-  const [chOpen, setChOpen] = useState<string | null>(null)
-  const { t } = useLang()
+
+  const activeBookId = useMemo(() => {
+    const m = pathname.match(/^\/book\/([^/]+)/)
+    return m ? m[1] : null
+  }, [pathname])
+
+  const [groupOpen, setGroupOpen] = useState<OpenMap>(() => {
+    const init: OpenMap = {}
+    for (const g of GROUPS) init[g.status] = g.defaultOpen
+    return init
+  })
+  const [seriesOpen, setSeriesOpen] = useState<OpenMap>({})
+  const [bookOpen, setBookOpen] = useState<OpenMap>({})
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('wv-sidebar-state')
+      if (raw) {
+        const p = JSON.parse(raw) as { group?: OpenMap; series?: OpenMap; book?: OpenMap }
+        if (p.group) setGroupOpen((c) => ({ ...c, ...p.group }))
+        if (p.series) setSeriesOpen((c) => ({ ...c, ...p.series }))
+        if (p.book) setBookOpen((c) => ({ ...c, ...p.book }))
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        'wv-sidebar-state',
+        JSON.stringify({ group: groupOpen, series: seriesOpen, book: bookOpen }),
+      )
+    } catch {
+      /* ignore */
+    }
+  }, [groupOpen, seriesOpen, bookOpen])
+
+  useEffect(() => {
+    if (!activeBookId) return
+    const book = books.find((b) => b.id === activeBookId)
+    if (!book) return
+    const st = book.status === 'idea' || book.status === 'archive' ? book.status : 'active'
+    setGroupOpen((c) => (c[st] ? c : { ...c, [st]: true }))
+    if (book.series) {
+      const sid = book.series.id
+      setSeriesOpen((c) => (c[sid] ? c : { ...c, [sid]: true }))
+    }
+    setBookOpen((c) => (c[activeBookId] !== undefined ? c : { ...c, [activeBookId]: true }))
+  }, [activeBookId, books])
+
+  const grouped = useMemo(() => {
+    const out: Record<'idea' | 'active' | 'archive', SidebarBook[]> = { idea: [], active: [], archive: [] }
+    for (const b of books) {
+      const st = b.status === 'idea' || b.status === 'archive' ? b.status : 'active'
+      out[st].push(b)
+    }
+    return out
+  }, [books])
+
+  const renderBook = (b: SidebarBook) => {
+    const active = b.id === activeBookId
+    const open = bookOpen[b.id] === true
+    return (
+      <div key={b.id}>
+        <div className={`sb-book-row ${active ? 'sb-book-active' : ''}`}>
+          <button
+            type="button"
+            className="sb-book-chev"
+            onClick={() => setBookOpen((c) => ({ ...c, [b.id]: !open }))}
+          >
+            <ChevronRight size={12} className={open ? 'sb-chev-open' : ''} />
+          </button>
+          <Link href={`/book/${b.id}`} className="sb-book">
+            <BookOpenText size={13} />
+            <span className="truncate flex-1">{b.title}</span>
+          </Link>
+        </div>
+        {open && (
+          <div className="sb-tabs">
+            {BOOK_TABS.map((tb) => {
+              const Icon = tb.icon
+              const tabActive = active && currentTab === tb.tab
+              return (
+                <Link
+                  key={tb.tab}
+                  href={`/book/${b.id}?tab=${tb.tab}`}
+                  className={`sb-tab ${tabActive ? 'sb-tab-active' : ''}`}
+                >
+                  <Icon size={13} />
+                  <span className="truncate">{t(tb.key)}</span>
+                </Link>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    )
+  }
 
   return (
-    <nav className="p-3 flex-1 overflow-y-auto flex flex-col gap-1">
-      <Link href="/" className="px-2 py-4 flex items-center gap-3">
-        <span className="w-9 h-9 rounded-xl overflow-hidden bg-[#8c3a2b] flex items-center justify-center text-white">
-          <img src="/logo.png" alt="" className="w-full h-full object-cover" />
-        </span>
-        <span>
-          <span className="block font-semibold tracking-wide text-[#f0e9dc]">Writer&apos;s Vault</span>
-          <span className="block text-[11px] text-white/40">{t('tagline')}</span>
-        </span>
+    <>
+      <Link href="/" className="sb-top">
+        <Home size={16} />
+        <span className="truncate">{t('homeTitle')}</span>
       </Link>
-
-      <div className="nav-head">{t('navBooks')}</div>
-
-      {books.length === 0 && (
-        <div className="text-xs px-2 py-1" style={{ color: 'rgba(255,255,255,.4)' }}>
-          {t('navEmpty')}
-        </div>
-      )}
-
-      {books.map((b) => {
-        const isOpen = open === b.id
-        const isActive = currentBookId === b.id
-        const isPassport = isActive && !currentTab
-        return (
-          <div key={b.id}>
-            <div className={`nav-row ${isActive ? 'nav-row-active' : ''}`}>
+      <div className="sb-section">
+        {GROUPS.map((g) => {
+          const list = grouped[g.status]
+          if (list.length === 0) return null
+          const Icon = g.icon
+          const open = groupOpen[g.status] !== false
+          const seriesMap = new Map<string, { id: string; name: string; books: SidebarBook[] }>()
+          const loose: SidebarBook[] = []
+          for (const b of list) {
+            if (b.series) {
+              let s = seriesMap.get(b.series.id)
+              if (!s) {
+                s = { id: b.series.id, name: b.series.name, books: [] }
+                seriesMap.set(b.series.id, s)
+              }
+              s.books.push(b)
+            } else {
+              loose.push(b)
+            }
+          }
+          const seriesList = [...seriesMap.values()].sort((a, b) => a.name.localeCompare(b.name))
+          return (
+            <div key={g.status} className="sb-group">
               <button
                 type="button"
-                className="nav-toggle"
-                aria-expanded={isOpen}
-                onClick={() => setOpen(isOpen ? null : b.id)}
+                className="sb-group-head"
+                onClick={() => setGroupOpen((c) => ({ ...c, [g.status]: !open }))}
               >
-                <ChevronRight size={14} className={`nav-chev ${isOpen ? 'nav-chev-open' : ''}`} />
+                <ChevronRight size={13} className={open ? 'sb-chev-open' : ''} />
+                <Icon size={14} />
+                <span className="flex-1 text-left">{t(g.key)}</span>
+                <span className="sb-count">{list.length}</span>
               </button>
-              <Link
-                href={`/book/${b.id}`}
-                className={`nav-link flex-1 min-w-0 ${isPassport ? 'nav-link-active' : ''}`}
-              >
-                <BookOpenText size={15} className="shrink-0" />
-                <span className="truncate">{b.title}</span>
-              </Link>
-            </div>
-
-            {isOpen && (
-              <div className="nav-sub">
-                {SECTIONS.map((s) => {
-                  const Icon = s.icon
-                  const active = isActive && currentTab === s.tab
-                  return (
-                    <div key={s.tab}>
-                      <div className="flex items-center">
-                        <Link
-                          href={`/book/${b.id}?tab=${s.tab}`}
-                          className={`nav-sub-link flex-1 min-w-0 ${active ? 'nav-sub-active' : ''}`}
+              {open && (
+                <div className="sb-group-body">
+                  {seriesList.map((s) => {
+                    const sOpen = seriesOpen[s.id] !== false
+                    return (
+                      <div key={s.id}>
+                        <button
+                          type="button"
+                          className="sb-series-head"
+                          onClick={() => setSeriesOpen((c) => ({ ...c, [s.id]: !sOpen }))}
                         >
-                          <Icon size={13} /> <span className="truncate">{t(s.key)}</span>
-                        </Link>
-                        {s.tab === 'chapters' && b.chapters.length > 0 && (
-                          <button
-                            type="button"
-                            className="nav-ch-toggle"
-                            title={t('navChaptersToggle')}
-                            onClick={() => setChOpen(chOpen === b.id ? null : b.id)}
-                          >
-                            <ChevronRight size={12} className={`nav-chev ${chOpen === b.id ? 'nav-chev-open' : ''}`} />
-                          </button>
-                        )}
+                          <ChevronRight size={12} className={sOpen ? 'sb-chev-open' : ''} />
+                          <Library size={13} />
+                          <span className="flex-1 text-left truncate">{s.name}</span>
+                          <span className="sb-count">{s.books.length}</span>
+                        </button>
+                        {sOpen && <div className="sb-series-body">{s.books.map(renderBook)}</div>}
                       </div>
-                      {s.tab === 'chapters' && chOpen === b.id && (
-                        <div className="nav-chapters">
-                          {b.chapters.map((ch, i) => (
-                            <Link
-                              key={ch.id}
-                              href={`/book/${b.id}?tab=chapters&ch=${ch.id}`}
-                              className="nav-chapter-link"
-                            >
-                              <span className="nav-ch-num">{i + 1}</span>
-                              <span className="truncate">{ch.title || '—'}</span>
-                            </Link>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-        )
-      })}
-
-      <div className="mt-auto pt-3 border-t border-white/10 flex flex-col gap-2">
-        <div className="px-2">
-          <LangFlags />
-        </div>
-        <Link href="/help" className="nav-link">
-          <CircleHelp size={15} /> {t('navHelp')}
-        </Link>
-        <Link href="/settings" className="nav-link">
-          <Settings size={15} /> {t('navSettings')}
-        </Link>
-        <div className="px-2 pb-2 text-[11px] leading-relaxed text-white/30">
-          {t('footer1')}
-          <br />
-          {t('footer2')}
-        </div>
+                    )
+                  })}
+                  {loose.length > 0 && <div className="sb-loose">{loose.map(renderBook)}</div>}
+                </div>
+              )}
+            </div>
+          )
+        })}
       </div>
-    </nav>
+      <div className="sb-bottom">
+        <Link href="/settings" className="sb-link">
+          <Settings size={14} /> {t('navSettings')}
+        </Link>
+        <Link href="/help" className="sb-link">
+          <HelpCircle size={14} /> {t('navHelp')}
+        </Link>
+      </div>
+    </>
   )
 }

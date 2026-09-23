@@ -44,7 +44,7 @@ async function ensureSchema() {
     if (!evCols.some((c) => c.name === 'tag')) {
       await prisma.$executeRawUnsafe(`ALTER TABLE "TimelineEvent" ADD COLUMN "tag" TEXT`)
     }
-        await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "Storyline" (
+    await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "Storyline" (
       "id" TEXT NOT NULL PRIMARY KEY,
       "bookId" TEXT NOT NULL,
       "name" TEXT NOT NULL,
@@ -76,6 +76,32 @@ async function ensureSchema() {
       "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       CONSTRAINT "Note_bookId_fkey" FOREIGN KEY ("bookId") REFERENCES "Book" ("id") ON DELETE CASCADE ON UPDATE CASCADE
     )`)
+    await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "BeatCharacter" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "beatId" TEXT NOT NULL,
+      "characterId" TEXT NOT NULL,
+      CONSTRAINT "BeatCharacter_beatId_fkey" FOREIGN KEY ("beatId") REFERENCES "PlotBeat" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+      CONSTRAINT "BeatCharacter_characterId_fkey" FOREIGN KEY ("characterId") REFERENCES "Character" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+    )`)
+    await prisma.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "BeatCharacter_beatId_characterId_key" ON "BeatCharacter"("beatId", "characterId")`)
+        const beatCols = await prisma.$queryRawUnsafe<Array<{ name: string }>>(`PRAGMA table_info("PlotBeat")`)
+    if (!beatCols.some((c) => c.name === 'bookId')) {
+      await prisma.$executeRawUnsafe(`ALTER TABLE "PlotBeat" ADD COLUMN "bookId" TEXT`)
+      await prisma.$executeRawUnsafe(`UPDATE "PlotBeat" SET "bookId" = (SELECT "bookId" FROM "Storyline" WHERE "Storyline"."id" = "PlotBeat"."lineId")`)
+    }
+    await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "BeatLine" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "beatId" TEXT NOT NULL,
+      "lineId" TEXT NOT NULL,
+      "order" INTEGER NOT NULL DEFAULT 0,
+      CONSTRAINT "BeatLine_beatId_fkey" FOREIGN KEY ("beatId") REFERENCES "PlotBeat" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+      CONSTRAINT "BeatLine_lineId_fkey" FOREIGN KEY ("lineId") REFERENCES "Storyline" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+    )`)
+    await prisma.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "BeatLine_beatId_lineId_key" ON "BeatLine"("beatId", "lineId")`)
+    await prisma.$executeRawUnsafe(`INSERT OR IGNORE INTO "BeatLine" ("id", "beatId", "lineId", "order")
+      SELECT 'mig_' || "id", "id", "lineId", "order" FROM "PlotBeat"
+      WHERE "lineId" IS NOT NULL
+        AND NOT EXISTS (SELECT 1 FROM "BeatLine" bl WHERE bl."beatId" = "PlotBeat"."id" AND bl."lineId" = "PlotBeat"."lineId")`)
   } catch (e) {
     console.error('ensureSchema failed:', e)
   }

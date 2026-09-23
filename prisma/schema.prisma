@@ -26,6 +26,7 @@ model Book {
   notes           Note[]
   status          String          @default("active")
   storylines      Storyline[]
+  plotBeats       PlotBeat[]
 }
 
 model Note {
@@ -59,6 +60,7 @@ model Character {
   relations   CharacterRelation[] @relation("CharacterRelations")
   relatedIn   CharacterRelation[] @relation("RelatedRelations")
   eventLinks  EventCharacter[]
+  beatLinks   BeatCharacter[]
 }
 
 model CharacterRelation {
@@ -161,24 +163,48 @@ model Series {
   books     Book[]
 }
 
+model PlotBeat {
+  id         String          @id @default(cuid())
+  bookId     String?
+  book       Book?           @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  lineId     String?
+  title      String          @default("")
+  summary    String          @default("")
+  order      Int             @default(0)
+  chapterId  String?
+  chapter    Chapter?        @relation(fields: [chapterId], references: [id], onDelete: SetNull)
+  eventId    String?
+  event      TimelineEvent?  @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  characters BeatCharacter[]
+  lines      BeatLine[]
+}
+
+model BeatLine {
+  id     String    @id @default(cuid())
+  beatId String
+  beat   PlotBeat  @relation(fields: [beatId], references: [id], onDelete: Cascade)
+  lineId String
+  line   Storyline @relation(fields: [lineId], references: [id], onDelete: Cascade)
+  order  Int       @default(0)
+
+  @@unique([beatId, lineId])
+}
+
 model Storyline {
   id     String     @id @default(cuid())
   bookId String
   book   Book       @relation(fields: [bookId], references: [id], onDelete: Cascade)
   name   String
   order  Int        @default(0)
-  beats  PlotBeat[]
+  beats  BeatLine[]
 }
 
-model PlotBeat {
-  id        String         @id @default(cuid())
-  lineId    String
-  line      Storyline      @relation(fields: [lineId], references: [id], onDelete: Cascade)
-  title     String         @default("")
-  summary   String         @default("")
-  order     Int            @default(0)
-  chapterId String?
-  chapter   Chapter?       @relation(fields: [chapterId], references: [id], onDelete: SetNull)
-  eventId   String?
-  event     TimelineEvent? @relation(fields: [eventId], references: [id], onDelete: SetNull)
+model BeatCharacter {
+  id          String    @id @default(cuid())
+  beatId      String
+  beat        PlotBeat  @relation(fields: [beatId], references: [id], onDelete: Cascade)
+  characterId String
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@unique([beatId, characterId])
 }

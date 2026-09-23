@@ -2,7 +2,9 @@
 
 import { prisma, schemaReady } from './prisma'
 import { revalidatePath } from 'next/cache'
+import { getLang } from './lang-server'
 import { ROLES } from './roles'
+import { importDocx } from './importDocx'
 
 const validRole = (role: string): string =>
   ROLES.some((r) => r.key === role) ? role : 'secondary'
@@ -470,17 +472,14 @@ export async function checkChapterExists(id: string): Promise<boolean> {
 export async function deleteChapter(id: string) {
   const chapter = await prisma.chapter.findUnique({
     where: { id },
-    select: { bookId: true }
+    select: { bookId: true },
   })
-  
   if (!chapter) return
-
   await prisma.$transaction([
     prisma.chapterMention.deleteMany({ where: { chapterId: id } }),
     prisma.eventMention.deleteMany({ where: { chapterId: id } }),
-    prisma.chapter.delete({ where: { id } })
+    prisma.chapter.delete({ where: { id } }),
   ])
-
   revalidatePath(`/book/${chapter.bookId}`)
 }
 
@@ -496,6 +495,7 @@ export async function deleteLocation(id: string) {
   if (loc) revalidatePath(`/book/${loc.bookId}`)
 }
 
+// --- SERIES ---
 export async function getSeriesList() {
   await schemaReady
   return prisma.series.findMany({ orderBy: { name: 'asc' }, select: { id: true, name: true } })
@@ -533,6 +533,7 @@ export async function setBookSeries(bookId: string, seriesId: string | null) {
   revalidatePath(`/book/${bookId}`)
 }
 
+// --- CHAPTERS / ACTS / STRUCTURE ---
 export async function moveChapter(chapterId: string, dir: number) {
   await schemaReady
   const ch = await prisma.chapter.findUnique({
@@ -833,6 +834,7 @@ export async function deleteNote(id: string) {
   revalidatePath(`/book/${n.bookId}`)
 }
 
+// --- BOOK STATUS ---
 export async function setBookStatus(bookId: string, status: string) {
   await schemaReady
   const st = status === 'idea' || status === 'archive' ? status : 'active'
@@ -863,11 +865,14 @@ export type StorylineRow = {
     eventLabel: string | null
     eventYear: number | null
     eventDay: number | null
+    characters: { id: string; name: string; roleLabel: string }[]
+    lines: { id: string; name: string }[]
   }[]
 }
 
 export async function getStorylines(bookId: string): Promise<StorylineRow[]> {
   await schemaReady
+  const lang = await getLang()
   const rows = await prisma.storyline.findMany({
     where: { bookId },
     orderBy: { order: 'asc' },
@@ -875,8 +880,14 @@ export async function getStorylines(bookId: string): Promise<StorylineRow[]> {
       beats: {
         orderBy: { order: 'asc' },
         include: {
-          chapter: { select: { title: true, order: true } },
-          event: { select: { description: true, bookYear: true, bookDay: true } },
+          beat: {
+            include: {
+              chapter: { select: { title: true, order: true } },
+              event: { select: { description: true, bookYear: true, bookDay: true } },
+              characters: { include: { character: { select: { id: true, name: true, role: true } } } },
+              lines: { include: { line: { select: { id: true, name: true } } } },
+            },
+          },
         },
       },
     },
@@ -884,19 +895,37 @@ export async function getStorylines(bookId: string): Promise<StorylineRow[]> {
   return rows.map((r) => ({
     id: r.id,
     name: r.name,
-    beats: r.beats.map((b) => ({
-      id: b.id,
-      title: b.title,
-      summary: b.summary,
-      chapterId: b.chapterId,
-      chapterTitle: b.chapter?.title ?? null,
-      chapterOrder: b.chapter?.order ?? null,
-      eventId: b.eventId,
-      eventLabel: b.event?.description ?? null,
-      eventYear: b.event?.bookYear ?? null,
-      eventDay: b.event?.bookDay ?? null,
-    })),
+    beats: r.beats.map((bl) => {
+      const b = bl.beat
+      return {
+        id: b.id,
+        title: b.title,
+        summary: b.summary,
+        chapterId: b.chapterId,
+        chapterTitle: b.chapter?.title ?? null,
+        chapterOrder: b.chapter?.order ?? null,
+        eventId: b.eventId,
+        eventLabel: b.event?.description ?? null,
+        eventYear: b.event?.bookYear ?? null,
+        eventDay: b.event?.bookDay ?? null,
+        characters: b.characters.map((bc) => {
+          const role = ROLES.find((x) => x.key === bc.character.role)
+          return {
+            id: bc.character.id,
+            name: bc.character.name,
+            roleLabel: role ? (lang === 'ru' ? role.ru : role.en) : bc.character.role,
+          }
+        }),
+        lines: b.lines.map((x) => ({ id: x.line.id, name: x.line.name })),
+      }
+    }),
   }))
+}
+
+export async function getBookBeats(bookId: string): Promise<{ id: string; title: string }[]> {
+  await schemaReady
+  const rows = await prisma.plotBeat.findMany({ where: { bookId }, select: { id: true, title: true } })
+  return rows.map((r) => ({ id: r.id, title: r.title }))
 }
 
 export async function createStoryline(bookId: string, fd: FormData) {
@@ -922,6 +951,12 @@ export async function deleteStoryline(id: string) {
   await schemaReady
   const line = await prisma.storyline.findUnique({ where: { id }, select: { bookId: true } })
   if (!line) return
+  const links = await prisma.beatLine.findMany({ where: { lineId: id }, select: { beatId: true } })
+  await prisma.beatLine.deleteMany({ where: { lineId: id } })
+  for (const l of links) {
+    const left = await prisma.beatLine.count({ where: { beatId: l.beatId } })
+    if (left === 0) await prisma.plotBeat.delete({ where: { id: l.beatId } })
+  }
   await prisma.storyline.delete({ where: { id } })
   revalidatePath(`/book/${line.bookId}`)
 }
@@ -941,7 +976,9 @@ export async function moveStoryline(id: string, dir: number) {
   const ids = siblings.map((s) => s.id)
   const [m] = ids.splice(idx, 1)
   ids.splice(target, 0, m)
-  await prisma.$transaction(ids.map((sid, i) => prisma.storyline.update({ where: { id: sid }, data: { order: i + 1 } })))
+  await prisma.$transaction(
+    ids.map((sid, i) => prisma.storyline.update({ where: { id: sid }, data: { order: i + 1 } })),
+  )
   revalidatePath(`/book/${line.bookId}`)
 }
 
@@ -950,8 +987,9 @@ export async function createBeat(lineId: string, fd: FormData) {
   const title = ((fd.get('title') as string) ?? '').trim()
   const line = await prisma.storyline.findUnique({ where: { id: lineId }, select: { bookId: true } })
   if (!line) return
-  const count = await prisma.plotBeat.count({ where: { lineId } })
-  await prisma.plotBeat.create({ data: { lineId, title, order: count + 1 } })
+  const count = await prisma.beatLine.count({ where: { lineId } })
+  const beat = await prisma.plotBeat.create({ data: { bookId: line.bookId, title } })
+  await prisma.beatLine.create({ data: { lineId, beatId: beat.id, order: count + 1 } })
   revalidatePath(`/book/${line.bookId}`)
 }
 
@@ -961,47 +999,70 @@ export async function saveBeat(id: string, fd: FormData) {
   const summary = (fd.get('summary') as string) ?? ''
   const chapterId = ((fd.get('chapterId') as string) ?? '') || null
   const eventId = ((fd.get('eventId') as string) ?? '') || null
-  const beat = await prisma.plotBeat.findUnique({
-    where: { id },
-    select: { line: { select: { bookId: true } } },
-  })
-  if (!beat) return
+  const beat = await prisma.plotBeat.findUnique({ where: { id }, select: { bookId: true } })
+  if (!beat || !beat.bookId) return
   await prisma.plotBeat.update({ where: { id }, data: { title, summary, chapterId, eventId } })
-  revalidatePath(`/book/${beat.line.bookId}`)
+  const charIds = fd.getAll('charIds').map((v) => String(v))
+  await prisma.beatCharacter.deleteMany({ where: { beatId: id } })
+  for (const cid of charIds) {
+    await prisma.beatCharacter.create({ data: { beatId: id, characterId: cid } })
+  }
+  revalidatePath(`/book/${beat.bookId}`)
 }
 
 export async function deleteBeat(id: string) {
   await schemaReady
-  const beat = await prisma.plotBeat.findUnique({
-    where: { id },
-    select: { line: { select: { bookId: true } } },
-  })
-  if (!beat) return
+  const beat = await prisma.plotBeat.findUnique({ where: { id }, select: { bookId: true } })
+  if (!beat || !beat.bookId) return
   await prisma.plotBeat.delete({ where: { id } })
-  revalidatePath(`/book/${beat.line.bookId}`)
+  revalidatePath(`/book/${beat.bookId}`)
+}
+
+export async function unlinkBeat(lineId: string, beatId: string) {
+  await schemaReady
+  const line = await prisma.storyline.findUnique({ where: { id: lineId }, select: { bookId: true } })
+  if (!line) return
+  await prisma.beatLine.deleteMany({ where: { lineId, beatId } })
+  const left = await prisma.beatLine.count({ where: { beatId } })
+  if (left === 0) await prisma.plotBeat.delete({ where: { id: beatId } })
+  revalidatePath(`/book/${line.bookId}`)
+}
+
+export async function linkBeat(lineId: string, fd: FormData) {
+  await schemaReady
+  const beatId = ((fd.get('beatId') as string) ?? '') || null
+  if (!beatId) return
+  const line = await prisma.storyline.findUnique({ where: { id: lineId }, select: { bookId: true } })
+  if (!line) return
+  const exists = await prisma.beatLine.findUnique({ where: { beatId_lineId: { beatId, lineId } } })
+  if (exists) return
+  const count = await prisma.beatLine.count({ where: { lineId } })
+  await prisma.beatLine.create({ data: { lineId, beatId, order: count + 1 } })
+  revalidatePath(`/book/${line.bookId}`)
 }
 
 export async function moveBeat(lineId: string, id: string, dir: number) {
   await schemaReady
   const line = await prisma.storyline.findUnique({ where: { id: lineId }, select: { bookId: true } })
   if (!line) return
-  const siblings = await prisma.plotBeat.findMany({
+  const siblings = await prisma.beatLine.findMany({
     where: { lineId },
     orderBy: { order: 'asc' },
-    select: { id: true },
+    select: { id: true, beatId: true },
   })
-  const idx = siblings.findIndex((s) => s.id === id)
+  const idx = siblings.findIndex((s) => s.beatId === id)
   const target = idx + dir
   if (idx < 0 || target < 0 || target >= siblings.length) return
-  const ids = siblings.map((s) => s.id)
-  const [m] = ids.splice(idx, 1)
-  ids.splice(target, 0, m)
-  await prisma.$transaction(ids.map((bid, i) => prisma.plotBeat.update({ where: { id: bid }, data: { order: i + 1 } })))
+  const a = siblings[idx]
+  const b = siblings[target]
+  await prisma.$transaction([
+    prisma.beatLine.update({ where: { id: a.id }, data: { order: target + 1 } }),
+    prisma.beatLine.update({ where: { id: b.id }, data: { order: idx + 1 } }),
+  ])
   revalidatePath(`/book/${line.bookId}`)
 }
 
-import { importDocx } from './importDocx'
-
+// --- DOCX IMPORT ---
 export async function importBookFromDocx(
   fd: FormData,
 ): Promise<{ ok: true; bookId: string } | { ok: false; error: string }> {

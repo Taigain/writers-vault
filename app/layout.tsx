@@ -1,14 +1,20 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import Script from 'next/script'
-import SidebarNav from '@/components/SidebarNav'
-import { getBooksWithChapters } from '@/lib/actions'
+import SidebarNav, { type SidebarBook } from '@/components/SidebarNav'
+import { getBooksWithSeries } from '@/lib/actions'
 import './globals.css'
 
 export const metadata: Metadata = { title: "Writer's Vault" }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const books = await getBooksWithChapters()
+  const booksRaw = await getBooksWithSeries()
+  const books: SidebarBook[] = booksRaw.map((b) => ({
+    id: b.id,
+    title: b.title,
+    status: b.status,
+    series: b.series ? { id: b.series.id, name: b.series.name } : null,
+  }))
 
   return (
     <html lang="ru" suppressHydrationWarning>

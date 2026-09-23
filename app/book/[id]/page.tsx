@@ -40,6 +40,7 @@ import {
   getNotes,
   getStorylines,
   importChaptersFromDocx,
+  getBookBeats,
 } from '@/lib/actions'
 import ImportDocxButton from '@/components/ImportDocxButton'
 
@@ -70,6 +71,7 @@ export default async function BookPage({
   ])
   const notes = await getNotes(id)
   const lines = await getStorylines(id)
+  const allBeats = await getBookBeats(id)
   const chapterOptions = chapters.map((c) => ({ id: c.id, title: c.title }))
   const characterOptions = characters.map((c) => ({ id: c.id, name: c.name }))
   const totalWords = chapters.reduce((s, c) => s + words(c.title) + words(c.content), 0)
@@ -341,6 +343,8 @@ export default async function BookPage({
         bookYear: ev.bookYear,
         bookDay: ev.bookDay,
       }))}
+      characters={characters.map((c) => ({ id: c.id, name: c.name }))}
+      allBeats={allBeats}
     />
   )
 

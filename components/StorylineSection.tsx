@@ -1,6 +1,6 @@
 'use client'
 
-import { ChevronRight, Plus, Save, Trash2, ArrowUp, ArrowDown, GitBranch } from 'lucide-react'
+import { ChevronRight, Plus, Save, Trash2, ArrowUp, ArrowDown, GitBranch, Link2, Link2Off } from 'lucide-react'
 import { useLang } from '@/lib/useLang'
 import {
   createStoryline,
@@ -11,8 +11,12 @@ import {
   saveBeat,
   deleteBeat,
   moveBeat,
+  unlinkBeat,
+  linkBeat
 } from '@/lib/actions'
 import type { StorylineRow } from '@/lib/actions'
+import { useState } from 'react'
+import StoryGraph from './StoryGraph'
 
 export type ChapterOpt = { id: string; title: string; order: number }
 export type EventOpt = { id: string; label: string; bookYear: number | null; bookDay: number | null }
@@ -22,15 +26,48 @@ export default function StorylineSection({
   lines,
   chapters,
   events,
+  characters,
+  allBeats
 }: {
   bookId: string
   lines: StorylineRow[]
   chapters: ChapterOpt[]
   events: EventOpt[]
+  characters: { id: string; name: string }[]
+  allBeats: { id: string; title: string }[]
 }) {
   const { t } = useLang()
+  function CharChips({ characters, initial }: { characters: { id: string; name: string }[]; initial: string[] }) {
+  const [on, setOn] = useState<Record<string, boolean>>(() => {
+    const m: Record<string, boolean> = {}
+    for (const id of initial) m[id] = true
+    return m
+  })
+  return (
+    <div className="flex flex-wrap gap-1.5 pt-1">
+      {characters.map((ch) => (
+        <label
+          key={ch.id}
+          className="chip cursor-pointer select-none"
+          style={on[ch.id] ? { background: '#4c3d8f', color: '#fff', borderColor: '#4c3d8f' } : undefined}
+        >
+          <input
+            type="checkbox"
+            name="charIds"
+            value={ch.id}
+            checked={!!on[ch.id]}
+            onChange={(e) => setOn((c) => ({ ...c, [ch.id]: e.target.checked }))}
+            className="hidden"
+          />
+          {ch.name}
+        </label>
+      ))}
+    </div>
+  )
+}
   return (
     <div>
+      <StoryGraph lines={lines} />
       <form className="flex flex-wrap gap-2 mb-4" action={async (fd) => { await createStoryline(bookId, fd) }}>
         <input name="name" required className="input" style={{ width: '16rem' }} placeholder={t('slNamePh')} />
         <button className="btn btn-primary btn-sm">
@@ -111,6 +148,13 @@ export default function StorylineSection({
                           </button>
                         </span>
                         <span className="acc-title">{b.title || t('slUntitledBeat')}</span>
+                        {b.lines.length > 1 && (
+                          <span className="chip">
+                            {t('slAlsoIn', {
+                              names: b.lines.filter((x) => x.id !== ln.id).map((x) => x.name).join(', '),
+                            })}
+                          </span>
+                        )}
                         {b.chapterOrder != null && <span className="chip">{t('slChipCh', { n: b.chapterOrder })}</span>}
                         {ev && (
                           <span className="chip">
@@ -147,8 +191,19 @@ export default function StorylineSection({
                                 </option>
                               ))}
                             </select>
+                          <div className="field-label">{t('slBeatChars')}</div>
+                          <CharChips characters={characters} initial={b.characters.map((x) => x.id)} />
                           </div>
                           <div className="flex justify-end gap-2">
+                            <button
+                              type="button"
+                              className="btn btn-ghost btn-sm"
+                              onClick={async () => {
+                                if (window.confirm(t('slUnlinkConfirm'))) await unlinkBeat(ln.id, b.id)
+                              }}
+                            >
+                              <Link2Off size={13} /> {t('slUnlink')}
+                            </button>
                             <button
                               type="button"
                               className="btn btn-danger btn-sm"
@@ -171,6 +226,19 @@ export default function StorylineSection({
                   <input name="title" className="input flex-1 min-w-[200px]" placeholder={t('slBeatTitlePh')} />
                   <button className="btn btn-ghost btn-sm">
                     <Plus size={13} /> {t('slAddBeat')}
+                  </button>
+                </form>
+                <form className="flex flex-wrap gap-2" action={async (fd) => { await linkBeat(ln.id, fd) }}>
+                  <select name="beatId" defaultValue="" className="input" style={{ width: 'auto' }}>
+                    <option value="" disabled>{t('slLinkPh')}</option>
+                    {allBeats
+                      .filter((x) => !ln.beats.some((bb) => bb.id === x.id))
+                      .map((x) => (
+                        <option key={x.id} value={x.id}>{x.title || t('slUntitledBeat')}</option>
+                      ))}
+                  </select>
+                  <button className="btn btn-ghost btn-sm">
+                    <Link2 size={13} /> {t('slLink')}
                   </button>
                 </form>
               </div>
