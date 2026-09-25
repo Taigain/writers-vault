@@ -5,10 +5,19 @@ import { createPortal } from 'react-dom'
 import { BookOpen, ChevronLeft, ChevronRight, X } from 'lucide-react'
 import RichPreview from './RichPreview'
 import { useLang } from '@/lib/useLang'
+import { applyDict, type DictMap } from '@/lib/dict'
 
 export type ReadChapter = { id: string; title: string; content: string; act: string | null }
 
-export default function ReadMode({ bookTitle, chapters }: { bookTitle: string; chapters: ReadChapter[] }) {
+export default function ReadMode({
+  bookTitle,
+  chapters,
+  dict,
+}: {
+  bookTitle: string
+  chapters: ReadChapter[]
+  dict?: DictMap
+}) {
   const { t } = useLang()
   const [open, setOpen] = useState(false)
   const [idx, setIdx] = useState(0)
@@ -110,7 +119,7 @@ export default function ReadMode({ bookTitle, chapters }: { bookTitle: string; c
               )}
               <h2 className="text-2xl font-bold mb-6">{cur.title}</h2>
               <div className="font-write text-lg leading-8">
-                <RichPreview text={cur.content} />
+                <RichPreview text={applyDict(cur.content, dict ?? {})} />
               </div>
               <div className="flex justify-between mt-10">
                 <button type="button" className="btn btn-ghost btn-sm" disabled={idx <= 0} onClick={prev}>

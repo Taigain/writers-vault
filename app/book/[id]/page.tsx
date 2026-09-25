@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { Save, Plus, MapPin, Globe2, BookOpen, Feather, Users, Type, ChevronRight, Upload } from 'lucide-react'
+import { Save, Plus, MapPin, Globe2, BookOpen, Feather, Users, Type, ChevronRight } from 'lucide-react'
 import CharacterCard from '@/components/CharacterCard'
 import LoreSection from '@/components/LoreSection'
 import TimelineSection from '@/components/TimelineSection'
@@ -16,10 +16,13 @@ import ZoomImage from '@/components/ZoomImage'
 import ImageAttach from '@/components/ImageAttach'
 import NotesSection from '@/components/NotesSection'
 import StorylineSection from '@/components/StorylineSection'
+import DictSection from '@/components/DictSection'
+import ImportDocxButton from '@/components/ImportDocxButton'
 import { readImageField } from '@/lib/actions'
 import { ROLES } from '@/lib/roles'
 import { getLang } from '@/lib/lang-server'
 import { tr } from '@/lib/i18n'
+import { buildDictMap } from '@/lib/dict'
 import {
   getBook,
   getSeriesList,
@@ -39,13 +42,13 @@ import {
   getBookBlocks,
   getNotes,
   getStorylines,
-  importChaptersFromDocx,
   getBookBeats,
+  getDict,
+  importChaptersFromDocx,
 } from '@/lib/actions'
-import ImportDocxButton from '@/components/ImportDocxButton'
 
 const words = (t: string) => (t.trim() ? t.trim().split(/\s+/).length : 0)
-const VIEWS = ['chapters', 'characters', 'world', 'locations', 'timeline', 'graph', 'notes', 'plot']
+const VIEWS = ['chapters', 'characters', 'world', 'locations', 'timeline', 'graph', 'notes', 'plot', 'dict']
 
 export default async function BookPage({
   params,
@@ -72,6 +75,8 @@ export default async function BookPage({
   const notes = await getNotes(id)
   const lines = await getStorylines(id)
   const allBeats = await getBookBeats(id)
+  const dictRows = await getDict(id)
+  const dictMap = buildDictMap(dictRows)
   const chapterOptions = chapters.map((c) => ({ id: c.id, title: c.title }))
   const characterOptions = characters.map((c) => ({ id: c.id, name: c.name }))
   const totalWords = chapters.reduce((s, c) => s + words(c.title) + words(c.content), 0)
@@ -92,11 +97,12 @@ export default async function BookPage({
     }
   }
 
-  /* ---------- ГЛАВЫ ---------- */
   const importChaptersAction = async (fd: FormData) => {
     'use server'
     return importChaptersFromDocx(id, fd)
-  } 
+  }
+
+  /* ---------- ГЛАВЫ ---------- */
   const chaptersSection = (
     <div className="space-y-6">
       <ChapterSearch
@@ -113,9 +119,9 @@ export default async function BookPage({
           </span>
         </div>
         <div className="flex flex-wrap gap-2">
-          <ImportDocxButton label={tr(lang, 'chImportDocx')} onFile={importChaptersAction} />
-          <ReadMode bookTitle={book.title} chapters={readChapters} />
+          <ReadMode bookTitle={book.title} chapters={readChapters} dict={dictMap} />
           <ExportButton bookId={id} baseName={book.title} />
+          <ImportDocxButton label={tr(lang, 'chImportDocx')} onFile={importChaptersAction} />
           <form
             action={async () => {
               'use server'
@@ -149,6 +155,7 @@ export default async function BookPage({
                 bookId={id}
                 blockIndex={bi}
                 blockTotal={blocks.length}
+                dict={dictMap}
               />
             </div>
           ) : (
@@ -169,6 +176,7 @@ export default async function BookPage({
                     bookId={id}
                     actIndex={ci}
                     actTotal={b.chs.length}
+                    dict={dictMap}
                   />
                 ))}
               </div>
@@ -348,6 +356,9 @@ export default async function BookPage({
     />
   )
 
+  /* ---------- СЛОВАРЬ ---------- */
+  const dictSection = <DictSection bookId={id} entries={dictRows} />
+
   /* ---------- СБОРКА ---------- */
   return (
     <div className="max-w-6xl mx-auto px-8 py-8 anim-fade">
@@ -402,6 +413,7 @@ export default async function BookPage({
           {view === 'graph' && graphSection}
           {view === 'notes' && notesSection}
           {view === 'plot' && plotSection}
+          {view === 'dict' && dictSection}
         </>
       )}
     </div>

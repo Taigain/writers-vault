@@ -116,6 +116,10 @@ export const FAQ: Record<Lang, FaqItem[]> = {
       q: 'Как поддержать автора?',
       a: 'В разделе «Настройки», блок «О программе», есть кнопки «Поблагодарить автора». Они открывают платёжные страницы во внешнем браузере.',
     },
+    {
+      q: 'Словарь мира и автоподстановка слов',
+      a: 'Раздел «Словарь» книги хранит пары «слово книги ↔ черновое слово» (например, око ↔ глаз) и формы слова (глаза → очи). В черновике напишите черновое слово, выделите его и нажмите кнопку с иконкой языков на панели — получится метка [~ключ]. В предпросмотре, режиме чтения и экспорте DOCX метка превратится в слово книги; регистр переносится ([~Глаз] → «Око»), формы подставляются по парам, неизвестная форма даёт базовое слово. Переименование слова в словаре обновляет все метки во всей книге.',
+    },
   ],
   en: [
     {
@@ -229,6 +233,10 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     {
       q: 'How do I support the author?',
       a: 'In Settings → About there are "Thank the author" buttons. They open the payment pages in the external browser.',
+    },
+    {
+      q: 'World dictionary and word substitution',
+      a: 'The book\'s "Dictionary" section stores "book word ↔ draft word" pairs (e.g. oko ↔ eye) plus word forms (eyes → ochi). In the draft, write the draft word, select it and press the languages icon on the toolbar to get a [~key] marker. In preview, reading mode and DOCX export the marker becomes the book word; case transfers ([~Glaz] → "Oko"), forms substitute by pairs, an unknown form falls back to the base word. Renaming the word in the dictionary updates every marker in the book.',
     },
   ],
 }

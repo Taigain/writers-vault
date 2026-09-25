@@ -27,6 +27,7 @@ model Book {
   status          String          @default("active")
   storylines      Storyline[]
   plotBeats       PlotBeat[]
+  dict DictEntry[]
 }
 
 model Note {
@@ -207,4 +208,16 @@ model BeatCharacter {
   character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
 
   @@unique([beatId, characterId])
+}
+
+model DictEntry {
+  id      String @id @default(cuid())
+  bookId  String
+  book    Book   @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  key     String
+  word    String
+  meaning String @default("")
+  forms   String @default("[]")
+
+  @@unique([bookId, key])
 }

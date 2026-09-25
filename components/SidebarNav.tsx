@@ -20,6 +20,7 @@ import {
   NotebookPen,
   GitBranch,
   Home,
+  Languages,
 } from 'lucide-react'
 import { useLang } from '@/lib/useLang'
 
@@ -39,6 +40,7 @@ type TabKey =
   | 'secGraph'
   | 'secNotes'
   | 'secPlot'
+  | 'secDict'
 
 const BOOK_TABS: { tab: string; key: TabKey; icon: React.ComponentType<{ size?: number }> }[] = [
   { tab: 'chapters', key: 'secChapters', icon: BookOpenText },
@@ -49,6 +51,7 @@ const BOOK_TABS: { tab: string; key: TabKey; icon: React.ComponentType<{ size?: 
   { tab: 'graph', key: 'secGraph', icon: Network },
   { tab: 'notes', key: 'secNotes', icon: NotebookPen },
   { tab: 'plot', key: 'secPlot', icon: GitBranch },
+  { tab: 'dict', key: 'secDict', icon: Languages },
 ]
 
 const GROUPS = [

@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { getLang } from './lang-server'
 import { ROLES } from './roles'
 import { importDocx } from './importDocx'
+import {parseForms} from './dict'
 
 const validRole = (role: string): string =>
   ROLES.some((r) => r.key === role) ? role : 'secondary'
@@ -1124,4 +1125,64 @@ export async function importChaptersFromDocx(
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : 'Ошибка импорта' }
   }
+}
+
+// --- DICT ---
+export type DictRow = { id: string; key: string; word: string; meaning: string; forms: { d: string; b: string }[] }
+
+function makeKey(word: string): string {
+  return word.toLowerCase().replace(/\s+/g, '_').replace(/[^\p{L}\p{N}_-]/gu, '').slice(0, 40) || 'w'
+}
+
+export async function getDict(bookId: string): Promise<DictRow[]> {
+  await schemaReady
+  const rows = await prisma.dictEntry.findMany({ where: { bookId }, orderBy: { key: 'asc' } })
+  return rows.map((r) => ({ id: r.id, key: r.key, word: r.word, meaning: r.meaning, forms: parseForms(r.forms) }))
+}
+
+export async function createDictEntry(bookId: string, fd: FormData) {
+  await schemaReady
+  const word = ((fd.get('word') as string) ?? '').trim()
+  const meaning = ((fd.get('meaning') as string) ?? '').trim()
+  if (!word || !meaning) return
+  let key = makeKey(meaning)
+  const exists = await prisma.dictEntry.findUnique({ where: { bookId_key: { bookId, key } } })
+  if (exists) {
+    let n = 2
+    while (await prisma.dictEntry.findUnique({ where: { bookId_key: { bookId, key: key + '_' + n } } })) n++
+    key = key + '_' + n
+  }
+  await prisma.dictEntry.create({ data: { bookId, key, word, meaning } })
+  revalidatePath(`/book/${bookId}`)
+}
+
+export async function saveDictEntry(id: string, fd: FormData) {
+  await schemaReady
+  const word = ((fd.get('word') as string) ?? '').trim()
+  const meaning = ((fd.get('meaning') as string) ?? '').trim()
+  if (!word || !meaning) return
+  const e = await prisma.dictEntry.findUnique({ where: { id }, select: { id: true, bookId: true, key: true } })
+  if (!e) return
+  let key = e.key
+  const want = makeKey(meaning)
+  if (want && want !== e.key) {
+    const clash = await prisma.dictEntry.findUnique({ where: { bookId_key: { bookId: e.bookId, key: want } } })
+    if (!clash) key = want
+  }
+  let formsJson = '[]'
+  const fr = fd.get('forms')
+  if (typeof fr === 'string') {
+    const arr = parseForms(fr)
+    formsJson = JSON.stringify(arr)
+  }
+  await prisma.dictEntry.update({ where: { id }, data: { word, meaning, key, forms: formsJson } })
+  revalidatePath(`/book/${e.bookId}`)
+}
+
+export async function deleteDictEntry(id: string) {
+  await schemaReady
+  const e = await prisma.dictEntry.findUnique({ where: { id }, select: { bookId: true } })
+  if (!e) return
+  await prisma.dictEntry.delete({ where: { id } })
+  revalidatePath(`/book/${e.bookId}`)
 }

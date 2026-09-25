@@ -102,6 +102,19 @@ async function ensureSchema() {
       SELECT 'mig_' || "id", "id", "lineId", "order" FROM "PlotBeat"
       WHERE "lineId" IS NOT NULL
         AND NOT EXISTS (SELECT 1 FROM "BeatLine" bl WHERE bl."beatId" = "PlotBeat"."id" AND bl."lineId" = "PlotBeat"."lineId")`)
+    await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "DictEntry" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "bookId" TEXT NOT NULL,
+      "key" TEXT NOT NULL,
+      "word" TEXT NOT NULL,
+      "meaning" TEXT NOT NULL DEFAULT '',
+      CONSTRAINT "DictEntry_bookId_fkey" FOREIGN KEY ("bookId") REFERENCES "Book" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+    )`)
+    await prisma.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "DictEntry_bookId_key_key" ON "DictEntry"("bookId", "key")`)
+    const dictCols = await prisma.$queryRawUnsafe<Array<{ name: string }>>(`PRAGMA table_info("DictEntry")`)
+    if (!dictCols.some((c) => c.name === 'forms')) {
+      await prisma.$executeRawUnsafe(`ALTER TABLE "DictEntry" ADD COLUMN "forms" TEXT NOT NULL DEFAULT '[]'`)
+    }
   } catch (e) {
     console.error('ensureSchema failed:', e)
   }

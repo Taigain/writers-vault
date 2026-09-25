@@ -21,6 +21,7 @@ import {
   Hash,
   Expand,
   Minimize,
+  Languages,
 } from 'lucide-react'
 import RichPreview from './RichPreview'
 import { useLang } from '@/lib/useLang'
@@ -33,6 +34,7 @@ import {
   checkChapterExists,
 } from '@/lib/actions'
 import { registerEditor, setEditorDirty, unregisterEditor } from '@/lib/autosave'
+import { applyDict, type DictMap } from '@/lib/dict'
 
 const wordsOf = (s: string) => (s.trim() ? s.trim().split(/\s+/).length : 0)
 const SIZES = [14, 16, 18, 20, 24, 32]
@@ -51,6 +53,7 @@ export default function ChapterEditor({
   actTotal,
   highlight,
   focusPos,
+  dict,
 }: {
   id: string
   title: string
@@ -65,6 +68,7 @@ export default function ChapterEditor({
   actTotal?: number
   highlight?: string
   focusPos?: number
+  dict?: DictMap
 }) {
   const { t } = useLang()
   const [newActOpen, setNewActOpen] = useState(false)
@@ -319,12 +323,6 @@ export default function ChapterEditor({
     let k = 0
     while (pos + k < c.length && c[pos + k] === ' ') k++
     return k
-  }
-
-  const wrapSelection = (before: string, after: string) => {
-    const ta = taRef.current
-    if (!ta) return
-    applyWrap(ta.selectionStart ?? c.length, ta.selectionEnd ?? c.length, before, after)
   }
 
   const toggleWrap = (before: string, after: string) => {
@@ -660,11 +658,14 @@ export default function ChapterEditor({
                     <Italic size={15} />
                   </button>
                   <span className="tb-sep" />
-                  <button type="button" title={t('chTbChar')} onClick={() => wrapSelection('[@', ']')}>
+                  <button type="button" title={t('chTbMention')} onClick={() => toggleWrap('[@', ']')}>
                     <AtSign size={15} />
                   </button>
-                  <button type="button" title={t('chTbEvent')} onClick={() => wrapSelection('[#', ']')}>
+                  <button type="button" title={t('chTbEvent')} onClick={() => toggleWrap('[#', ']')}>
                     <Hash size={15} />
+                  </button>
+                  <button type="button" title={t('chTbDict')} onClick={() => toggleWrap('[~', ']')}>
+                    <Languages size={15} />
                   </button>
                   <span className="tb-sep" />
                   <button type="button" title={t('chTbLeft')} onClick={() => setAlign('left')}>
@@ -822,7 +823,7 @@ export default function ChapterEditor({
                     <EyeOff size={14} />
                   </button>
                 </div>
-                <RichPreview text={c} highlight={highlight} />
+                <RichPreview text={applyDict(c, dict ?? {})} highlight={highlight} />
               </div>
             )}
             <div className="flex flex-wrap items-center justify-between gap-2">

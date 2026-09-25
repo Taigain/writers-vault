@@ -3,6 +3,7 @@ import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, Line
 import { prisma, schemaReady } from '@/lib/prisma'
 import { parseRichText } from '@/lib/richtext'
 import { getBookBlocks } from '@/lib/actions'
+import { buildDictMap, parseForms } from '@/lib/dict'
 
 const ALIGN_MAP = {
   left: AlignmentType.LEFT,
@@ -94,6 +95,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ bookId:
       pushChapter(b.ch, HeadingLevel.HEADING_1)
     }
   }
+
+  const dictRows = await prisma.dictEntry.findMany({ where: { bookId }, select: { key: true, word: true, forms: true } })
+  const dictMap = buildDictMap(dictRows.map((r) => ({ key: r.key, word: r.word, forms: parseForms(r.forms) })))
 
   const doc = new Document({
     creator: 'Taiga Develop',
