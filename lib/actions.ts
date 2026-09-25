@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { getLang } from './lang-server'
 import { ROLES } from './roles'
 import { importDocx } from './importDocx'
-import {parseForms} from './dict'
+import { parseForms } from './dict'
 
 const validRole = (role: string): string =>
   ROLES.some((r) => r.key === role) ? role : 'secondary'
@@ -987,9 +987,11 @@ export async function createBeat(lineId: string, fd: FormData) {
   await schemaReady
   const title = ((fd.get('title') as string) ?? '').trim()
   const line = await prisma.storyline.findUnique({ where: { id: lineId }, select: { bookId: true } })
-  if (!line) return
+  if (!line || !line.bookId) return
   const count = await prisma.beatLine.count({ where: { lineId } })
-  const beat = await prisma.plotBeat.create({ data: { bookId: line.bookId, title } })
+  const beat = await prisma.plotBeat.create({
+    data: { bookId: line.bookId, lineId, title },
+  })
   await prisma.beatLine.create({ data: { lineId, beatId: beat.id, order: count + 1 } })
   revalidatePath(`/book/${line.bookId}`)
 }
@@ -1172,8 +1174,7 @@ export async function saveDictEntry(id: string, fd: FormData) {
   let formsJson = '[]'
   const fr = fd.get('forms')
   if (typeof fr === 'string') {
-    const arr = parseForms(fr)
-    formsJson = JSON.stringify(arr)
+    formsJson = JSON.stringify(parseForms(fr))
   }
   await prisma.dictEntry.update({ where: { id }, data: { word, meaning, key, forms: formsJson } })
   revalidatePath(`/book/${e.bookId}`)
