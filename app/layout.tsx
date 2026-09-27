@@ -3,6 +3,8 @@ import { Suspense } from 'react'
 import SidebarNav, { type SidebarBook } from '@/components/SidebarNav'
 import { getBooksWithSeries } from '@/lib/actions'
 import './globals.css'
+import WhatsNewModal from '@/components/WhatsNewModal'
+import { APP_VERSION } from '@/lib/appinfo'
 
 export const metadata: Metadata = { title: "Writer's Vault" }
 
@@ -31,6 +33,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           </aside>
           <main className="flex-1 overflow-auto">{children}</main>
         </div>
+        <WhatsNewModal current={APP_VERSION} />
       </body>
     </html>
   )

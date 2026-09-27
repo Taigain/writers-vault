@@ -70,7 +70,7 @@ export default function ChapterEditor({
   focusPos?: number
   dict?: DictMap
 }) {
-  const { t } = useLang()
+  const { t, lang } = useLang()
   const [newActOpen, setNewActOpen] = useState(false)
   const inBlock = actName === null
   const upDisabled = inBlock ? (blockIndex ?? 0) <= 0 : (actIndex ?? 0) <= 0
@@ -760,6 +760,8 @@ export default function ChapterEditor({
                   value={c}
                   onChange={(e) => setC(e.target.value)}
                   onSelect={updateSel}
+                  spellCheck={true}
+                  lang={lang === 'ru' ? 'ru' : 'en'}
                   onKeyDown={(e) => {
                     if (e.key === 'F3') {
                       e.preventDefault()

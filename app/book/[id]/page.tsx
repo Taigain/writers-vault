@@ -86,16 +86,6 @@ export default async function BookPage({
     if (c.actName && !actNames.includes(c.actName)) actNames.push(c.actName)
   }
   const blocks = await getBookBlocks(id)
-  const readChapters: ReadChapter[] = []
-  for (const b of blocks) {
-    if (b.kind === 'act') {
-      for (const ch of b.chs) {
-        readChapters.push({ id: ch.id, title: ch.title, content: ch.content, act: b.name })
-      }
-    } else {
-      readChapters.push({ id: b.ch.id, title: b.ch.title, content: b.ch.content, act: null })
-    }
-  }
 
   const importChaptersAction = async (fd: FormData) => {
     'use server'
@@ -105,10 +95,7 @@ export default async function BookPage({
   /* ---------- ГЛАВЫ ---------- */
   const chaptersSection = (
     <div className="space-y-6">
-      <ChapterSearch
-        bookId={id}
-        chapters={chapters.map((c, i) => ({ id: c.id, title: c.title, content: c.content, index: i }))}
-      />
+      <ChapterSearch bookId={id} />
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap gap-2">
           <span className="chip">
@@ -119,7 +106,7 @@ export default async function BookPage({
           </span>
         </div>
         <div className="flex flex-wrap gap-2">
-          <ReadMode bookTitle={book.title} chapters={readChapters} dict={dictMap} />
+          <ReadMode bookId={id} bookTitle={book.title} dict={dictMap} />
           <ExportButton bookId={id} baseName={book.title} />
           <ImportDocxButton label={tr(lang, 'chImportDocx')} onFile={importChaptersAction} />
           <form
@@ -272,7 +259,7 @@ export default async function BookPage({
             <div className="acc-body">
               {loc.imageBase64 && (
                 <div className="loc-img mt-4 mb-3">
-                  <ZoomImage src={loc.imageBase64} />
+                  <ZoomImage src={loc.imageBase64} name={loc.name} />
                 </div>
               )}
               <form

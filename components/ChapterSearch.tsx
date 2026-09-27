@@ -1,120 +1,91 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { Search } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { Search, X } from 'lucide-react'
 import { useLang } from '@/lib/useLang'
+import { getChapterIndex } from '@/lib/actions'
 
-type ChapterLite = { id: string; title: string; content: string; index: number }
+type Item = { id: string; title: string; content: string; index: number }
+type Hit = { item: Item; pos: number; snippet: string }
 
-function escapeReg(s: string) {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-}
-
-function Highlight({ text, query }: { text: string; query: string }) {
-  const parts = text.split(new RegExp(`(${escapeReg(query)})`, 'gi'))
-  return (
-    <>
-      {parts.map((p, i) =>
-        p.toLowerCase() === query.toLowerCase() ? <mark key={i}>{p}</mark> : <span key={i}>{p}</span>,
-      )}
-    </>
-  )
-}
-
-export default function ChapterSearch({
-  bookId,
-  chapters,
-}: {
-  bookId: string
-  chapters: ChapterLite[]
-}) {
+export default function ChapterSearch({ bookId }: { bookId: string }) {
   const { t } = useLang()
   const router = useRouter()
   const [q, setQ] = useState('')
-  const query = q.trim()
+  const [items, setItems] = useState<Item[] | null>(null)
+  const [loading, setLoading] = useState(false)
 
-  const results = useMemo(() => {
-    if (query.length < 2) return [] as { ch: ChapterLite; count: number; snippets: string[]; firstPos: number }[]
-    const lower = query.toLowerCase()
-    const out: { ch: ChapterLite; count: number; snippets: string[]; firstPos: number }[] = []
-    for (const ch of chapters) {
-      const re = new RegExp(escapeReg(query), 'gi')
-      let count = 0
-      let firstPos = -1
-      const snippets: string[] = []
-      let m: RegExpExecArray | null
-      while ((m = re.exec(ch.content)) !== null) {
-        if (firstPos < 0) firstPos = m.index
-        count++
-        if (snippets.length < 3) {
-          const start = Math.max(0, m.index - 60)
-          const end = Math.min(ch.content.length, m.index + query.length + 60)
-          snippets.push(
-            (start > 0 ? '…' : '') +
-              ch.content.slice(start, end).replace(/\s+/g, ' ') +
-              (end < ch.content.length ? '…' : ''),
-          )
-        }
-        if (count > 99) break
+  const ensure = async () => {
+    if (items || loading) return
+    setLoading(true)
+    try {
+      setItems(await getChapterIndex(bookId))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const hits = useMemo<Hit[]>(() => {
+    const query = q.trim().toLowerCase()
+    if (!items || query.length < 2) return []
+    const out: Hit[] = []
+    for (const it of items) {
+      const low = it.content.toLowerCase()
+      let i = low.indexOf(query)
+      while (i !== -1 && out.length < 100) {
+        const start = Math.max(0, i - 40)
+        out.push({ item: it, pos: i, snippet: it.content.slice(start, i + 80) })
+        i = low.indexOf(query, i + query.length)
       }
-      const titleHit = ch.title.toLowerCase().includes(lower)
-      if (count > 0 || titleHit) out.push({ ch, count, snippets, firstPos })
+      if (it.title.toLowerCase().includes(query) && out.length < 100) {
+        out.push({ item: it, pos: 0, snippet: it.content.slice(0, 80) })
+      }
     }
     return out
-  }, [query, chapters])
-
-  const total = results.reduce((s, r) => s + r.count, 0)
+  }, [q, items])
 
   return (
-    <div className="ch-search">
-      <div className="ch-search-bar">
-        <Search size={15} className="shrink-0" style={{ color: 'var(--soft)' }} />
+    <div className="relative mb-4">
+      <div className="flex items-center gap-2 input">
+        <Search size={14} style={{ color: 'var(--soft)' }} />
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder={t('chSearchPh')}
-          className="flex-1 bg-transparent outline-none text-sm"
+          onFocus={() => void ensure()}
+          placeholder={t('csPh')}
+          className="flex-1 bg-transparent outline-none border-none text-sm"
         />
-        {q !== '' && (
-          <button type="button" className="mini-btn" onClick={() => setQ('')}>
-            <X size={14} />
-          </button>
-        )}
-        {query.length >= 2 && (
-          <span className="chip">{t('chSearchFound', { n: total, c: results.length })}</span>
-        )}
+        {loading && <span className="text-xs" style={{ color: 'var(--soft)' }}>…</span>}
       </div>
-
-      {query.length >= 2 && (
-        <div className="ch-search-results">
-          {results.length === 0 ? (
-            <div className="text-xs p-3" style={{ color: 'var(--soft)' }}>{t('chSearchEmpty')}</div>
-          ) : (
-            results.map((r) => (
-              <button
-                key={r.ch.id}
-                type="button"
-                className="ch-search-item"
-                onClick={() =>
-                  router.push(
-                    `/book/${bookId}?tab=chapters&ch=${r.ch.id}&q=${encodeURIComponent(query)}&pos=${r.firstPos}`,
-                  )
-                }
-              >
-                <div className="flex items-center gap-2">
-                  <span className="nav-ch-num">{r.ch.index + 1}</span>
-                  <span className="font-semibold text-sm truncate">{r.ch.title}</span>
-                  <span className="chip ml-auto">{r.count}</span>
-                </div>
-                {r.snippets.map((s, i) => (
-                  <div key={i} className="ch-search-snippet">
-                    <Highlight text={s} query={query} />
-                  </div>
-                ))}
-              </button>
-            ))
+      {q.trim().length >= 2 && items && (
+        <div className="card mt-1 max-h-72 overflow-y-auto" style={{ position: 'absolute', zIndex: 30, width: '100%' }}>
+          {hits.length === 0 && (
+            <div className="p-3 text-sm" style={{ color: 'var(--soft)' }}>
+              {t('csEmpty')}
+            </div>
           )}
+          {hits.map((h, i) => (
+            <button
+              key={i}
+              type="button"
+              className="w-full text-left p-2 hover:bg-[var(--soft-bg)] border-b"
+              style={{ borderColor: 'var(--line)' }}
+              onClick={() => {
+                setQ('')
+                router.push(
+                  `/book/${bookId}?tab=chapters&ch=${h.item.id}&q=${encodeURIComponent(q.trim())}&pos=${h.pos}`,
+                )
+              }}
+            >
+              <div className="text-xs font-bold">
+                {h.item.index + 1}. {h.item.title}
+              </div>
+              <div className="text-xs" style={{ color: 'var(--soft)' }}>
+                …{h.snippet}…
+              </div>
+            </button>
+          ))}
         </div>
       )}
     </div>

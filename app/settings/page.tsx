@@ -9,6 +9,7 @@ import { APP_NAME, APP_VERSION, APP_AUTHOR, APP_YEAR, DONATE_LINKS } from '@/lib
 import AutosaveSetting from '@/components/AutosaveSetting'
 import CheckUpdatesButton from '@/components/CheckUpdatesButton'
 import ContactForm from '@/components/ContactForm'
+import ChangelogButton from '@/components/ChangelogButton'
 
 const UI_FONTS: { key: string; labelKey: StrKey; stack: string }[] = [
   { key: 'system', labelKey: 'fontSystem', stack: '"Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif' },
@@ -179,6 +180,7 @@ export default function SettingsPage() {
         </h2>
         <div className="space-y-1 text-sm" style={{ color: 'var(--soft)' }}>
           <CheckUpdatesButton />
+          <ChangelogButton />
           <div>{APP_NAME} · {t('aboutVersion')} {APP_VERSION}</div>
           <div>{t('aboutAuthor')}: {APP_AUTHOR}</div>
           <div className="mt-4 pt-3 border-t" style={{ borderColor: 'var(--line)' }}>

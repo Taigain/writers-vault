@@ -6,6 +6,7 @@ import { saveBook, removeBookCover, setBookStatus } from '@/lib/actions'
 import { useLang } from '@/lib/useLang'
 import SeriesPicker from './SeriesPicker'
 import ExportMetaToggle from './ExportMetaToggle'
+import DownloadImage from './DownloadImage'
 
 const ANN_LIMIT = 800
 const SYN_LIMIT = 5000
@@ -125,35 +126,36 @@ export default function BookPassport({
       </div>
 
       <div className="flex flex-wrap items-center gap-2 justify-end">
-        <div className="mr-auto">
+         <div className="mr-auto">
           <ExportMetaToggle bookId={id} initial={exportMeta} />
-        </div>
+         </div>
         <label className="btn btn-ghost btn-sm cursor-pointer">
-          <ImageIcon size={13} /> {preview ? t('bpCoverReplace') : t('bpCoverUpload')}
+           <ImageIcon size={13} /> {preview ? t('bpCoverReplace') : t('bpCoverUpload')}
           <input
-            ref={fileRef}
-            type="file"
+             ref={fileRef}
+             type="file"
             name="cover"
             accept="image/*"
             className="hidden"
             onChange={(e) => onCoverChange(e.target.files?.[0] ?? null)}
           />
         </label>
-        {preview && (
-          <button
-            type="button"
-            className="btn btn-ghost btn-sm"
-            onClick={async () => {
+         {preview && <DownloadImage src={preview} name={title} />}
+         {preview && (
+           <button
+             type="button"
+             className="btn btn-ghost btn-sm"
+             onClick={async () => {
               setPreview(null)
               if (fileRef.current) fileRef.current.value = ''
-              await removeBookCover(id)
-            }}
-          >
-            <Trash2 size={13} /> {t('bpCoverRemove')}
-          </button>
+               await removeBookCover(id)
+             }}
+           >
+             <Trash2 size={13} /> {t('bpCoverRemove')}
+           </button>
         )}
         <button type="submit" className="btn btn-primary btn-sm">
-          <Save size={13} /> {t('bpSave')}
+           <Save size={13} /> {t('bpSave')}
         </button>
       </div>
     </form>

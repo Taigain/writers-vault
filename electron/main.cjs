@@ -277,6 +277,89 @@ function createWindow() {
   })
 }
 
+const fs = require('fs')
+const path = require('path')
+
+function customDictPath() {
+  return path.join(app.getPath('userData'), 'spell-custom.json')
+}
+function loadCustomWords() {
+  try {
+    const arr = JSON.parse(fs.readFileSync(customDictPath(), 'utf8'))
+    return Array.isArray(arr) ? arr : []
+  } catch {
+    return []
+  }
+}
+function saveCustomWords(words) {
+  try {
+    fs.writeFileSync(customDictPath(), JSON.stringify(words))
+  } catch {
+    /* ignore */
+  }
+}
+
+function setupSpellcheck(win) {
+  const ses = win.webContents.session
+  try {
+    const avail = ses.availableSpellCheckerLanguages || []
+    const wanted = ['ru', 'en'].filter((l) => avail.includes(l))
+    if (wanted.length > 0) ses.setSpellCheckerLanguages(wanted)
+  } catch {
+    /* ignore */
+  }
+  for (const w of loadCustomWords()) {
+    try {
+      ses.addWordToSpellCheckerDictionary(w)
+    } catch {
+      /* ignore */
+    }
+  }
+  win.webContents.on('context-menu', (event, params) => {
+    const { Menu, MenuItem } = require('electron')
+    const menu = new Menu()
+    if (params.misspelledWord) {
+      const sugg = params.dictionarySuggestions || []
+      if (sugg.length === 0) {
+        menu.append(new MenuItem({ label: 'Нет вариантов / No suggestions', enabled: false }))
+      } else {
+        for (const s of sugg.slice(0, 6)) {
+          menu.append(new MenuItem({ label: s, click: () => win.webContents.replaceMisspelling(s) }))
+        }
+      }
+      menu.append(new MenuItem({ type: 'separator' }))
+      menu.append(
+        new MenuItem({
+          label: 'Добавить в словарь / Add to dictionary',
+          click: () => {
+            try {
+              win.webContents.session.addWordToSpellCheckerDictionary(params.misspelledWord)
+              const words = loadCustomWords()
+              if (!words.includes(params.misspelledWord)) {
+                words.push(params.misspelledWord)
+                saveCustomWords(words)
+              }
+            } catch {
+              /* ignore */
+            }
+          },
+        }),
+      )
+      menu.append(new MenuItem({ type: 'separator' }))
+    }
+    if (params.isEditable) {
+      menu.append(new MenuItem({ role: 'undo' }))
+      menu.append(new MenuItem({ role: 'redo' }))
+      menu.append(new MenuItem({ type: 'separator' }))
+      menu.append(new MenuItem({ role: 'cut' }))
+      menu.append(new MenuItem({ role: 'copy' }))
+      menu.append(new MenuItem({ role: 'paste' }))
+      menu.append(new MenuItem({ role: 'selectAll' }))
+    }
+    if (menu.items.length > 0) menu.popup()
+  })
+}
+
 app.whenReady().then(async () => {
   logStream = fs.createWriteStream(logFile(), { flags: 'w' })
   log('app ready, version ' + app.getVersion())

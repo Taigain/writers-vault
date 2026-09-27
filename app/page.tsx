@@ -26,6 +26,7 @@ import ImportDocxButton from '@/components/ImportDocxButton'
 import CollapsibleSection from '@/components/CollapsibleSection'
 import { getLang } from '@/lib/lang-server'
 import { tr } from '@/lib/i18n'
+import CoverOptimizer from '@/components/CoverOptimizer'
 
 type BookRow = Awaited<ReturnType<typeof getBooksWithSeries>>[number]
 type Status = 'idea' | 'active' | 'archive'
@@ -34,6 +35,7 @@ function BookCard({ b, lang }: { b: BookRow; lang: 'ru' | 'en' }) {
   return (
     <Link href={`/book/${b.id}`} className="group anim-fade">
       <div className="card overflow-hidden transition-transform duration-200 group-hover:-translate-y-1">
+        <CoverOptimizer />
         <div className="w-full overflow-hidden" style={{ aspectRatio: '3 / 4' }}>
           {b.coverBase64 ? (
             <img src={b.coverBase64} alt="" className="w-full h-full object-cover" />

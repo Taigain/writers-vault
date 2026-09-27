@@ -1187,3 +1187,56 @@ export async function deleteDictEntry(id: string) {
   await prisma.dictEntry.delete({ where: { id } })
   revalidatePath(`/book/${e.bookId}`)
 }
+
+// --- LAZY READ / SEARCH ---
+export async function getBookReadData(bookId: string) {
+  await schemaReady
+  const blocks = await getBookBlocks(bookId)
+  const out: { id: string; title: string; content: string; act: string | null }[] = []
+  for (const b of blocks) {
+    if (b.kind === 'act') {
+      for (const ch of b.chs) out.push({ id: ch.id, title: ch.title, content: ch.content, act: b.name })
+    } else {
+      out.push({ id: b.ch.id, title: b.ch.title, content: b.ch.content, act: null })
+    }
+  }
+  return out
+}
+
+export async function getChapterIndex(bookId: string) {
+  await schemaReady
+  const rows = await prisma.chapter.findMany({
+    where: { bookId },
+    orderBy: { order: 'asc' },
+    select: { id: true, title: true, content: true },
+  })
+  return rows.map((r, i) => ({ id: r.id, title: r.title, content: r.content, index: i }))
+}
+
+export async function normalizeCovers() {
+  await schemaReady
+  const rows = await prisma.book.findMany({
+    where: { NOT: { coverBase64: null } },
+    select: { id: true, coverBase64: true },
+  })
+  const Jimp = (await import('jimp')).default
+  for (const r of rows) {
+    if (!r.coverBase64 || !r.coverBase64.startsWith('data:image')) continue
+    try {
+      const img = await Jimp.read(r.coverBase64)
+      if (img.bitmap.width > 1000 || img.bitmap.height > 1000) {
+        if (img.bitmap.width >= img.bitmap.height) img.resize(1000, Jimp.AUTO)
+        else img.resize(Jimp.AUTO, 1000)
+      }
+      img.quality(82)
+      const buf = await img.getBufferAsync(Jimp.MIME_JPEG)
+      await prisma.book.update({
+        where: { id: r.id },
+        data: { coverBase64: 'data:image/jpeg;base64,' + buf.toString('base64') },
+      })
+    } catch {
+      /* пропускаем проблемную обложку */
+    }
+  }
+  revalidatePath('/')
+}
