@@ -277,9 +277,6 @@ function createWindow() {
   })
 }
 
-const fs = require('fs')
-const path = require('path')
-
 function customDictPath() {
   return path.join(app.getPath('userData'), 'spell-custom.json')
 }

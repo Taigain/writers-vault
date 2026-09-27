@@ -7,6 +7,16 @@ export type ChangeEntry = {
 
 export const CHANGELOG: ChangeEntry[] = [
   {
+    version: '1.3.5',
+    date: '27.09.2026',
+    ru: [
+      'Технический перевыпуск отозванной 1.3.4: исправлен крах запуска приложения (дубликат объявления модуля в главном процессе); данные книг не затрагивались',
+    ],
+    en: [
+      'Technical re-release of the withdrawn 1.3.4: fixed app launch crash (duplicate module declaration in the main process); book data was never affected',
+    ],
+  },
+    {
     version: '1.3.4',
     date: '27.09.2026',
     ru: [
