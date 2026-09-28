@@ -11,14 +11,13 @@ import DeleteButton from '@/components/DeleteButton'
 import ExportButton from '@/components/ExportButton'
 import ChapterSearch from '@/components/ChapterSearch'
 import ActBar from '@/components/ActBar'
-import ReadMode, { type ReadChapter } from '@/components/ReadMode'
 import ZoomImage from '@/components/ZoomImage'
 import ImageAttach from '@/components/ImageAttach'
 import NotesSection from '@/components/NotesSection'
 import StorylineSection from '@/components/StorylineSection'
 import DictSection from '@/components/DictSection'
 import ImportDocxButton from '@/components/ImportDocxButton'
-import { readImageField } from '@/lib/actions'
+import ReadMode from '@/components/ReadMode'
 import { ROLES } from '@/lib/roles'
 import { getLang } from '@/lib/lang-server'
 import { tr } from '@/lib/i18n'
@@ -45,6 +44,7 @@ import {
   getBookBeats,
   getDict,
   importChaptersFromDocx,
+  readImageField,
 } from '@/lib/actions'
 
 const words = (t: string) => (t.trim() ? t.trim().split(/\s+/).length : 0)

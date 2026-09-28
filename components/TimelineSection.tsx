@@ -12,6 +12,7 @@ import {
 import type { TimelineRow } from '@/lib/actions'
 import TimelineVisual from './TimelineVisual'
 import { useLang } from '@/lib/useLang'
+import { useRouter } from 'next/navigation'
 
 type TypeKey = 'calendar' | 'book'
 
@@ -202,12 +203,15 @@ function EventCard({
   event,
   chapters,
   characters,
+  bookId,
 }: {
   event: TimelineRow
   chapters: { id: string; title: string }[]
   characters: { id: string; name: string }[]
+  bookId: string
 }) {
   const { t } = useLang()
+  const router = useRouter()
   const [type, setType] = useState<TypeKey>(event.dateType)
   return (
     <div className="tl-item">
@@ -276,14 +280,32 @@ function EventCard({
           </div>
         )}
         <ParticipantChips eventId={event.id} participantIds={event.participantIds} characters={characters} />
-        {event.mentionChapters.length > 0 && (
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-xs font-semibold" style={{ color: 'var(--soft)' }}>{t('tlInChapters')}</span>
-            {event.mentionChapters.map((tl, i) => (
-              <span key={i} className="chip chip-mention">{tl}</span>
-            ))}
-          </div>
-        )}
+                    {event.mentions.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {event.mentions.map((m, i) => (
+            <button
+              key={i}
+              type="button"
+              className="chip chip-mention"
+              title={t('tlJumpHint')}
+              onClick={() =>
+                router.push(
+                  `/book/${bookId}?tab=chapters&ch=${m.chapterId}&q=${encodeURIComponent(
+                    '[#' + ((event.tag ?? '').replace(/^#/, '') || event.description) + ']',
+                  )}&pos=${m.pos ?? 0}`,
+                )
+              }
+            >
+              {m.title}
+            </button>
+          ))}
+        </div>
+      )}
+      {event.orderWarning && (
+        <span className="chip" style={{ borderColor: '#8c3a2b', color: '#8c3a2b' }}>
+          {t('tlOrderWarn')}
+        </span>
+      )}
       </div>
     </div>
   )
@@ -358,7 +380,7 @@ export default function TimelineSection({
         </h3>
         <div className="tl">
           {events.map((e) => (
-            <EventCard key={e.id} event={e} chapters={chapters} characters={characters} />
+             <EventCard key={e.id} event={e} chapters={chapters} characters={characters} bookId={bookId} />
           ))}
         </div>
       </div>

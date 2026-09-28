@@ -94,13 +94,17 @@ export async function getChapters(bookId: string) {
   return prisma.chapter.findMany({ where: { bookId }, orderBy: { order: 'asc' } })
 }
 
-export async function saveChapter(chapterId: string, title: string, content: string) {
+export async function saveChapter(
+  chapterId: string,
+  title: string,
+  content: string,
+): Promise<{ unknownEvents: string[] }> {
   await prisma.chapter.update({ where: { id: chapterId }, data: { title, content } })
   const chapter = await prisma.chapter.findUnique({
     where: { id: chapterId },
     select: { bookId: true },
   })
-  if (!chapter) return
+  if (!chapter) return { unknownEvents: [] }
   const bookId = chapter.bookId
 
   const mentions = content.match(/\[@(.*?)\]/g) || []
@@ -125,22 +129,72 @@ export async function saveChapter(chapterId: string, title: string, content: str
     await prisma.chapterMention.createMany({ data: mentionsToCreate })
   }
 
-  const eventMarks = content.match(/\[#(.*?)\]/g) || []
-  const eventNames = [
-    ...new Set(eventMarks.map((m) => m.replace(/[\[#\]]/g, '').trim().toLowerCase())),
-  ]
+  const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, '_')
+  const eventMarks: { name: string; pos: number }[] = []
+  for (const m of content.matchAll(/\[#(.*?)\]/g)) {
+    const raw = m[1].trim()
+    if (!raw) continue
+    eventMarks.push({ name: norm(raw), pos: m.index ?? 0 })
+  }
   const events = await prisma.timelineEvent.findMany({ where: { bookId } })
-  const matchedEvents = events.filter((e) => {
-    const tag = (e.tag ?? '').replace(/^#/, '').toLowerCase()
-    return (tag !== '' && eventNames.includes(tag)) || eventNames.includes(e.description.toLowerCase())
-  })
   await prisma.eventMention.deleteMany({ where: { chapterId } })
-  if (matchedEvents.length > 0) {
+  const unknown: string[] = []
+  const seen = new Set<string>()
+  const links: { eventId: string; pos: number }[] = []
+  for (const mk of eventMarks) {
+    const ev = events.find((e) => {
+      const tag = (e.tag ?? '').replace(/^#/, '')
+      return norm(tag) === mk.name || norm(e.description) === mk.name
+    })
+    if (!ev) {
+      if (!unknown.includes(mk.name)) unknown.push(mk.name)
+      continue
+    }
+    if (seen.has(ev.id)) continue
+    seen.add(ev.id)
+    links.push({ eventId: ev.id, pos: mk.pos })
+    if (ev.chapterId == null) {
+      await prisma.timelineEvent.update({ where: { id: ev.id }, data: { chapterId } })
+    }
+  }
+  if (links.length > 0) {
     await prisma.eventMention.createMany({
-      data: matchedEvents.map((ev) => ({ chapterId, eventId: ev.id })),
+      data: links.map((l) => ({ chapterId, eventId: l.eventId, pos: l.pos })),
     })
   }
   revalidatePath(`/book/${bookId}`)
+  return { unknownEvents: unknown }
+}
+
+export async function createEventFromMark(
+  bookId: string,
+  mark: string,
+  chapterId: string,
+  pos: number | null,
+) {
+  await schemaReady
+  const norm = mark.trim().toLowerCase().replace(/\s+/g, '_')
+  const display = norm.replace(/_/g, ' ')
+  const ev = await prisma.timelineEvent.create({
+    data: {
+      bookId,
+      dateType: 'book',
+      date: '',
+      bookYear: null,
+      bookDay: null,
+      description: display,
+      summary: '',
+      chapterId,
+      tag: '#' + norm,
+    },
+  })
+  try {
+    await prisma.eventMention.create({ data: { chapterId, eventId: ev.id, pos } })
+  } catch (e) {
+    console.error('[createEventFromMark] mention link skipped:', e)
+  }
+  revalidatePath(`/book/${bookId}`)
+  return ev.id
 }
 
 export async function createChapter(bookId: string, order: number) {
@@ -267,13 +321,18 @@ export type TimelineRow = {
   chapterTitle: string | null
   chapterFirstSentence: string | null
   participantIds: string[]
-  mentionChapters: string[]
+  mentions: { chapterId: string; title: string; pos: number | null }[]
   tag: string | null
+  orderWarning: boolean
 }
 
 function extractFirstSentence(text: string): string | null {
   if (!text) return null
-  const cleaned = text.replace(/\[@(.*?)\]/g, '$1').replace(/\[#(.*?)\]/g, '$1').replace(/\s+/g, ' ').trim()
+  const cleaned = text
+    .replace(/\[@(.*?)\]/g, '$1')
+    .replace(/\[#(.*?)\]/g, (_m, g: string) => g.replace(/_/g, ' '))
+    .replace(/\s+/g, ' ')
+    .trim() 
   const match = cleaned.match(/[^.!?…]+[.!?…]+/)
   if (match) return match[0].trim()
   return cleaned.length > 120 ? cleaned.slice(0, 120) + '…' : cleaned || null
@@ -283,26 +342,42 @@ export async function getTimeline(bookId: string) {
   const rows = await prisma.timelineEvent.findMany({
     where: { bookId },
     include: {
-      chapter: { select: { title: true, content: true } },
+      chapter: { select: { title: true, content: true, order: true } },
       participants: { select: { characterId: true } },
-      mentions: { select: { chapter: { select: { title: true } } } },
+      mentions: { select: { pos: true, chapter: { select: { id: true, title: true, order: true } } } },
     },
   })
-  return rows.map<TimelineRow>((r) => ({
-    id: r.id,
-    dateType: (r.dateType === 'book' ? 'book' : 'calendar') as 'calendar' | 'book',
-    date: r.date,
-    bookYear: r.bookYear,
-    bookDay: r.bookDay,
-    description: r.description,
-    summary: r.summary,
-    chapterId: r.chapterId,
-    chapterTitle: r.chapter?.title ?? null,
-    chapterFirstSentence: r.chapter ? extractFirstSentence(r.chapter.content) : null,
-    participantIds: r.participants.map((p) => p.characterId),
-    mentionChapters: r.mentions.map((m) => m.chapter.title),
-    tag: r.tag,
-  }))
+  const mapped = rows.map((r) => {
+    const orders = r.mentions.map((m) => m.chapter.order)
+    const anchor = r.chapter?.order ?? (orders.length ? Math.min(...orders) : null)
+    return {
+      id: r.id,
+      dateType: (r.dateType === 'book' ? 'book' : 'calendar') as 'calendar' | 'book',
+      date: r.date,
+      bookYear: r.bookYear,
+      bookDay: r.bookDay,
+      description: r.description,
+      summary: r.summary,
+      chapterId: r.chapterId,
+      chapterTitle: r.chapter?.title ?? null,
+      chapterFirstSentence: r.chapter ? extractFirstSentence(r.chapter.content) : null,
+      participantIds: r.participants.map((p) => p.characterId),
+      mentions: r.mentions.map((m) => ({ chapterId: m.chapter.id, title: m.chapter.title, pos: m.pos })),
+      tag: r.tag,
+      orderWarning: false,
+      _time: r.bookYear != null ? r.bookYear * 1000 + (r.bookDay ?? 0) : null,
+      _anchor: anchor,
+    }
+  })
+  const dated = mapped
+    .filter((m) => m._time != null && m._anchor != null)
+    .sort((a, b) => (a._time ?? 0) - (b._time ?? 0))
+  let prev = -1
+  for (const m of dated) {
+    if ((m._anchor ?? 0) < prev) m.orderWarning = true
+    prev = Math.max(prev, m._anchor ?? 0)
+  }
+  return mapped.map<TimelineRow>(({ _time, _anchor, ...rest }) => rest)
 }
 
 export async function saveTimelineEvent(id: string, data: TimelineInput) {

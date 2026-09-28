@@ -52,6 +52,11 @@ async function ensureSchema() {
       await prisma.$executeRawUnsafe(`ALTER TABLE "TimelineEvent" ADD COLUMN "tag" TEXT`)
     }
 
+        const emCols = await prisma.$queryRawUnsafe<Array<{ name: string }>>(`PRAGMA table_info("EventMention")`)
+    if (!emCols.some((c) => c.name === 'pos')) {
+      await prisma.$executeRawUnsafe(`ALTER TABLE "EventMention" ADD COLUMN "pos" INTEGER`)
+    }
+
     await prisma.$executeRawUnsafe(
       `CREATE TABLE IF NOT EXISTS "Storyline" (
         "id" TEXT NOT NULL PRIMARY KEY,

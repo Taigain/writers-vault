@@ -11,7 +11,14 @@ const ALIGN_MAP = {
   right: AlignmentType.RIGHT,
 } as const
 
-const cleanPlain = (t: string) => t.replace(/\[@(.*?)\]/g, '$1').replace(/\[#(.*?)\]/g, '$1')
+const BODY_SPACING = { after: 160, line: 259, lineRule: LineRuleType.AUTO } as const
+
+const prepMarkers = (s: string) =>
+  s.replace(/\[#(.*?)\]/g, (_m, g: string) => '[#' + g.replace(/_/g, ' ') + ']')
+const cleanPlain = (t: string) =>
+  t
+    .replace(/\[@(.*?)\]/g, '$1')
+    .replace(/\[#(.*?)\]/g, (_m, g: string) => g.replace(/_/g, ' '))
 
 export async function GET(_req: Request, { params }: { params: Promise<{ bookId: string }> }) {
   const { bookId } = await params
@@ -34,6 +41,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ bookId:
         text: cleanPlain(book.title),
         heading: HeadingLevel.TITLE,
         alignment: AlignmentType.CENTER,
+        spacing: BODY_SPACING,
       }),
     )
     if (book.annotation.trim()) {
@@ -41,6 +49,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ bookId:
         new Paragraph({
           text: cleanPlain(book.annotation),
           alignment: AlignmentType.CENTER,
+          spacing: BODY_SPACING,
         }),
       )
     }
@@ -54,31 +63,31 @@ export async function GET(_req: Request, { params }: { params: Promise<{ bookId:
       new Paragraph({
         text: cleanPlain(ch.title),
         heading,
+        spacing: BODY_SPACING,
       }),
     )
 
-    for (const block of parseRichText(ch.content)) {
-      const runs: TextRun[] = []
-      block.lines.forEach((line, li) => {
-        line.forEach((r, ri) => {
-          runs.push(
+    for (const block of parseRichText(prepMarkers(ch.content))) {
+      for (const line of block.lines) {
+        if (line.every((r) => !r.text.trim())) continue
+        const runs: TextRun[] = line.map(
+          (r) =>
             new TextRun({
               text: r.text,
               bold: r.mention ? false : r.bold,
               italics: r.italic,
               size: r.size ? Math.round(r.size * 1.5) : undefined,
-              break: li > 0 && ri === 0 ? 1 : 0,
             }),
-          )
-        })
-      })
-      if (runs.length === 0) runs.push(new TextRun({ text: '' }))
-      children.push(
-        new Paragraph({
-          alignment: ALIGN_MAP[block.align],
-          children: runs,
-        }),
-      )
+        )
+        if (runs.length === 0) runs.push(new TextRun({ text: '' }))
+        children.push(
+          new Paragraph({
+            alignment: ALIGN_MAP[block.align],
+            children: runs,
+            spacing: BODY_SPACING,
+          }),
+        )
+      }
     }
   }
 
@@ -88,6 +97,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ bookId:
         new Paragraph({
           text: cleanPlain(b.name),
           heading: HeadingLevel.HEADING_1,
+          spacing: BODY_SPACING,
         }),
       )
       for (const ch of b.chs) pushChapter(ch, HeadingLevel.HEADING_2)

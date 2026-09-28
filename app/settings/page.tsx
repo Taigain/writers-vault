@@ -10,6 +10,8 @@ import AutosaveSetting from '@/components/AutosaveSetting'
 import CheckUpdatesButton from '@/components/CheckUpdatesButton'
 import ContactForm from '@/components/ContactForm'
 import ChangelogButton from '@/components/ChangelogButton'
+import QuoteStyleSetting from '@/components/QuoteStyleSetting'
+import PaletteSetting from '@/components/PaletteSetting'
 
 const UI_FONTS: { key: string; labelKey: StrKey; stack: string }[] = [
   { key: 'system', labelKey: 'fontSystem', stack: '"Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif' },
@@ -172,6 +174,8 @@ export default function SettingsPage() {
       <section className="card p-5">
         <div className="text-sm font-bold mb-2">{t('setEditor')}</div>
         <AutosaveSetting />
+        <QuoteStyleSetting />
+        <PaletteSetting />
       </section>
       
       <section className="card p-5 mt-6">

@@ -89,6 +89,7 @@ model EventMention {
   eventId   String
   chapter   Chapter       @relation(fields: [chapterId], references: [id], onDelete: Cascade)
   event     TimelineEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  pos       Int?
 
   @@unique([chapterId, eventId])
 }

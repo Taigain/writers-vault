@@ -6,6 +6,24 @@ export type ChangeEntry = {
 }
 
 export const CHANGELOG: ChangeEntry[] = [
+    {
+    version: '1.4.0',
+    date: '28.09.2026',
+    ru: [
+      'Облако связей стало кластерным: острова-сообщества с пунктирными контурами и подписями, изоляция кластера кликом, легенда кластеров; палитры в настройках (тёплая, дальтоник-безопасная, моно-контрастная) перекрашивают облако и карту сюжета одинаково',
+      'События стали якорями: метка [#…] ставится по выделению с авто-подчёркиваниями, неизвестное событие создаётся из редактора в один клик с пустыми датами и авто-главой, чипы глав в таймлайне открывают текст ровно на месте метки, приложение подсвечивает конфликты книжных дат и порядка глав',
+      'Пунктуационный линтер в редакторе: список проблем с переходом и точечными или массовыми автоправками; стили кавычек (ёлочки, лапки, английские) в настройках и кнопка нормализации пар кавычек',
+      'Экспорт DOCX по методике Word: каждый абзац автора — абзац документа с интервалом после 8 пт; подчёркивания меток событий в текст не попадают',
+      'Режим чтения открывается полноэкранным, с закреплённой шапкой и загрузкой глав по требованию',
+    ],
+    en: [
+      'The relationship cloud is now clustered: community islands with dashed hulls and labels, click-to-isolate, cluster legend; settings palettes (warm, color-blind safe, mono contrast) recolor the cloud and the story map consistently',
+      'Events became anchors: the [#…] marker wraps a selection with auto-underscores, an unknown event is created from the editor in one click with empty dates and an auto-chapter, timeline chapter chips open the text exactly at the mark, and the app flags conflicts between book dates and chapter order',
+      'Punctuation linter in the editor: an issue list with jump and single or bulk auto-fixes; quote styles (guillemets, laps, English) in settings with a pair-normalization button',
+      'DOCX export follows the Word methodology: every author paragraph is a document paragraph with 8 pt after; underscores from event markers never reach the text',
+      'Reading mode opens fullscreen with a pinned header and on-demand chapter loading',
+    ],
+  },
   {
     version: '1.3.5',
     date: '27.09.2026',

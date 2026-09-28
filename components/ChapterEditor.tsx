@@ -22,9 +22,15 @@ import {
   Expand,
   Minimize,
   Languages,
+  SpellCheck,
+  Quote,
+  X,
 } from 'lucide-react'
 import RichPreview from './RichPreview'
 import { useLang } from '@/lib/useLang'
+import { checkPunctuation, type PunctIssue } from '@/lib/punct'
+import { getQuoteStyle, normalizeQuotes } from '@/lib/quotes'
+import type { StrKey } from '@/lib/i18n'
 import {
   saveChapter,
   deleteChapter,
@@ -32,6 +38,7 @@ import {
   moveBlock,
   setChapterAct,
   checkChapterExists,
+  createEventFromMark,
 } from '@/lib/actions'
 import { registerEditor, setEditorDirty, unregisterEditor } from '@/lib/autosave'
 import { applyDict, type DictMap } from '@/lib/dict'
@@ -119,7 +126,8 @@ export default function ChapterEditor({
         unregisterEditor(id)
         return
       }
-      await saveChapter(id, chTitle, c)
+      const res = await saveChapter(id, chTitle, c)
+      setUnknownEvents(res?.unknownEvents ?? [])
       baseRef.current = { title: chTitle, content: c }
       lastAutoRef.current = Date.now()
       setIsDirty(false)
@@ -473,6 +481,49 @@ export default function ChapterEditor({
   const words = wordsOf(chTitle) + wordsOf(c)
   const chars = chTitle.length + c.length
 
+  const [punctOpen, setPunctOpen] = useState(false)
+  const [unknownEvents, setUnknownEvents] = useState<string[]>([])
+  const punctIssues = useMemo(() => (punctOpen ? checkPunctuation(c) : []), [punctOpen, c])
+  const fixIssue = (iss: PunctIssue) => {
+    setC((prev) => prev.slice(0, iss.pos) + iss.fix + prev.slice(iss.pos + iss.len))
+  }
+  const fixAllPunct = () => {
+    setC((prev) => {
+      let out = prev
+      const list = checkPunctuation(out).sort((a, b) => b.pos - a.pos)
+      for (const iss of list) out = out.slice(0, iss.pos) + iss.fix + out.slice(iss.pos + iss.len)
+      return out
+    })
+  }
+  const applyQuotes = () => {
+    const ta = taRef.current
+    const style = getQuoteStyle()
+    const s = ta?.selectionStart ?? 0
+    const e = ta?.selectionEnd ?? 0
+    if (e > s && ta) {
+      const next = c.slice(0, s) + normalizeQuotes(c.slice(s, e), style) + c.slice(e)
+      setC(next)
+      restore(ta, s, e, ta.scrollTop)
+    } else {
+      setC(normalizeQuotes(c, style))
+    }
+  }
+
+  const wrapEvent = () => {
+    const ta = taRef.current
+    if (!ta) return
+    const s = ta.selectionStart ?? 0
+    const e = ta.selectionEnd ?? 0
+    if (e > s) {
+      const sel = c.slice(s, e).trim().replace(/\s+/g, '_')
+      const next = c.slice(0, s) + '[#' + sel + ']' + c.slice(e)
+      setC(next)
+      restore(ta, s + 2, s + 2 + sel.length, ta.scrollTop)
+      return
+    }
+    toggleWrap('[#', ']')
+  }
+
   return (
     <div className="acc" ref={rootRef}>
       <div
@@ -661,11 +712,17 @@ export default function ChapterEditor({
                   <button type="button" title={t('chTbMention')} onClick={() => toggleWrap('[@', ']')}>
                     <AtSign size={15} />
                   </button>
-                  <button type="button" title={t('chTbEvent')} onClick={() => toggleWrap('[#', ']')}>
+                  <button type="button" title={t('chTbEvent')} onClick={wrapEvent}>
                     <Hash size={15} />
                   </button>
                   <button type="button" title={t('chTbDict')} onClick={() => toggleWrap('[~', ']')}>
                     <Languages size={15} />
+                  </button>
+                  <button type="button" title={t('chTbPunct')} onClick={() => setPunctOpen(!punctOpen)}>
+                    <SpellCheck size={15} />
+                  </button>
+                  <button type="button" title={t('chTbQuotes')} onClick={applyQuotes}>
+                    <Quote size={15} />
                   </button>
                   <span className="tb-sep" />
                   <button type="button" title={t('chTbLeft')} onClick={() => setAlign('left')}>
@@ -755,6 +812,68 @@ export default function ChapterEditor({
                     {zen ? <Minimize size={15} /> : <Expand size={15} />}
                   </button>
                 </div>
+        {punctOpen && (
+          <div className="card p-3 mt-2 space-y-2" style={{ background: 'var(--soft-bg)' }}>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-semibold">
+                {t('chPunctTitle')} · {punctIssues.length}
+              </span>
+              <span className="flex gap-1">
+                <button type="button" className="mini-btn" disabled={punctIssues.length === 0} onClick={fixAllPunct}>
+                  {t('chPunctFixAll')}
+                </button>
+                <button type="button" className="mini-btn" onClick={() => setPunctOpen(false)}>
+                  <X size={13} />
+                </button>
+              </span>
+            </div>
+            {punctIssues.length === 0 ? (
+              <div className="text-xs" style={{ color: 'var(--soft)' }}>{t('chPunctClean')}</div>
+            ) : (
+              <div className="space-y-1 max-h-40 overflow-y-auto">
+                {punctIssues.slice(0, 50).map((iss, i) => (
+                  <div key={i} className="flex items-center gap-2 text-xs">
+                    <code className="chip">{iss.bad || '·'}</code>
+                    <span className="flex-1 truncate" style={{ color: 'var(--soft)' }}>
+                      {t(iss.msgKey as StrKey)}
+                    </span>
+                    <button type="button" className="mini-btn" title={t('chPunctJump')} onClick={() => jumpTo(iss.pos, iss.len)}>
+                      →
+                    </button>
+                    <button type="button" className="mini-btn" title={t('chPunctFix')} onClick={() => fixIssue(iss)}>
+                      ✓
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+                {unknownEvents.length > 0 && (
+          <div className="card p-3 mt-2 space-y-2" style={{ background: 'var(--soft-bg)' }}>
+            <div className="text-xs font-semibold">{t('chEvUnknown')}</div>
+            <div className="flex flex-wrap gap-2">
+              {unknownEvents.map((name) => (
+                <span key={name} className="chip">
+                  {name.replace(/_/g, ' ')}
+                  <button
+                    type="button"
+                    className="mini-btn"
+                    title={t('chEvCreate')}
+                    onClick={async () => {
+                      const pos = c.indexOf('[#' + name + ']')
+                      await createEventFromMark(bookId, name, id, pos >= 0 ? pos : null)
+                      setUnknownEvents((cur) => cur.filter((x) => x !== name))
+                    }}
+                  >
+                    <Plus size={12} />
+                  </button>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
                 <textarea
                   ref={taRef}
                   value={c}

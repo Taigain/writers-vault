@@ -3,9 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ZoomIn, ZoomOut, Expand, Minimize, Crosshair } from 'lucide-react'
 import { useLang } from '@/lib/useLang'
+import { PALETTES, getPalette } from '@/lib/palettes'
 import type { StorylineRow } from '@/lib/actions'
 
-const LINE_COLORS = ['#8c3a2b', '#2f6d4f', '#3d6b8c', '#7a3b6e', '#20655d', '#8a5a2b', '#555555', '#33691e']
 const C_CHAR = '#4c3d8f'
 const C_EVENT = '#a9812f'
 
@@ -23,19 +23,17 @@ type GNode = {
   year?: number | null
   day?: number | null
 }
-
 type GEdge = { a: string; b: string; kind: 'chain' | 'link'; color: string; curve: number }
 
-function buildGraph(lines: StorylineRow[]) {
+function buildGraph(lines: StorylineRow[], colors: string[]) {
   const nodes = new Map<string, GNode>()
   const edges: GEdge[] = []
   const charBeats = new Map<string, string[]>()
   const eventBeats = new Map<string, string[]>()
   const charMeta = new Map<string, { name: string; role: string }>()
   const eventMeta = new Map<string, { label: string; year: number | null; day: number | null }>()
-
   lines.forEach((line, li) => {
-    const color = LINE_COLORS[li % LINE_COLORS.length]
+    const color = colors[li % colors.length]
     line.beats.forEach((b, bi) => {
       nodes.set('b:' + b.id, {
         id: 'b:' + b.id,
@@ -67,7 +65,6 @@ function buildGraph(lines: StorylineRow[]) {
       }
     })
   })
-
   const placed: { x: number; y: number }[] = []
   const place = (mx: number, my: number) => {
     let x = mx
@@ -80,7 +77,6 @@ function buildGraph(lines: StorylineRow[]) {
     placed.push({ x, y })
     return { x, y }
   }
-
   charBeats.forEach((beatIds, id) => {
     const xs = beatIds.map((b) => nodes.get(b)!.x)
     const ys = beatIds.map((b) => nodes.get(b)!.y)
@@ -108,7 +104,6 @@ function buildGraph(lines: StorylineRow[]) {
       day: meta.day,
     })
   })
-
   const list = [...nodes.values()]
   for (let pass = 0; pass < 2; pass++) {
     for (let i = 0; i < list.length; i++) {
@@ -143,10 +138,16 @@ export default function StoryGraph({ lines }: { lines: StorylineRow[] }) {
   const [sel, setSel] = useState<string | null>(null)
   const [view, setView] = useState({ s: 1, x: 20, y: 10 })
   const [fs, setFs] = useState(false)
+  const [palKey, setPalKey] = useState<string | null>(null)
   const wrapRef = useRef<HTMLDivElement | null>(null)
   const panRef = useRef<{ sx: number; sy: number; ox: number; oy: number } | null>(null)
 
-  const { nodes, edges } = useMemo(() => buildGraph(lines), [lines])
+  useEffect(() => {
+    setPalKey(getPalette().key)
+  }, [])
+  const colors = (PALETTES.find((p) => p.key === palKey) ?? PALETTES[0]).colors
+
+  const { nodes, edges } = useMemo(() => buildGraph(lines, colors), [lines, colors])
   const shown = lines.filter((l) => l.beats.length > 0)
 
   useEffect(() => {
@@ -154,7 +155,6 @@ export default function StoryGraph({ lines }: { lines: StorylineRow[] }) {
     document.addEventListener('fullscreenchange', onFs)
     return () => document.removeEventListener('fullscreenchange', onFs)
   }, [])
-
   useEffect(() => {
     const el = wrapRef.current
     if (!el) return
@@ -172,7 +172,6 @@ export default function StoryGraph({ lines }: { lines: StorylineRow[] }) {
     el.addEventListener('wheel', onWheel, { passive: false })
     return () => el.removeEventListener('wheel', onWheel)
   }, [])
-
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
       const p = panRef.current
@@ -191,7 +190,6 @@ export default function StoryGraph({ lines }: { lines: StorylineRow[] }) {
   }, [])
 
   if (shown.length === 0) return null
-
   const byId = new Map(nodes.map((n) => [n.id, n]))
   const neighbor = new Set<string>()
   if (sel) {
@@ -203,7 +201,6 @@ export default function StoryGraph({ lines }: { lines: StorylineRow[] }) {
   }
   const dim = (id: string) => (sel && !neighbor.has(id) ? 0.15 : 1)
   const dimEdge = (e: GEdge) => (sel && e.a !== sel && e.b !== sel ? 0.1 : 1)
-
   const zoomBy = (f: number) => {
     const el = wrapRef.current
     if (!el) return
@@ -216,12 +213,10 @@ export default function StoryGraph({ lines }: { lines: StorylineRow[] }) {
       return { s: ns, x: cx - (cx - v.x) * k, y: cy - (cy - v.y) * k }
     })
   }
-
   const toggleFs = () => {
     if (document.fullscreenElement) void document.exitFullscreen().catch(() => {})
     else wrapRef.current?.requestFullscreen?.().catch(() => {})
   }
-
   const tipFor = (n: GNode) => {
     if (n.kind === 'beat') return { title: n.label, body: n.summary ? n.summary.slice(0, 160) : '' }
     if (n.kind === 'char') return { title: n.label, body: n.role ?? '' }
@@ -230,13 +225,12 @@ export default function StoryGraph({ lines }: { lines: StorylineRow[] }) {
       body: n.year != null ? t('slChipBookTime', { y: String(n.year), d: String(n.day ?? '-') }) : '',
     }
   }
-
   return (
     <div className="card p-4 mb-5">
       <div className="flex flex-wrap items-center gap-4 mb-3 text-xs" style={{ color: 'var(--soft)' }}>
         {shown.map((l, li) => (
           <span key={l.id} className="flex items-center gap-1.5">
-            <i style={{ width: 18, height: 3, background: LINE_COLORS[li % LINE_COLORS.length], borderRadius: 2 }} />
+            <i style={{ width: 18, height: 3, background: colors[li % colors.length], borderRadius: 2 }} />
             {l.name}
           </span>
         ))}
@@ -277,32 +271,43 @@ export default function StoryGraph({ lines }: { lines: StorylineRow[] }) {
         >
           <rect width="100%" height="100%" fill="transparent" data-bg="1" />
           <defs>
-            {LINE_COLORS.map((c, i) => (
-              <marker key={i} id={'arr' + i} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            {colors.map((c, i) => (
+              <marker
+                key={i}
+                id={'arr' + i}
+                viewBox="0 0 10 10"
+                refX="9"
+                refY="5"
+                markerWidth="7"
+                markerHeight="7"
+                orient="auto-start-reverse"
+              >
                 <path d="M 0 0 L 10 5 L 0 10 z" fill={c} />
               </marker>
             ))}
           </defs>
           <g transform={`translate(${view.x} ${view.y}) scale(${view.s})`}>
-            {edges.filter((e) => e.kind === 'link').map((e, i) => {
-              const a = byId.get(e.a)!
-              const b = byId.get(e.b)!
-              const mx = (a.x + b.x) / 2
-              const my = (a.y + b.y) / 2 + e.curve
-              return (
-                <path
-                  key={'l' + i}
-                  d={`M ${a.x} ${a.y} Q ${mx} ${my} ${b.x} ${b.y}`}
-                  fill="none"
-                  stroke={e.color}
-                  strokeWidth={1.1}
-                  opacity={0.55 * dimEdge(e)}
-                />
-              )
-            })}
+            {edges
+              .filter((e) => e.kind === 'link')
+              .map((e, i) => {
+                const a = byId.get(e.a)!
+                const b = byId.get(e.b)!
+                const mx = (a.x + b.x) / 2
+                const my = (a.y + b.y) / 2 + e.curve
+                return (
+                  <path
+                    key={'l' + i}
+                    d={`M ${a.x} ${a.y} Q ${mx} ${my} ${b.x} ${b.y}`}
+                    fill="none"
+                    stroke={e.color}
+                    strokeWidth={1.1}
+                    opacity={0.55 * dimEdge(e)}
+                  />
+                )
+              })}
             {shown.map((line, li) => {
-              const color = LINE_COLORS[li % LINE_COLORS.length]
-              const marker = `url(#arr${li % LINE_COLORS.length})`
+              const color = colors[li % colors.length]
+              const marker = `url(#arr${li % colors.length})`
               const chain = edges.filter((e) => e.kind === 'chain' && e.color === color)
               const first = byId.get('b:' + line.beats[0].id)!
               const last = byId.get('b:' + line.beats[line.beats.length - 1].id)!

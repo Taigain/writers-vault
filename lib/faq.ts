@@ -10,7 +10,7 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     },
     {
       q: 'Как связывать персонажей и события?',
-      a: 'В тексте главы пишите [@имя] для персонажей и [#описание] для событий — или выделите текст и нажмите кнопки @ и # на панели редактора, метки вставятся сами. Персонажи дополнительно отзываются на псевдонимы, события — на метки (см. следующие пункты). После сохранения главы связи появятся в карточках, на таймлайне и в облаке связей.',
+      a: 'В тексте главы пишите [@имя] для персонажей и [#описание] для событий — или выделите текст и нажмите кнопки @ и # на панели: метки вставятся сами, а для событий пробелы выделения автоматически станут подчёркиваниями ([#падение_станции]) — в тексте и экспорте они вернутся пробелами. Если помеченного события ещё нет, после сохранения редактор покажет баннер с чипом и плюсом: один клик создаёт событие в таймлайне с пустыми датами и привязкой к этой главе. В таймлайне чипы глав-упоминаний кликабельны и открывают текст ровно на месте метки; если книжная дата события спорит с порядком глав, карточка получит чип «Проверьте порядок». Персонажи дополнительно отзываются на псевдонимы, события — на метки-теги.',
     },
     {
       q: 'Что такое «Тэги и псевдонимы» персонажа?',
@@ -27,6 +27,10 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     {
       q: 'Как убрать форматирование?',
       a: 'Выделите фрагмент и нажмите «Ластик» на панели. Он снимет теги размера, жирный, курсив и метки выравнивания внутри выделения.',
+    },
+        {
+      q: 'Проверка пунктуации и стили кавычек',
+      a: 'Кнопка со значком проверки на панели главы открывает панель пунктуации: лишние пробелы, пробел перед знаком, повторы знаков, три точки вместо многоточия, дефис вместо тире. Стрелка ставит курсор на место, галочка чинит одно вхождение, «Исправить всё» чинит список целиком; правки применяются к тексту главы и уходят в экспорт уже исправленными. Кнопка со значком кавычек приводит пары кавычек в главе (или в выделении) к стилю из настроек: «ёлочки», «лапки» или английские. Линтер консервативен: берёт только уверенные паттерны, спорные случаи оставляет автору.',
     },
     {
       q: 'Как работает проверка орфографии?',
@@ -58,7 +62,7 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     },
     {
       q: 'Как работает экспорт в DOCX?',
-      a: 'Кнопка «Экспорт в DOCX» в разделе «Главы» и на паспорте книги. В документ попадают заголовок книги, аннотация, акты (заголовки 1 уровня) и главы внутри актов (уровень 2), одиночные главы — уровнем 1. Формат по умолчанию — стандарт сдаваемых рукописей: Times New Roman 11 pt, интервал после абзаца 8 pt, межстрочный 1.08. Жирный, курсив и выравнивание сохраняются; явный [size=NN] в тексте перебивает кегль по умолчанию. Служебные символы (@, #, звёздочки) не попадают, метки словаря [~…] заменяются словами книги. Тумблер «Включать название, аннотацию и синопсис в экспорт DOCX» на паспорте книги управляет составом титульного блока: настройка каждой книги, запоминается. Куда сохраняется: в папку из настроек (Chrome/Edge) или в «Загрузки».',
+      a: 'Кнопка «Экспорт в DOCX» в разделе «Главы» и на паспорте книги. Документ собирается по методике Word: каждый абзац автора (всё до нажатия Enter) становится отдельным абзацем документа с интервалом после 8 пт и межстрочным 1.08, пустых строк-прокладок нет; заголовки книги, актов и глав несут свои отступы и уровни оглавления. Формат по умолчанию — Times New Roman 11 pt. Жирный, курсив и выравнивание сохраняются; явный [size=NN] перебивает кегль. Служебные символы меток не попадают: [@имя] даёт имя, [#метка] — текст метки с пробелами вместо подчёркиваний, [~ключ] заменяется словом книги из словаря. Тумблер «Включать название, аннотацию и синопсис в экспорт DOCX» на паспорте управляет титульным блоком по каждой книге. Куда сохраняется: в папку из настроек (Chrome/Edge) или в «Загрузки».',
     },
     {
       q: 'Как импортировать книгу из DOCX?',
@@ -66,7 +70,7 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     },
     {
       q: 'Режим чтения: как прочитать написанное как книгу?',
-      a: 'Кнопка «Читать» в разделе «Главы» открывает полноэкранный книжный экран: главы в порядке книги с актами, навигация списком глав, стрелками на экране и клавишами ←/→, выход по Esc. Текст показывается форматированным и со подстановкой словаря, как в готовой книге — удобно вычитывать рукопись целиком. Главы подгружаются при открытии режима, поэтому страница книги не тяжелеет.',
+      a: 'Кнопка «Читать» в разделе «Главы» открывает полноэкранный книжный экран: шапка с названием, счётчиком «N / M», списком глав и крестиком закреплена сверху, прокручивается только текст. Главы идут в порядке книги с актами, навигация списком, стрелками на экране и клавишами ←/→; Esc или выход из полноэкранного режима закрывает чтение. Текст показывается форматированным и с подстановкой словаря, как в готовой книге. Главы подгружаются при открытии, поэтому страница книги остаётся лёгкой.',
     },
     {
       q: 'Что такое серии и циклы?',
@@ -105,6 +109,10 @@ export const FAQ: Record<Lang, FaqItem[]> = {
       a: '«Сюжет» — главы и что с ними связано. «Персонажи» — персонажи и их появления. «События» — события таймлайна и участники. Колесо мыши — масштаб, перетаскивание мышью — перемещение, кнопки — зум и полный экран.',
     },
     {
+      q: 'Кластеры и палитры в облаке связей',
+      a: 'Облако само находит сообщества плотно связанных сущностей и раскладывает их островами с пунктирным контуром и подписью «Кластер N · K»: видно, из каких кусков состоит история и где они соприкасаются длинными перемычками. Клик по контуру или чипу кластера изолирует его (остальное приглушается), повторный клик или клик по фону возвращает всё. В настройках раздел палитр меняет цветовой язык визуализаций: тёплая по умолчанию, дальтоник-безопасная и моно-контрастная для тёмной темы; выбранные цвета одинаково применяются к кластерам облака и нитям карты сюжета. Цвета узлов по типам (главы, персонажи, события) остаются фиксированными — это легенда типов.',
+    },
+    {
       q: 'Как сменить язык, тему, шрифты?',
       a: 'Флажки RU/EN в боковой панели над пунктом «Помощь» переключают язык мгновенно, без захода в настройки. В разделе «Настройки»: язык интерфейса, тема (светлая/тёмная), шрифт интерфейса и шрифт текста глав, папка экспорта по умолчанию, частота автосохранения. Всё применяется сразу и запоминается.',
     },
@@ -132,7 +140,7 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     },
     {
       q: 'How do character and event links work?',
-      a: 'In chapter text write [@name] for characters and [#description] for events — or select text and press the @ and # buttons on the editor toolbar to insert the markers automatically. Characters also respond to aliases, events to tags (see next items). After saving the chapter, links appear on cards, on the timeline and in the relationship cloud.',
+      a: 'In chapter text write [@name] for characters and [#description] for events — or select text and press the @ and # toolbar buttons: markers insert themselves, and for events the selection spaces automatically become underscores ([#station_fall]) — in the text and export they return as spaces. If the marked event does not exist yet, after saving the editor shows a banner with a chip and a plus: one click creates the event in the timeline with empty dates and a link to this chapter. In the timeline, mention chapter chips are clickable and open the text exactly at the mark; if an event\'s book date conflicts with chapter order, the card gets a "Check the order" chip. Characters also respond to aliases, events to tag marks.',
     },
     {
       q: 'What are character "Tags & aliases"?',
@@ -149,6 +157,10 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     {
       q: 'How do I clear formatting?',
       a: 'Select the fragment and press the Eraser on the toolbar. It removes size tags, bold, italic and alignment markers inside the selection.',
+    },
+    {
+      q: 'Punctuation check and quote styles',
+      a: 'The check-icon button on the chapter toolbar opens the punctuation panel: extra spaces, space before punctuation, repeated signs, three dots instead of an ellipsis, hyphen instead of a dash. The arrow puts the cursor at the place, the tick fixes one occurrence, "Fix all" fixes the whole list; fixes apply to the chapter text and reach the export already corrected. The quote-icon button normalizes quote pairs in the chapter (or in the selection) to the style from settings: guillemets, laps or English. The linter is conservative: it takes only confident patterns and leaves borderline cases to the author.',
     },
     {
       q: 'How does spell checking work?',
@@ -180,7 +192,7 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     },
     {
       q: 'How does DOCX export work?',
-      a: 'The "Export to DOCX" button in the Chapters section and on the book passport. The document receives the book title, annotation, acts (level-1 headings) and their chapters (level 2); standalone chapters are level 1. Default format matches submission standards: Times New Roman 11 pt, 8 pt after paragraphs, 1.08 line spacing. Bold, italic and alignment are preserved; explicit [size=NN] overrides the default size. Service symbols (@, #, asterisks) are excluded and dictionary markers [~…] are replaced with book words. The "Include title, annotation and synopsis in DOCX export" toggle on the book passport controls the title block contents: per-book and persisted. Saved to the folder from settings (Chrome/Edge) or to Downloads.',
+      a: 'The "Export to DOCX" button in the Chapters section and on the book passport. The document follows the Word methodology: every author paragraph (everything up to Enter) becomes its own document paragraph with 8 pt after and 1.08 line spacing, no empty spacer lines; book, act and chapter headings carry their own spacing and outline levels. Default format is Times New Roman 11 pt. Bold, italic and alignment are preserved; explicit [size=NN] overrides the size. Marker service symbols never leak: [@name] yields the name, [#mark] yields the mark text with spaces instead of underscores, [~key] is replaced with the book word from the dictionary. The "Include title, annotation and synopsis in DOCX export" toggle on the passport controls the title block per book. Saved to the folder from settings (Chrome/Edge) or to Downloads.',
     },
     {
       q: 'How do I import a book from DOCX?',
@@ -188,7 +200,7 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     },
     {
       q: 'Reading mode: how do I read my work like a book?',
-      a: 'The "Read" button in the Chapters section opens a fullscreen book view: chapters in book order with acts, navigation via the chapter list, on-screen arrows and ←/→ keys, Esc to close. The text is shown formatted and with dictionary substitution, like a finished book — convenient for proofreading the whole manuscript. Chapters load when the mode opens, so the book page stays light.',
+      a: 'The "Read" button in the Chapters section opens a fullscreen book screen: the header with the title, the "N / M" counter, the chapter list and the cross is pinned on top, only the text scrolls. Chapters follow book order with acts; navigation via the list, on-screen arrows and ←/→ keys; Esc or exiting fullscreen closes reading. The text is shown formatted and with dictionary substitution, like a finished book. Chapters load on open, so the book page stays light.',
     },
     {
       q: 'What are series and cycles?',
@@ -225,6 +237,10 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     {
       q: 'Relationship cloud modes',
       a: '"Plot" — chapters and their links. "Characters" — characters and their appearances. "Events" — timeline events and participants. Mouse wheel — zoom, drag — pan, buttons — zoom and fullscreen.',
+    },
+    {
+      q: 'Clusters and palettes in the relationship cloud',
+      a: 'The cloud detects communities of tightly linked entities on its own and lays them out as islands with a dashed hull and a "Cluster N · K" label: you see which pieces the story consists of and where they touch via long bridges. Clicking a hull or a cluster chip isolates it (the rest dims); clicking again or clicking the background restores everything. In settings, the palette section changes the visual color language: warm by default, color-blind safe, and mono contrast for the dark theme; the chosen colors apply equally to cloud clusters and story-map threads. Node colors by type (chapters, characters, events) stay fixed — that is the type legend.',
     },
     {
       q: 'How do I change language, theme, fonts?',
