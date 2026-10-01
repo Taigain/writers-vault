@@ -5,7 +5,19 @@ export type ChangeEntry = {
   en: string[]
 }
 
-export const CHANGELOG: ChangeEntry[] = [
+export const CHANGELOG: ChangeEntry[] = [  
+  {
+    version: '1.5.1',
+    date: '02.10.2026',
+    ru: [
+      'Технический выпуск вместо отозванной 1.5.0: автообновление переведено на полные пакеты без дельт, кэш рендерера сбрасывается при смене версии — разделы книг после обновления больше не отдают 404',
+      'Окно «Что нового» в десктопной версии хранит просмотренную версию в данных приложения, а не в localStorage, и показывается после обновления стабильно',
+    ],
+    en: [
+      'Technical release replacing the withdrawn 1.5.0: auto-update switched to full packages without deltas, renderer cache resets on version change — book sections no longer 404 after an update',
+      'The "What\'s new" window in the desktop build stores the seen version in app data instead of localStorage and reliably appears after updates',
+    ],
+  },
   {
     version: '1.5.0',
     date: '02.10.2026',

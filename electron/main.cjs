@@ -1,4 +1,4 @@
-const { app, BrowserWindow, shell, dialog, ipcMain } = require('electron')
+const { app, BrowserWindow, shell, dialog, ipcMain, session, Menu, MenuItem } = require('electron')
 const { autoUpdater } = require('electron-updater')
 const { spawn } = require('child_process')
 const path = require('path')
@@ -103,12 +103,12 @@ function waitForServer(port, onOk, onFail, tries) {
   req.setTimeout(1500, () => req.destroy(new Error('poll timeout')))
   req.on('error', () => {
     if (settled) return
-    if (left <= 0) {
+    if (left > 0) {
+      setTimeout(() => waitForServer(port, onOk, onFail, left - 1), 750)
+    } else {
       settled = true
       onFail()
-      return
     }
-    setTimeout(() => waitForServer(port, onOk, onFail, left - 1), 750)
   })
 }
 
@@ -120,11 +120,11 @@ function pageHtml(title, bodyHtml) {
   return (
     'data:text/html;charset=utf-8,' +
     encodeURIComponent(
-      `<!doctype html><html><head><meta charset="utf-8"><title>${esc(title)}</title></head>` +
-      `<body style="font-family:Segoe UI,Arial,sans-serif;background:#f6f3ec;color:#221e1a;display:flex;align-items:center;justify-content:center;height:100vh;margin:0">` +
-      `<div style="max-width:640px;padding:32px;background:#fffdf8;border:1px solid #e6dfd2;border-radius:16px">` +
+      '<!doctype html><html><head><meta charset="utf-8"><title>' +
+      esc(title) +
+      '</title></head><body style="font-family: system-ui, sans-serif; padding: 40px; background: #f6f3ec; color: #201c17;">' +
       bodyHtml +
-      `</div></body></html>`
+      '</body></html>'
     )
   )
 }
@@ -132,8 +132,7 @@ function pageHtml(title, bodyHtml) {
 function loadingPage() {
   return pageHtml(
     "Writer's Vault",
-    `<h2 style="margin:0 0 8px">Writer&#8217;s Vault</h2>
-     <p style="color:#6f665c;margin:0">Запуск локального сервера… Обычно это занимает 1–3 секунды.</p>`
+    '<h2>Writer\u2019s Vault</h2><p>Запуск локального сервера… Обычно это занимает 1–3 секунды.</p>'
   )
 }
 
@@ -148,19 +147,73 @@ function tailOfLog() {
 function showFailure(reason) {
   log('FAILURE: ' + reason)
   const body =
-    `<h2 style="margin:0 0 8px">Не удалось запустить сервер</h2>
-     <p style="color:#6f665c">${esc(reason)}</p>
-     <p style="color:#6f665c;font-size:13px">Файл лога: ${esc(logFile())}</p>
-     <pre style="background:#f1e9db;padding:12px;border-radius:8px;font-size:12px;max-height:260px;overflow:auto">${esc(tailOfLog())}</pre>`
+    '<h2>Не удалось запустить сервер</h2>' +
+    '<pre style="white-space: pre-wrap;">' +
+    esc(reason) +
+    '</pre>' +
+    '<p>Файл лога: ' +
+    esc(logFile()) +
+    '</p>' +
+    '<pre style="white-space: pre-wrap;">' +
+    esc(tailOfLog()) +
+    '</pre>'
   if (mainWindow) {
     mainWindow.loadURL(pageHtml('Ошибка запуска', body))
   }
 }
 
+/* ---------- защита автообновления: сброс кэша при смене версии ---------- */
+function lastVerFile() {
+  return path.join(app.getPath('userData'), 'last-run-version.json')
+}
+
+async function guardVersionCache() {
+  const cur = app.getVersion()
+  let prev = null
+  try {
+    prev = JSON.parse(fs.readFileSync(lastVerFile(), 'utf8')).v
+  } catch (e) {}
+  if (prev && prev !== cur) {
+    log('version changed ' + prev + ' -> ' + cur + ', clearing renderer cache')
+    try {
+      await session.defaultSession.clearCache()
+    } catch (e) {
+      log('clearCache failed: ' + (e && e.message))
+    }
+  }
+  try {
+    fs.writeFileSync(lastVerFile(), JSON.stringify({ v: cur }))
+  } catch (e) {}
+}
+
+/* ---------- окно «Что нового»: просмотренная версия в userData ---------- */
+function seenFile() {
+  return path.join(app.getPath('userData'), 'seen-version.json')
+}
+
+function setupSeenBridge() {
+  ipcMain.handle('wv-seen-get', () => {
+    try {
+      const raw = JSON.parse(fs.readFileSync(seenFile(), 'utf8'))
+      return typeof raw.v === 'string' ? raw.v : null
+    } catch (e) {
+      return null
+    }
+  })
+  ipcMain.handle('wv-seen-set', (_e, v) => {
+    try {
+      fs.writeFileSync(seenFile(), JSON.stringify({ v: String(v) }))
+    } catch (e) {}
+    return true
+  })
+}
+
+/* ---------- автообновление ---------- */
 function setupAutoUpdate() {
   if (!app.isPackaged) return
   autoUpdater.autoDownload = true
   autoUpdater.autoInstallOnAppQuit = true
+  autoUpdater.disableDifferentialDownload = true
   autoUpdater.on('error', (e) => log('updater error: ' + (e && e.message)))
   autoUpdater.on('update-available', (info) => log('update available: ' + info.version))
   autoUpdater.on('update-available', () => sendUpdateStatus('available'))
@@ -205,6 +258,7 @@ function setupUpdateBridge() {
   })
 }
 
+/* ---------- guard закрытия с несохранённым текстом ---------- */
 function setupCloseGuard() {
   if (!mainWindow) return
   mainWindow.on('close', (e) => {
@@ -277,6 +331,7 @@ function createWindow() {
   })
 }
 
+/* ---------- проверка орфографии ---------- */
 function customDictPath() {
   return path.join(app.getPath('userData'), 'spell-custom.json')
 }
@@ -313,7 +368,6 @@ function setupSpellcheck(win) {
     }
   }
   win.webContents.on('context-menu', (event, params) => {
-    const { Menu, MenuItem } = require('electron')
     const menu = new Menu()
     if (params.misspelledWord) {
       const sugg = params.dictionarySuggestions || []
@@ -357,9 +411,11 @@ function setupSpellcheck(win) {
   })
 }
 
+/* ---------- старт ---------- */
 app.whenReady().then(async () => {
   logStream = fs.createWriteStream(logFile(), { flags: 'w' })
   log('app ready, version ' + app.getVersion())
+  await guardVersionCache()
   try {
     PORT = await pickFreePort()
     log('picked free port ' + PORT)
@@ -370,12 +426,14 @@ app.whenReady().then(async () => {
   createWindow()
   setupCloseGuard()
   setupUpdateBridge()
+  setupSeenBridge()
   startServer(PORT)
   waitForServer(
     PORT,
     () => {
       log('loading app url')
       mainWindow.loadURL(`http://${HOST}:${PORT}/`)
+      setupSpellcheck(mainWindow)
       setupAutoUpdate()
     },
     () => showFailure('Сервер не ответил за отведённое время.'),
