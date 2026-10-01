@@ -1,13 +1,14 @@
 'use client'
 
-import { useMemo, useState } from 'react'
-import { Hash, Plus, Save, Trash2, ChevronRight } from 'lucide-react'
-import { deleteLoreEntry, saveLoreEntryFull } from '@/lib/actions'
-import ImageAttach from './ImageAttach'
+import { useMemo, useState, useEffect } from 'react'
+import { ChevronRight, ArrowLeft, X } from 'lucide-react'
 import { useLang } from '@/lib/useLang'
-import ZoomImage from './ZoomImage'
+import { saveLoreEntryFull, deleteLoreEntry } from '@/lib/actions'
+import ImageAttach from './ImageAttach'
+import DeleteButton from './DeleteButton'
+import { PALETTES, getPalette } from '@/lib/palettes'
 
-export type LoreEntryData = {
+type LoreEntry = {
   id: string
   text: string
   tags: string[]
@@ -15,179 +16,283 @@ export type LoreEntryData = {
   imageBase64: string | null
 }
 
-export default function LoreSection({
+function LoreForm({
   bookId,
-  entries,
+  entry,
+  submitLabel,
+  onDone,
 }: {
   bookId: string
-  entries: LoreEntryData[]
+  entry?: LoreEntry
+  submitLabel: string
+  onDone?: () => void
 }) {
+  return (
+    <form
+      action={async (fd) => {
+        await saveLoreEntryFull(fd)
+        onDone?.()
+      }}
+      className="space-y-3"
+    >
+      <input type="hidden" name="bookId" value={bookId} />
+      {entry && <input type="hidden" name="id" value={entry.id} />}
+      <textarea
+        name="text"
+        defaultValue={entry?.text ?? ''}
+        rows={3}
+        className="textarea text-sm"
+        placeholder={useLang().t('wlTextPh')}
+        required
+      />
+      <ImageAttach
+        name="image"
+        value={entry?.imageBase64 ?? null}
+        maxDim={1200}
+        labelAttach={useLang().t('wlImgAttach')}
+        labelReplace={useLang().t('wlImgReplace')}
+        labelRemove={useLang().t('wlImgRemove')}
+      />
+      <input
+        name="tags"
+        defaultValue={entry?.tags.join(' ') ?? ''}
+        className="input"
+        placeholder={useLang().t('wlTagsPh')}
+        required
+      />
+      <div className="flex justify-end gap-2">
+        {entry && (
+          <DeleteButton
+            onConfirm={async () => {
+              await deleteLoreEntry(entry.id)
+              onDone?.()
+            }}
+            label={useLang().t('wlDelete')}
+            confirmText={useLang().t('wlDeleteConfirm')}
+          />
+        )}
+        <button type="submit" className="btn btn-primary btn-sm">
+          {submitLabel}
+        </button>
+      </div>
+    </form>
+  )
+}
+
+export default function LoreSection({ bookId, entries }: { bookId: string; entries: LoreEntry[] }) {
   const { t } = useLang()
-  const [activeTag, setActiveTag] = useState<string | null>(null)
+  const [mode, setMode] = useState<'list' | 'cloud'>('list')
+  const [listTag, setListTag] = useState<string | null>(null)
+  const [cloudTag, setCloudTag] = useState<string | null>(null)
+  const [editId, setEditId] = useState<string | null>(null)
 
-  const tagStats = useMemo(() => {
-    const map = new Map<string, number>()
-    for (const e of entries) for (const tg of e.tags) map.set(tg, (map.get(tg) ?? 0) + 1)
-    return [...map.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'ru'))
+  const tagCounts = useMemo(() => {
+    const m = new Map<string, number>()
+    for (const e of entries) for (const tg of e.tags) m.set(tg, (m.get(tg) ?? 0) + 1)
+    return [...m.entries()].sort((a, b) => b[1] - a[1])
   }, [entries])
+  const counts = tagCounts.map(([, c]) => c)
+  const minC = counts.length ? Math.min(...counts) : 0
+  const maxC = counts.length ? Math.max(...counts) : 0
+  //const fontSize = (c: number) => 13 + ((c - minC) / (maxC - minC || 1)) * 15
 
-  const visible = useMemo(() => {
-    const list = activeTag ? entries.filter((e) => e.tags.includes(activeTag)) : entries
-    return [...list].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-  }, [entries, activeTag])
+    const [palKey, setPalKey] = useState<string | null>(null)
+  useEffect(() => {
+    setPalKey(getPalette().key)
+  }, [])
+  const colors = (PALETTES.find((p) => p.key === palKey) ?? PALETTES[0]).colors
+  const weight = (c: number) => (maxC === minC ? 0.6 : (c - minC) / (maxC - minC))
+
+  const filtered = listTag ? entries.filter((e) => e.tags.includes(listTag)) : entries
+  const cloudEntries = cloudTag ? entries.filter((e) => e.tags.includes(cloudTag)) : []
+  const editEntry = editId ? entries.find((e) => e.id === editId) ?? null : null
 
   return (
-    <div className="space-y-6">
-      <form
-        action={async (fd: FormData) => {
-          await saveLoreEntryFull(fd)
-        }}
-        className="card p-5 space-y-3"
-      >
-        <input type="hidden" name="bookId" value={bookId} />
-        <div className="field-label">{t('loreNew')}</div>
-        <textarea
-          name="text"
-          required
-          rows={3}
-          className="textarea text-sm"
-          placeholder={t('lorePh')}
-        />
-        <ImageAttach
-          name="image"
-          value={null}
-          maxDim={1200}
-          labelAttach={t('loreImgAttach')}
-          labelReplace={t('loreImgReplace')}
-          labelRemove={t('loreImgRemove')}
-        />
-        <div className="flex flex-wrap gap-2">
-          <input
-            name="tags"
-            required
-            className="input flex-1 min-w-[220px]"
-            placeholder={t('loreTagsPh')}
-          />
-          <button className="btn btn-primary btn-sm">
-            <Plus size={14} /> {t('loreAdd')}
-          </button>
-        </div>
-      </form>
+    <div>
+      <div className="card p-4 mb-6 space-y-3">
+        <div className="field-label">{t('wlNew')}</div>
+        <LoreForm bookId={bookId} submitLabel={t('wlAdd')} />
+      </div>
 
-      {tagStats.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-semibold" style={{ color: 'var(--soft)' }}>
-            {t('loreSort')}
-          </span>
-          <button
-            type="button"
-            onClick={() => setActiveTag(null)}
-            className={`chip-btn ${activeTag === null ? 'chip-btn-active' : ''}`}
-          >
-            {t('loreAll')} ({entries.length})
-          </button>
-          {tagStats.map(([tag, count]) => (
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        <span className="text-xs font-semibold" style={{ color: 'var(--soft)' }}>{t('wlView')}</span>
+        <button
+          type="button"
+          className={`chip-btn ${mode === 'list' ? 'chip-btn-active' : ''}`}
+          onClick={() => setMode('list')}
+        >
+          {t('wlModeList')}
+        </button>
+        <button
+          type="button"
+          className={`chip-btn ${mode === 'cloud' ? 'chip-btn-active' : ''}`}
+          onClick={() => {
+            setMode('cloud')
+            setCloudTag(null)
+          }}
+        >
+          {t('wlModeCloud')}
+        </button>
+      </div>
+
+      {mode === 'list' && (
+        <>
+          <div className="flex flex-wrap items-center gap-2 mb-5">
+            <span className="text-xs" style={{ color: 'var(--soft)' }}>{t('wlFilter')}</span>
             <button
-              key={tag}
               type="button"
-              onClick={() => setActiveTag(activeTag === tag ? null : tag)}
-              className={`chip-btn ${activeTag === tag ? 'chip-btn-active' : ''}`}
+              className={`chip-btn ${listTag === null ? 'chip-btn-active' : ''}`}
+              onClick={() => setListTag(null)}
             >
-              <Hash size={11} /> {tag.slice(1)} · {count}
+              {t('wlAll')} ({entries.length})
             </button>
-          ))}
+            {tagCounts.map(([tg, c]) => (
+              <button
+                key={tg}
+                type="button"
+                className={`chip-btn ${listTag === tg ? 'chip-btn-active' : ''}`}
+                onClick={() => setListTag(listTag === tg ? null : tg)}
+              >
+                {tg} · {c}
+              </button>
+            ))}
+          </div>
+          {filtered.length === 0 && (
+            <div className="card p-10 text-center text-sm" style={{ color: 'var(--soft)' }}>
+              {t('wlEmpty')}
+            </div>
+          )}
+          <div className="space-y-3">
+            {filtered.map((e) => (
+              <details key={e.id} className="acc">
+                <summary className="acc-head">
+                  <ChevronRight size={18} className="acc-chev" />
+                  <span className="acc-title flex-1 truncate">
+                    {e.text.length > 80 ? e.text.slice(0, 80) + '…' : e.text}
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    {e.tags.slice(0, 3).map((tg) => (
+                      <span key={tg} className="chip chip-mention">{tg}</span>
+                    ))}
+                    {e.tags.length > 3 && <span className="chip">+{e.tags.length - 3}</span>}
+                  </span>
+                </summary>
+                <div className="acc-body pt-3">
+                  <LoreForm bookId={bookId} entry={e} submitLabel={t('wlSave')} />
+                </div>
+              </details>
+            ))}
+          </div>
+        </>
+      )}
+
+       {mode === 'cloud' && !cloudTag && (
+        <div
+          className="card px-8 py-10 flex flex-wrap items-baseline justify-center"
+          style={{ gap: '0.5rem 1.8rem', lineHeight: 2 }}
+        >
+          {tagCounts.length === 0 && (
+            <div className="text-sm" style={{ color: 'var(--soft)' }}>{t('wlEmpty')}</div>
+          )}
+          {tagCounts.map(([tg, c], i) => {
+            const w = weight(c)
+            const base = 0.72 + w * 0.28
+            return (
+              <button
+                key={tg}
+                type="button"
+                title={`${tg} · ${c}`}
+                onClick={() => setCloudTag(tg)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  padding: 0,
+                  cursor: 'pointer',
+                  fontSize: 15 + w * 22,
+                  fontWeight: 500 + Math.round(w * 300),
+                  color: colors[i % colors.length],
+                  opacity: base,
+                  lineHeight: 1.25,
+                  transition: 'transform .12s ease, opacity .12s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'scale(1.09)'
+                  e.currentTarget.style.opacity = '1'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)'
+                  e.currentTarget.style.opacity = String(base)
+                }}
+              >
+                {tg.replace(/^#/, '')}
+                <sup style={{ fontSize: '0.55em', opacity: 0.6, marginLeft: 2, fontWeight: 600 }}>
+                  {c}
+                </sup>
+              </button>
+            )
+          })}
         </div>
       )}
 
-      {visible.length === 0 ? (
-        <div className="card p-10 text-center text-sm" style={{ color: 'var(--soft)' }}>
-          {entries.length === 0 ? t('loreEmpty') : t('loreEmptyFilter')}
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {visible.map((e) => (
-            <details key={e.id} className="acc">
-              <summary className="acc-head">
-                <ChevronRight size={18} className="acc-chev" />
-                <span className="acc-title">
-                  {e.text.split(' ').slice(0, 8).join(' ')}{e.text.split(' ').length > 8 ? '…' : ''}
-                </span>
+      {mode === 'cloud' && cloudTag && (
+        <>
+          <div className="flex items-center gap-2 mb-4">
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setCloudTag(null)}>
+              <ArrowLeft size={13} /> {t('wlBackCloud')}
+            </button>
+            <span className="text-sm font-bold">
+              {t('wlNotesFor')} {cloudTag} · {cloudEntries.length}
+            </span>
+          </div>
+          <div className="grid md:grid-cols-2 gap-4">
+            {cloudEntries.map((e) => (
+              <button
+                key={e.id}
+                type="button"
+                className="card p-4 text-left space-y-2"
+                onClick={() => setEditId(e.id)}
+              >
+                {e.imageBase64 && (
+                  <img src={e.imageBase64} alt="" className="w-full h-28 object-cover rounded" />
+                )}
+                <div className="text-sm">
+                  {e.text.length > 140 ? e.text.slice(0, 140) + '…' : e.text}
+                </div>
                 <div className="flex flex-wrap gap-1.5">
-                  {e.tags.slice(0, 3).map((tg) => (
+                  {e.tags.map((tg) => (
                     <span key={tg} className="chip chip-mention">{tg}</span>
                   ))}
-                  {e.tags.length > 3 && <span className="chip">+{e.tags.length - 3}</span>}
                 </div>
-              </summary>
-              <div className="acc-body">
-                <div className="flex items-start justify-between gap-3 mb-3 pt-4">
-                  <div className="flex flex-wrap gap-1.5">
-                    {e.tags.map((tg) => (
-                      <button
-                        key={tg}
-                        type="button"
-                        onClick={() => setActiveTag(activeTag === tg ? null : tg)}
-                        className="chip chip-mention cursor-pointer"
-                      >
-                        <Hash size={11} /> {tg.slice(1)}
-                      </button>
-                    ))}
-                  </div>
-                  <button
-                    type="button"
-                    title={t('loreDeleteConfirm')}
-                    onClick={async () => {
-                      if (window.confirm(t('loreDeleteConfirm'))) await deleteLoreEntry(e.id)
-                    }}
-                    className="btn btn-ghost btn-sm"
-                  >
-                    <Trash2 size={13} />
-                  </button>
-                </div>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
 
-                {e.imageBase64 && (
-                  <div className="img-attach-preview mb-3" style={{ width: '10rem' }}>
-                    <ZoomImage src={e.imageBase64} />
-                  </div>
-                )}
-
-                <form
-                  action={async (fd: FormData) => {
-                    await saveLoreEntryFull(fd)
-                  }}
-                  className="space-y-3"
-                >
-                  <input type="hidden" name="id" value={e.id} />
-                  <input type="hidden" name="bookId" value={bookId} />
-                  <textarea
-                    name="text"
-                    defaultValue={e.text}
-                    rows={Math.max(2, e.text.split('\n').length)}
-                    className="textarea text-sm"
-                  />
-                  <ImageAttach
-                    name="image"
-                    value={e.imageBase64}
-                    maxDim={1200}
-                    labelAttach={t('loreImgAttach')}
-                    labelReplace={t('loreImgReplace')}
-                    labelRemove={t('loreImgRemove')}
-                  />
-                  <div className="flex flex-wrap gap-2 items-center">
-                    <input
-                      name="tags"
-                      required
-                      defaultValue={e.tags.join(' ')}
-                      className="input flex-1 min-w-[220px] text-xs"
-                    />
-                    <button type="submit" className="btn btn-ghost btn-sm">
-                      <Save size={13} /> {t('loreSave')}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </details>
-          ))}
+      {editEntry && (
+        <div
+          className="fixed inset-0 z-[160] flex items-center justify-center p-6"
+          style={{ background: 'rgba(0,0,0,.45)' }}
+          onClick={() => setEditId(null)}
+        >
+          <div
+            className="card w-full max-w-2xl p-5 space-y-3"
+            style={{ maxHeight: '85vh', overflowY: 'auto' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <span className="font-bold">{t('wlEditEntry')}</span>
+              <button type="button" className="mini-btn" onClick={() => setEditId(null)}>
+                <X size={15} />
+              </button>
+            </div>
+            <LoreForm
+              bookId={bookId}
+              entry={editEntry}
+              submitLabel={t('wlSave')}
+              onDone={() => setEditId(null)}
+            />
+          </div>
         </div>
       )}
     </div>

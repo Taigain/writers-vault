@@ -16,6 +16,7 @@ import ImageAttach from '@/components/ImageAttach'
 import NotesSection from '@/components/NotesSection'
 import StorylineSection from '@/components/StorylineSection'
 import DictSection from '@/components/DictSection'
+import SceneSection from '@/components/SceneSection'
 import ImportDocxButton from '@/components/ImportDocxButton'
 import ReadMode from '@/components/ReadMode'
 import { ROLES } from '@/lib/roles'
@@ -44,21 +45,22 @@ import {
   getBookBeats,
   getDict,
   importChaptersFromDocx,
+  getScenes,
   readImageField,
 } from '@/lib/actions'
 
 const words = (t: string) => (t.trim() ? t.trim().split(/\s+/).length : 0)
-const VIEWS = ['chapters', 'characters', 'world', 'locations', 'timeline', 'graph', 'notes', 'plot', 'dict']
+const VIEWS = ['chapters', 'characters', 'world', 'locations', 'timeline', 'graph', 'notes', 'plot', 'dict', 'scenes']
 
 export default async function BookPage({
   params,
   searchParams,
 }: {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ tab?: string; ch?: string; q?: string; pos?: string }>
+  searchParams: Promise<{ tab?: string; ch?: string; q?: string; pos?: string; scene?: string}>
 }) {
   const { id } = await params
-  const { tab, ch: chParam, q, pos } = await searchParams
+  const { tab, ch: chParam, q, pos, scene } = await searchParams
   const view = tab && VIEWS.includes(tab) ? tab : 'passport'
   const lang = await getLang()
   const book = await getBook(id)
@@ -76,6 +78,7 @@ export default async function BookPage({
   const lines = await getStorylines(id)
   const allBeats = await getBookBeats(id)
   const dictRows = await getDict(id)
+  const scenes = await getScenes(id)
   const dictMap = buildDictMap(dictRows)
   const chapterOptions = chapters.map((c) => ({ id: c.id, title: c.title }))
   const characterOptions = characters.map((c) => ({ id: c.id, name: c.name }))
@@ -346,6 +349,11 @@ export default async function BookPage({
   /* ---------- СЛОВАРЬ ---------- */
   const dictSection = <DictSection bookId={id} entries={dictRows} />
 
+  /* ---------- СЦЕНЫ ---------- */
+  const scenesSection = (
+    <SceneSection bookId={id} scenes={scenes} characters={characterOptions} focusScene={scene ?? null} dict={dictMap} />
+  )
+
   /* ---------- СБОРКА ---------- */
   return (
     <div className="max-w-6xl mx-auto px-8 py-8 anim-fade">
@@ -401,6 +409,7 @@ export default async function BookPage({
           {view === 'notes' && notesSection}
           {view === 'plot' && plotSection}
           {view === 'dict' && dictSection}
+          {view === 'scenes' && scenesSection}
         </>
       )}
     </div>

@@ -58,6 +58,7 @@ model Character {
   bookId      String
   book        Book                @relation(fields: [bookId], references: [id], onDelete: Cascade)
   mentions    ChapterMention[]
+  scenes       SceneCharacter[]
   relations   CharacterRelation[] @relation("CharacterRelations")
   relatedIn   CharacterRelation[] @relation("RelatedRelations")
   eventLinks  EventCharacter[]
@@ -112,6 +113,7 @@ model Chapter {
   bookId         String
   book           Book              @relation(fields: [bookId], references: [id], onDelete: Cascade)
   mentions       ChapterMention[]
+  scenes       Scene[]
   eventMentions  EventMention[]
   timelinePins   TimelineEvent[]
   plotBeats       PlotBeat[]
@@ -123,6 +125,8 @@ model ChapterMention {
   chapterId   String
   characterId String?
   locationId  String?
+  pos Int?
+  note String?
   snippet     String     @default("")
   chapter     Chapter    @relation(fields: [chapterId], references: [id], onDelete: Cascade)
   character   Character? @relation(fields: [characterId], references: [id], onDelete: Cascade)
@@ -221,4 +225,25 @@ model DictEntry {
   forms   String @default("[]")
 
   @@unique([bookId, key])
+}
+
+model Scene {
+  id         String           @id @default(cuid())
+  chapterId  String
+  chapter    Chapter          @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  order      Int              @default(0)
+  title      String           @default("")
+  start      Int              @default(0)
+  end        Int              @default(0)
+  characters SceneCharacter[]
+}
+
+model SceneCharacter {
+  id          String    @id @default(cuid())
+  sceneId     String
+  scene       Scene     @relation(fields: [sceneId], references: [id], onDelete: Cascade)
+  characterId String
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@unique([sceneId, characterId])
 }

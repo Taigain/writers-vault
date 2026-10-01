@@ -1,5 +1,6 @@
 import type { InlineRun } from '@/lib/richtext'
 import { parseRichText } from '@/lib/richtext'
+import { HL_COLORS } from '@/lib/scenes'
 
 function escapeReg(s: string) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -12,7 +13,9 @@ function markText(text: string, q?: string) {
     <>
       {parts.map((p, i) =>
         p.toLowerCase() === q.toLowerCase() ? (
-          <mark key={i} className="search-mark">{p}</mark>
+          <mark key={i} className="search-mark">
+            {p}
+          </mark>
         ) : (
           <span key={i}>{p}</span>
         ),
@@ -22,11 +25,27 @@ function markText(text: string, q?: string) {
 }
 
 function RunView({ r, highlight }: { r: InlineRun; highlight?: string }) {
-  if (r.mention) return <span className="mention-hl">{markText(r.text, highlight)}</span>
-  let node: React.ReactNode = markText(r.text, highlight)
+  let node: React.ReactNode = r.mention ? (
+    <span className="mention-hl">{markText(r.text, highlight)}</span>
+  ) : (
+    markText(r.text, highlight)
+  )
   if (r.bold) node = <strong>{node}</strong>
   if (r.italic) node = <em>{node}</em>
   if (r.size) node = <span style={{ fontSize: `${r.size}px` }}>{node}</span>
+  if (r.hl) {
+    node = (
+      <span
+        style={{
+          background: HL_COLORS[(r.hl - 1) % HL_COLORS.length] + '55',
+          borderRadius: 3,
+          padding: '0 2px',
+        }}
+      >
+        {node}
+      </span>
+    )
+  }
   return <>{node}</>
 }
 

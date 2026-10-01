@@ -13,6 +13,10 @@ export const FAQ: Record<Lang, FaqItem[]> = {
       a: 'В тексте главы пишите [@имя] для персонажей и [#описание] для событий — или выделите текст и нажмите кнопки @ и # на панели: метки вставятся сами, а для событий пробелы выделения автоматически станут подчёркиваниями ([#падение_станции]) — в тексте и экспорте они вернутся пробелами. Если помеченного события ещё нет, после сохранения редактор покажет баннер с чипом и плюсом: один клик создаёт событие в таймлайне с пустыми датами и привязкой к этой главе. В таймлайне чипы глав-упоминаний кликабельны и открывают текст ровно на месте метки; если книжная дата события спорит с порядком глав, карточка получит чип «Проверьте порядок». Персонажи дополнительно отзываются на псевдонимы, события — на метки-теги.',
     },
     {
+      q: 'Персонаж: упоминания, состояния, сцены и тепловая карта',
+      a: 'Каждая метка [@имя] в тексте становится отдельной строкой в карточке персонажа: глава, фрагмент контекста вокруг метки и поле состояния («ранен», «сомневается», «союзник») — заметка сохраняется при последующих правках главы. Чип главы в строке открывает текст на месте упоминания. Ниже — список сцен, в которых персонаж отмечен чипом (клик открывает карточку сцены), и тепловая карта с двумя цифрами: присутствие в главах (главы с упоминаниями / всех глав) и в сценах (сцены с персонажем / всех сцен), построчно по всем главам, включая главы без сцен. Первая цифра показывает, насколько персонаж проходит сквозь книгу, вторая — насколько он вовлечён в разыгранные сцены.',
+    },
+    {
       q: 'Что такое «Тэги и псевдонимы» персонажа?',
       a: 'Поле в карточке персонажа: перечислите через запятую варианты имени, фамилию, прозвища («Соколов, Дим»). Тогда [@Соколов] в тексте привяжет главу к той же карточке, что и [@имя]. Удобно, когда герой появляется в тексте под разными формами имени.',
     },
@@ -23,6 +27,14 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     {
       q: 'Команды форматирования текста',
       a: '**жирный** — полужирный, *курсив* — курсив, [size=24]текст[/size] — размер шрифта, [center], [right], [left] в начале абзаца — выравнивание. Кнопки панели инструментов сами ставят и снимают эти метки с выделенного текста.',
+    },
+    {
+      q: 'Сцены: начало, конец и синхронность с текстом',
+      a: 'Сцена ограничивается в тексте главы парным маркером [sc:]…[/sc]: выделите фрагмент и нажмите кнопку сцены на панели — выделение обернётся маркерами; без выделения пара встанет на курсор. Сцены могут идти вплотную, без пустых строк: граница — маркер, а не разрыв абзаца. Вкладка «Сцены» собирает все сцены книги по главам: в карточке полный текст сцены (редактируется — правка синхронно уходит в главу), чипы персонажей сцены, цветовые метки и предпросмотр. Кнопка «Открыть в тексте» ведёт к месту сцены в главе. Границы и текст сцены живут только в главе: вкладка показывает живой срез, поэтому рассинхрона не бывает. В экспорте DOCX маркеры сцен снимаются без следа, текст течёт непрерывно.',
+    },
+    {
+      q: 'Цветовые метки ключевых моментов',
+      a: 'Выделите фрагмент в главе или в сцене и нажмите одну из шести цветных точек на панели — фрагмент обернётся в [hl=N]…[/hl]. В предпросмотре, режиме чтения и карточках сцены фрагмент подсвечивается соответствующим цветом; разные точки позволяют пометить несколько моментов разными цветами. В экспорте DOCX метки снимаются до обычного текста: цвет — рабочий инструмент внутри приложения, а не оформление рукописи. Точки доступны и в редакторе главы, и в карточке сцены.',
     },
     {
       q: 'Как убрать форматирование?',
@@ -101,8 +113,8 @@ export const FAQ: Record<Lang, FaqItem[]> = {
       a: 'Календарное — обычные даты. Книжное — год и день года (1–365) от начала истории. Год может быть отрицательным: −2 означает «за два года до начала истории»; года 0 не существует, используйте 1 или −1. Событие можно привязать к главе напрямую или меткой [#…] в тексте — тогда оно появится в списке «В главах-упоминаниях».',
     },
     {
-      q: 'Зачем хэштеги у записей о мире?',
-      a: 'Теги вида #магия #лор задаются при создании записи. В разделе «Мир» есть фильтр по хэштегам — нажмите тег, чтобы видеть только связанные записи. К записи можно прикрепить изображение-иллюстрацию.',
+      q: 'Мир: хэштеги и облако тегов',
+      a: 'Хэштеги задаются при создании записи. У раздела «Мир» два вида: «Список» (фильтр по хэштегам и сворачиваемые карточки) и «Облако» — теги плавают облаком, где кегль и жирность зависят от числа записей с тегом, а цвет берётся из выбранной палитры. Клик по тегу облака открывает «записки»: короткие карточки с фрагментом, миниатюрой и тегами; клик по карточке — модальное окно редактирования записи (текст, изображение, теги, сохранить/удалить). Облако быстро показывает, какие темы доминируют в мире, а какие существуют в наброске.',
     },
     {
       q: 'Режимы облака связей',
@@ -143,6 +155,10 @@ export const FAQ: Record<Lang, FaqItem[]> = {
       a: 'In chapter text write [@name] for characters and [#description] for events — or select text and press the @ and # toolbar buttons: markers insert themselves, and for events the selection spaces automatically become underscores ([#station_fall]) — in the text and export they return as spaces. If the marked event does not exist yet, after saving the editor shows a banner with a chip and a plus: one click creates the event in the timeline with empty dates and a link to this chapter. In the timeline, mention chapter chips are clickable and open the text exactly at the mark; if an event\'s book date conflicts with chapter order, the card gets a "Check the order" chip. Characters also respond to aliases, events to tag marks.',
     },
     {
+      q: 'Character: mentions, state, scenes and heat map',
+      a: 'Every [@name] tag in the text becomes its own row on the character card: chapter, a context excerpt around the tag and a state field ("wounded", "doubts", "ally") — the note survives later chapter edits. The row\'s chapter chip opens the text at the mention. Below sit the list of scenes the character is checked into (a click opens the scene card) and a two-number heat map: presence in chapters (chapters with mentions / all chapters) and in scenes (scenes with the character / all scenes), row per chapter including chapters without scenes. The first number shows how fully the character traverses the book, the second how deeply they are woven into played scenes.',
+    },
+    {
       q: 'What are character "Tags & aliases"?',
       a: 'A field on the character card: list name variants, last name, nicknames comma-separated ("Sokolov, Dim"). Then [@Sokolov] in the text links the chapter to the same card as [@name]. Handy when a character appears under different name forms.',
     },
@@ -153,6 +169,14 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     {
       q: 'Text formatting commands',
       a: '**bold** — bold, *italic* — italic, [size=24]text[/size] — font size, [center], [right], [left] at paragraph start — alignment. Toolbar buttons add and remove these markers on selected text automatically.',
+    },
+    {
+      q: 'Scenes: start, end and sync with the text',
+      a: 'A scene is bounded in chapter text by the pair marker [sc:]…[/sc]: select a passage and press the scene button on the toolbar — the selection is wrapped in markers; with no selection the pair is placed at the cursor. Scenes may sit back-to-back without blank lines: the boundary is the marker, not a paragraph break. The "Scenes" tab gathers all scenes of the book grouped by chapter: the card holds the full scene text (editable — changes sync back into the chapter), character chips, color highlights and a preview. The "Open in text" button jumps to the scene\'s place in the chapter. Scene bounds and text live only in the chapter: the tab shows a live slice, so nothing drifts. In DOCX export scene markers are removed without trace and the text flows continuously.',
+    },
+    {
+      q: 'Color highlights of key moments',
+      a: 'Select a passage in a chapter or a scene and press one of the six color dots on the toolbar — the passage is wrapped in [hl=N]…[/hl]. In preview, reading mode and scene cards the passage glows with the matching color; pressing different dots tags multiple moments. In DOCX export the tags are stripped to plain text: color is an in-app working tool, not manuscript formatting. The dots are available both in the chapter editor and in scene cards.',
     },
     {
       q: 'How do I clear formatting?',
@@ -231,8 +255,8 @@ export const FAQ: Record<Lang, FaqItem[]> = {
       a: 'Calendar — real-world dates. Book — year and day of year (1–365) since the story start. The year can be negative: −2 means "two years before the story begins"; there is no year 0, use 1 or −1. An event can be pinned to a chapter directly or via a [#…] tag in the text — it then appears in "In chapters".',
     },
     {
-      q: 'What are world-lore hashtags for?',
-      a: 'Tags like #magic #lore are set when creating an entry. The World section has a hashtag filter — click a tag to see only related entries. An illustration image can be attached to an entry.',
+      q: 'World: hashtags and the tag cloud',
+      a: 'Tags are set when creating an entry. The World section has two views: "List" (hashtag filter and collapsible cards) and "Cloud" — tags float in a cloud where size and weight depend on the number of entries with the tag, and the color comes from the chosen palette. Clicking a cloud tag opens "notes": short cards with an excerpt, thumbnail and tags; clicking a card opens the modal edit window for the entry (text, image, tags, save/delete). The cloud quickly shows which themes dominate the world and which exist in outline.',
     },
     {
       q: 'Relationship cloud modes',

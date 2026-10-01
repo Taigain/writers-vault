@@ -1,4 +1,4 @@
-import { Save, Plus, X, Link2, Clock, ChevronRight } from 'lucide-react'
+import { Save, Plus, X, Link2, ChevronRight } from 'lucide-react'
 import { getCharacters, saveCharacter, addCharacterRelation, removeCharacterRelation, deleteCharacter, readImageField } from '@/lib/actions'
 import DeleteButton from './DeleteButton'
 import { ROLES, roleLabel } from '@/lib/roles'
@@ -6,6 +6,7 @@ import { getLang } from '@/lib/lang-server'
 import { tr, type StrKey } from '@/lib/i18n'
 import ImageAttach from './ImageAttach'
 import ZoomImage from './ZoomImage'
+import CharacterAnalytics from './CharacterAnalytics'
 
 type CharacterDetailed = Awaited<ReturnType<typeof getCharacters>>[number]
 
@@ -183,20 +184,7 @@ export default async function CharacterCard({
         </div>
 
         <div className="mt-4 pt-3 border-t" style={{ borderColor: 'var(--line)' }}>
-          <div className="text-xs font-semibold mb-2 flex items-center gap-1.5" style={{ color: 'var(--soft)' }}>
-            <Clock size={12} /> {tr(lang, 'ccHistory')}
-          </div>
-          {character.mentions.length > 0 ? (
-            <div className="flex flex-wrap gap-1.5">
-              {character.mentions.map((m) => (
-                <span key={m.id} className="chip chip-mention">{m.chapter.title}</span>
-              ))}
-            </div>
-          ) : (
-            <div className="text-xs" style={{ color: 'var(--soft)' }}>
-              {tr(lang, 'ccHistoryEmpty', { name: character.name })}
-            </div>
-          )}
+          <CharacterAnalytics bookId={character.bookId} characterId={character.id} name={character.name} />
         </div>
       </div>
     </details>

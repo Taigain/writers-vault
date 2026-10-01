@@ -14,7 +14,13 @@ const ALIGN_MAP = {
 const BODY_SPACING = { after: 160, line: 259, lineRule: LineRuleType.AUTO } as const
 
 const prepMarkers = (s: string) =>
-  s.replace(/\[#(.*?)\]/g, (_m, g: string) => '[#' + g.replace(/_/g, ' ') + ']')
+  s
+    .replace(/\[#(.*?)\]/g, (_m, g: string) => '[#' + g.replace(/_/g, ' ') + ']')
+    .replace(/\[sc:[^\]]*\]/g, '')
+    .replace(/\[\/sc\]/g, '')
+    .replace(/\[hl=\d+\]/g, '')
+    .replace(/\[\/hl\]/g, '')
+
 const cleanPlain = (t: string) =>
   t
     .replace(/\[@(.*?)\]/g, '$1')

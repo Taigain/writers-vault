@@ -6,6 +6,7 @@ import { getLang } from './lang-server'
 import { ROLES } from './roles'
 import { importDocx } from './importDocx'
 import { parseForms } from './dict'
+import { parseScenes } from './scenes'
 
 const validRole = (role: string): string =>
   ROLES.some((r) => r.key === role) ? role : 'secondary'
@@ -107,27 +108,59 @@ export async function saveChapter(
   if (!chapter) return { unknownEvents: [] }
   const bookId = chapter.bookId
 
-  const mentions = content.match(/\[@(.*?)\]/g) || []
-  const uniqueNames = [...new Set(mentions.map((m) => m.replace(/[\[@\]]/g, '').trim()))]
-  const lowerNames = uniqueNames.map((n) => n.toLowerCase())
   const characters = await prisma.character.findMany({ where: { bookId } })
-  const matchedChars = characters.filter((ch) =>
-    [ch.name, ...parseAliases(ch.aliases)].some((k) => lowerNames.includes(k.toLowerCase())),
-  )
+  const findChar = (raw: string) => {
+    const low = raw.trim().toLowerCase()
+    return characters.find((ch) =>
+      [ch.name, ...parseAliases(ch.aliases)].some((k) => k.toLowerCase() === low),
+    )
+  }
+  const oldMentions = await prisma.chapterMention.findMany({
+    where: { chapterId, characterId: { not: null } },
+    orderBy: { pos: 'asc' },
+    select: { characterId: true, note: true },
+  })
+  const notePool = new Map<string, string[]>()
+  for (const om of oldMentions) {
+    if (!om.characterId) continue
+    const arr = notePool.get(om.characterId) ?? []
+    arr.push(om.note ?? '')
+    notePool.set(om.characterId, arr)
+  }
   const locations = await prisma.location.findMany({ where: { bookId } })
-  const matchedLocs = locations.filter((l) => lowerNames.includes(l.name.toLowerCase()))
-
   await prisma.chapterMention.deleteMany({ where: { chapterId } })
-  const mentionsToCreate: { chapterId: string; characterId?: string; locationId?: string; snippet: string }[] = []
-  for (const entity of matchedChars) {
-    mentionsToCreate.push({ chapterId, characterId: entity.id, snippet: content.substring(0, 100) })
+  const mentionRows: {
+    chapterId: string
+    characterId?: string
+    locationId?: string
+    snippet: string
+    pos: number | null
+    note: string | null
+  }[] = []
+  const charOcc = new Map<string, number>()
+  for (const m of content.matchAll(/\[@(.*?)\]/g)) {
+    const ch = findChar(m[1])
+    if (!ch) continue
+    const pos = m.index ?? 0
+    const snippet = content
+      .slice(Math.max(0, pos - 60), pos + m[0].length + 60)
+      .replace(/\s+/g, ' ')
+      .trim()
+    const occ = charOcc.get(ch.id) ?? 0
+    charOcc.set(ch.id, occ + 1)
+    const notes = notePool.get(ch.id) ?? []
+    mentionRows.push({ chapterId, characterId: ch.id, snippet, pos, note: notes[occ] ?? null })
   }
-  for (const loc of matchedLocs) {
-    mentionsToCreate.push({ chapterId, locationId: loc.id, snippet: content.substring(0, 100) })
+  const locSeen = new Set<string>()
+  for (const m of content.matchAll(/\[@(.*?)\]/g)) {
+    const low = m[1].trim().toLowerCase()
+    if (locSeen.has(low)) continue
+    const loc = locations.find((l) => l.name.toLowerCase() === low)
+    if (!loc) continue
+    locSeen.add(low)
+    mentionRows.push({ chapterId, locationId: loc.id, snippet: content.substring(0, 100), pos: null, note: null })
   }
-  if (mentionsToCreate.length > 0) {
-    await prisma.chapterMention.createMany({ data: mentionsToCreate })
-  }
+  if (mentionRows.length > 0) await prisma.chapterMention.createMany({ data: mentionRows })
 
   const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, '_')
   const eventMarks: { name: string; pos: number }[] = []
@@ -162,6 +195,28 @@ export async function saveChapter(
       data: links.map((l) => ({ chapterId, eventId: l.eventId, pos: l.pos })),
     })
   }
+
+  const parsed = parseScenes(content)
+  const existing = await prisma.scene.findMany({ where: { chapterId }, orderBy: { order: 'asc' } })
+  for (let i = 0; i < parsed.length; i++) {
+    const p = parsed[i]
+    if (existing[i]) {
+      await prisma.scene.update({
+        where: { id: existing[i].id },
+        data: { title: p.title, start: p.start, end: p.end, order: i },
+      })
+    } else {
+      await prisma.scene.create({
+        data: { chapterId, title: p.title, start: p.start, end: p.end, order: i },
+      })
+    }
+  }
+  if (existing.length > parsed.length) {
+    const dead = existing.slice(parsed.length).map((s) => s.id)
+    await prisma.sceneCharacter.deleteMany({ where: { sceneId: { in: dead } } })
+    await prisma.scene.deleteMany({ where: { id: { in: dead } } })
+  }
+
   revalidatePath(`/book/${bookId}`)
   return { unknownEvents: unknown }
 }
@@ -1314,4 +1369,155 @@ export async function normalizeCovers() {
     }
   }
   revalidatePath('/')
+}
+
+// --- SCENES ---
+export type SceneRow = {
+  id: string
+  chapterId: string
+  chapterTitle: string
+  chapterOrder: number
+  order: number
+  title: string
+  start: number
+  text: string
+  characters: { id: string; name: string }[]
+}
+
+export async function getScenes(bookId: string): Promise<SceneRow[]> {
+  await schemaReady
+  const rows = await prisma.scene.findMany({
+    where: { chapter: { bookId } },
+    orderBy: [{ chapter: { order: 'asc' } }, { order: 'asc' }],
+    include: {
+      chapter: { select: { id: true, title: true, order: true, content: true } },
+      characters: { include: { character: { select: { id: true, name: true } } } },
+    },
+  })
+  return rows.map((r) => {
+    const openLen = ('[sc:' + r.title + ']').length
+    return {
+      id: r.id,
+      chapterId: r.chapter.id,
+      chapterTitle: r.chapter.title,
+      chapterOrder: r.chapter.order,
+      order: r.order,
+      title: r.title.trim(),
+      start: r.start,
+      text: r.chapter.content.slice(r.start + openLen, r.end - '[/sc]'.length),
+      characters: r.characters.map((c) => ({ id: c.character.id, name: c.character.name })),
+    }
+  })
+}
+
+export async function updateSceneText(sceneId: string, text: string) {
+  await schemaReady
+  const sc = await prisma.scene.findUnique({
+    where: { id: sceneId },
+    select: { id: true, chapterId: true, title: true, start: true, end: true },
+  })
+  if (!sc) return
+  const ch = await prisma.chapter.findUnique({ where: { id: sc.chapterId } })
+  if (!ch) return
+  const innerStart = sc.start + ('[sc:' + sc.title + ']').length
+  const innerEnd = sc.end - '[/sc]'.length
+  const next = ch.content.slice(0, innerStart) + text + ch.content.slice(innerEnd)
+  await saveChapter(ch.id, ch.title, next)
+}
+
+export async function setSceneCharacters(sceneId: string, charIds: string[]) {
+  await schemaReady
+  await prisma.sceneCharacter.deleteMany({ where: { sceneId } })
+  for (const cid of charIds) {
+    await prisma.sceneCharacter.create({ data: { sceneId, characterId: cid } })
+  }
+  const sc = await prisma.scene.findUnique({
+    where: { id: sceneId },
+    select: { chapter: { select: { bookId: true } } },
+  })
+  if (sc) revalidatePath(`/book/${sc.chapter.bookId}`)
+}
+
+export async function updateMentionNote(mentionId: string, note: string) {
+  await schemaReady
+  await prisma.chapterMention.update({ where: { id: mentionId }, data: { note } })
+}
+
+export async function getCharacterAnalytics(characterId: string) {
+  await schemaReady
+  const char = await prisma.character.findUnique({
+    where: { id: characterId },
+    select: { bookId: true },
+  })
+  if (!char)
+    return {
+      mentions: [],
+      scenes: [],
+      heat: [],
+      totalScenes: 0,
+      withScenes: 0,
+      chaptersTotal: 0,
+      chaptersWithMentions: 0,
+    }
+  const mentionRows = await prisma.chapterMention.findMany({
+    where: { characterId, pos: { not: null } },
+    include: { chapter: { select: { id: true, title: true, order: true } } },
+  })
+  const mentions = mentionRows
+    .sort((a, b) => a.chapter.order - b.chapter.order || (a.pos ?? 0) - (b.pos ?? 0))
+    .map((m) => ({
+      id: m.id,
+      chapterId: m.chapter.id,
+      chapterTitle: m.chapter.title,
+      pos: m.pos,
+      snippet: m.snippet,
+      note: m.note,
+    }))
+  const sceneRows = await prisma.scene.findMany({
+    where: { chapter: { bookId: char.bookId } },
+    orderBy: [{ chapter: { order: 'asc' } }, { order: 'asc' }],
+    include: {
+      chapter: { select: { id: true, title: true, order: true } },
+      characters: { select: { characterId: true } },
+    },
+  })
+  const scenes = sceneRows
+    .filter((s) => s.characters.some((c) => c.characterId === characterId))
+    .map((s) => ({ id: s.id, title: s.title.trim(), chapterId: s.chapter.id, chapterTitle: s.chapter.title }))
+  const chapterRows = await prisma.chapter.findMany({
+    where: { bookId: char.bookId },
+    orderBy: { order: 'asc' },
+    select: { id: true, title: true },
+  })
+  const mentionCounts = new Map<string, number>()
+  for (const m of mentionRows) {
+    mentionCounts.set(m.chapterId, (mentionCounts.get(m.chapterId) ?? 0) + 1)
+  }
+  const sceneStat = new Map<string, { total: number; withChar: number }>()
+  for (const s of sceneRows) {
+    const cur = sceneStat.get(s.chapter.id) ?? { total: 0, withChar: 0 }
+    cur.total++
+    if (s.characters.some((c) => c.characterId === characterId)) cur.withChar++
+    sceneStat.set(s.chapter.id, cur)
+  }
+  const heat = chapterRows.map((c) => {
+    const st = sceneStat.get(c.id) ?? { total: 0, withChar: 0 }
+    return {
+      chapterId: c.id,
+      chapterTitle: c.title,
+      mentions: mentionCounts.get(c.id) ?? 0,
+      scenesTotal: st.total,
+      scenesWithChar: st.withChar,
+    }
+  })
+  const chaptersWithMentions = heat.filter((h) => h.mentions > 0).length
+  return {
+    mentions,
+    scenes,
+    heat,
+    chaptersTotal: chapterRows.length,
+    chaptersWithMentions,
+    totalScenes: sceneRows.length,
+    withScenes: scenes.length,
+  }
 }

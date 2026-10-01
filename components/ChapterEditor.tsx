@@ -25,6 +25,7 @@ import {
   SpellCheck,
   Quote,
   X,
+  Clapperboard,
 } from 'lucide-react'
 import RichPreview from './RichPreview'
 import { useLang } from '@/lib/useLang'
@@ -42,6 +43,7 @@ import {
 } from '@/lib/actions'
 import { registerEditor, setEditorDirty, unregisterEditor } from '@/lib/autosave'
 import { applyDict, type DictMap } from '@/lib/dict'
+import { HL_COLORS } from '@/lib/scenes'
 
 const wordsOf = (s: string) => (s.trim() ? s.trim().split(/\s+/).length : 0)
 const SIZES = [14, 16, 18, 20, 24, 32]
@@ -524,6 +526,16 @@ export default function ChapterEditor({
     toggleWrap('[#', ']')
   }
 
+  const wrapPair = (open: string, close: string) => {
+    const ta = taRef.current
+    if (!ta) return
+    const s = ta.selectionStart ?? 0
+    const e = ta.selectionEnd ?? 0
+    const next = c.slice(0, s) + open + c.slice(s, e) + close + c.slice(e)
+    setC(next)
+    restore(ta, s + open.length, e + open.length, ta.scrollTop)
+  }
+
   return (
     <div className="acc" ref={rootRef}>
       <div
@@ -724,6 +736,20 @@ export default function ChapterEditor({
                   <button type="button" title={t('chTbQuotes')} onClick={applyQuotes}>
                     <Quote size={15} />
                   </button>
+                  <button type="button" title={t('chTbScene')} onClick={() => wrapPair('[sc:]', '[/sc]')}>
+                    <Clapperboard size={15} />
+                  </button>
+                  <span className="flex items-center gap-1">
+                    {HL_COLORS.map((hc, hi) => (
+                      <button
+                        key={hi}
+                        type="button"
+                        title={t('chTbHl')}
+                        style={{ width: 14, height: 14, borderRadius: 7, background: hc, border: '1px solid var(--line)' }}
+                        onClick={() => wrapPair(`[hl=${hi + 1}]`, '[/hl]')}
+                      />
+                    ))}
+                  </span>
                   <span className="tb-sep" />
                   <button type="button" title={t('chTbLeft')} onClick={() => setAlign('left')}>
                     <AlignLeft size={15} />

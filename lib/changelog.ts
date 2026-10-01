@@ -6,7 +6,25 @@ export type ChangeEntry = {
 }
 
 export const CHANGELOG: ChangeEntry[] = [
-    {
+  {
+    version: '1.5.0',
+    date: '02.10.2026',
+    ru: [
+      'Сцены: парные метки [sc:]…[/sc] с явными началом и концом, вкладка «Сцены» рядом с «Сюжетом» с карточками: текст сцены редактируется синхронно с главой, чипы персонажей, переход к месту в тексте, полный предпросмотр как в редакторе',
+      'Цветовые метки ключевых моментов [hl=N]…[/hl]: шесть цветов в редакторе и карточках сцен, подсветка в предпросмотре и режиме чтения, в экспорт метки не попадают',
+      'Карточка персонажа: поштучные строки упоминаний с контекстом и полем состояния (заметки переживают правки глав), список сцен персонажа с переходом, тепловая карта с двумя статистиками — присутствие в главах и в сценах, построчно по всем главам',
+      'Раздел «Мир»: режим «Облако» — облако тегов с размером и жирностью по числу записей и цветом из палитры, записки по клику на тег, модальное окно редактирования записи',
+      'Сайдбар вернул брендовый блок: логотип в светлом круге, название и подзаголовок, подпись о локальном хранении внизу',
+    ],
+    en: [
+      'Scenes: pair markers [sc:]…[/sc] with explicit start and end, a "Scenes" tab next to "Plot" with cards: scene text editable in sync with the chapter, character chips, jump to the place in text, the same rich preview as the editor',
+      'Color highlights of key moments [hl=N]…[/hl]: six colors in the editor and scene cards, glow in preview and reading mode, stripped in export',
+      'Character card: per-occurrence mention rows with context and a state note (notes survive chapter edits), the character\'s scene list with jumps, a two-stat heat map — presence in chapters and in scenes, row per chapter',
+      'The World section gains a "Cloud" mode: a tag cloud sized and weighted by entry count and colored by the palette, notes on tag click, a modal window for entry editing',
+      'The sidebar brand block is back: logo in a light circle, name and tagline, local-storage footnote at the bottom',
+    ],
+  },
+  {
     version: '1.4.0',
     date: '28.09.2026',
     ru: [

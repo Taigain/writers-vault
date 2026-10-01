@@ -185,6 +185,32 @@ async function ensureSchema() {
     if (!dictCols.some((c) => c.name === 'forms')) {
       await prisma.$executeRawUnsafe(`ALTER TABLE "DictEntry" ADD COLUMN "forms" TEXT NOT NULL DEFAULT '[]'`)
     }
+    await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "Scene" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "chapterId" TEXT NOT NULL,
+      "order" INTEGER NOT NULL DEFAULT 0,
+      "title" TEXT NOT NULL DEFAULT '',
+      "start" INTEGER NOT NULL DEFAULT 0,
+      "end" INTEGER NOT NULL DEFAULT 0,
+      CONSTRAINT "Scene_chapterId_fkey" FOREIGN KEY ("chapterId") REFERENCES "Chapter" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+    )`)
+    await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "SceneCharacter" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "sceneId" TEXT NOT NULL,
+      "characterId" TEXT NOT NULL,
+      CONSTRAINT "SceneCharacter_sceneId_fkey" FOREIGN KEY ("sceneId") REFERENCES "Scene" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+      CONSTRAINT "SceneCharacter_characterId_fkey" FOREIGN KEY ("characterId") REFERENCES "Character" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+    )`)
+    await prisma.$executeRawUnsafe(
+      `CREATE UNIQUE INDEX IF NOT EXISTS "SceneCharacter_sceneId_characterId_key" ON "SceneCharacter"("sceneId", "characterId")`,
+    )
+    const cmCols = await prisma.$queryRawUnsafe<Array<{ name: string }>>(`PRAGMA table_info("ChapterMention")`)
+    if (!cmCols.some((c) => c.name === 'pos')) {
+      await prisma.$executeRawUnsafe(`ALTER TABLE "ChapterMention" ADD COLUMN "pos" INTEGER`)
+    }
+    if (!cmCols.some((c) => c.name === 'note')) {
+      await prisma.$executeRawUnsafe(`ALTER TABLE "ChapterMention" ADD COLUMN "note" TEXT`)
+    }
   } catch (e) {
     console.error('ensureSchema failed:', e)
   }

@@ -21,8 +21,10 @@ import {
   GitBranch,
   Home,
   Languages,
+  Clapperboard,
 } from 'lucide-react'
 import { useLang } from '@/lib/useLang'
+import { APP_NAME } from '@/lib/appinfo'
 
 export type SidebarBook = {
   id: string
@@ -37,10 +39,11 @@ type TabKey =
   | 'secWorld'
   | 'secLocations'
   | 'secTimeline'
+  | 'secScenes'
   | 'secGraph'
   | 'secNotes'
   | 'secPlot'
-  | 'secDict'
+  | 'secDict'  
 
 const BOOK_TABS: { tab: string; key: TabKey; icon: React.ComponentType<{ size?: number }> }[] = [
   { tab: 'chapters', key: 'secChapters', icon: BookOpenText },
@@ -48,6 +51,7 @@ const BOOK_TABS: { tab: string; key: TabKey; icon: React.ComponentType<{ size?: 
   { tab: 'world', key: 'secWorld', icon: Globe2 },
   { tab: 'locations', key: 'secLocations', icon: MapPin },
   { tab: 'timeline', key: 'secTimeline', icon: CalendarDays },
+  { tab: 'scenes', key: 'secScenes', icon: Clapperboard },
   { tab: 'graph', key: 'secGraph', icon: Network },
   { tab: 'notes', key: 'secNotes', icon: NotebookPen },
   { tab: 'plot', key: 'secPlot', icon: GitBranch },
@@ -170,6 +174,34 @@ export default function SidebarNav({ books }: { books: SidebarBook[] }) {
 
   return (
     <>
+      <div
+        className="flex items-center gap-2.5 px-4 pt-4 pb-3 border-b"
+        style={{ borderColor: 'rgba(255,255,255,.08)' }}
+      >
+        <span
+          style={{
+            width: 38,
+            height: 38,
+            borderRadius: '50%',
+            background: '#f5f0e8',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+            boxShadow: '0 1px 4px rgba(0,0,0,.35)',
+          }}
+        >
+          <img src="/favicon.ico" alt="" width={24} height={24} />
+        </span>
+        <div className="min-w-0">
+          <div className="text-sm font-bold truncate" style={{ color: '#f3ede4' }}>
+            {APP_NAME}
+          </div>
+          <div className="text-[11px] truncate" style={{ color: 'rgba(243,237,228,.55)' }}>
+            {t('tagline')}
+          </div>
+        </div>
+      </div>
       <Link href="/" className="sb-top">
         <Home size={16} />
         <span className="truncate">{t('homeTitle')}</span>
@@ -241,6 +273,9 @@ export default function SidebarNav({ books }: { books: SidebarBook[] }) {
         <Link href="/help" className="sb-link">
           <HelpCircle size={14} /> {t('navHelp')}
         </Link>
+        <div className="px-4 pb-3 text-[10px]" style={{ color: 'rgba(243,237,228,.4)' }}>
+          {t('footer1')} {t('footer2')}
+        </div>
       </div>
     </>
   )
