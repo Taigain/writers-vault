@@ -30,3 +30,13 @@ export const cleanSceneMarkers = (t: string) =>
     .replace(/\[\/sc\]/g, '')
     .replace(/\[hl=\d+\]/g, '')
     .replace(/\[\/hl\]/g, '')
+
+export type SceneSpan = { start: number; end: number }
+
+export function sceneSpans(content: string): SceneSpan[] {
+  return parseScenes(content).map((p) => ({ start: p.start, end: p.end }))
+}
+
+export function scenesWouldNest(content: string, s: number, e: number): boolean {
+  return sceneSpans(content).some((sp) => s < sp.end && e > sp.start)
+}

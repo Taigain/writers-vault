@@ -43,7 +43,8 @@ import {
 } from '@/lib/actions'
 import { registerEditor, setEditorDirty, unregisterEditor } from '@/lib/autosave'
 import { applyDict, type DictMap } from '@/lib/dict'
-import { HL_COLORS } from '@/lib/scenes'
+import { HL_COLORS, scenesWouldNest } from '@/lib/scenes'
+import WarnDialog from './WarnDialog'
 
 const wordsOf = (s: string) => (s.trim() ? s.trim().split(/\s+/).length : 0)
 const SIZES = [14, 16, 18, 20, 24, 32]
@@ -484,6 +485,7 @@ export default function ChapterEditor({
   const chars = chTitle.length + c.length
 
   const [punctOpen, setPunctOpen] = useState(false)
+  const [warnText, setWarnText] = useState<string | null>(null)
   const [unknownEvents, setUnknownEvents] = useState<string[]>([])
   const punctIssues = useMemo(() => (punctOpen ? checkPunctuation(c) : []), [punctOpen, c])
   const fixIssue = (iss: PunctIssue) => {
@@ -511,27 +513,62 @@ export default function ChapterEditor({
     }
   }
 
-  const wrapEvent = () => {
+    const wrapEvent = () => {
     const ta = taRef.current
     if (!ta) return
     const s = ta.selectionStart ?? 0
     const e = ta.selectionEnd ?? 0
     if (e > s) {
-      const sel = c.slice(s, e).trim().replace(/\s+/g, '_')
-      const next = c.slice(0, s) + '[#' + sel + ']' + c.slice(e)
+      const sel = c.slice(s, e)
+      if (sel.startsWith('[#') && sel.endsWith(']')) {
+        const next = c.slice(0, s) + sel.slice(2, -1) + c.slice(e)
+        setC(next)
+        restore(ta, s, e - 3, ta.scrollTop)
+        return
+      }
+      if (s >= 2 && e + 1 <= c.length && c.slice(s - 2, e + 1).startsWith('[#') && c.slice(s - 2, e + 1).endsWith(']')) {
+        const next = c.slice(0, s - 2) + sel + c.slice(e + 1)
+        setC(next)
+        restore(ta, s - 2, e - 2, ta.scrollTop)
+        return
+      }
+      const normSel = sel.trim().replace(/\s+/g, '_')
+      const next = c.slice(0, s) + '[#' + normSel + ']' + c.slice(e)
       setC(next)
-      restore(ta, s + 2, s + 2 + sel.length, ta.scrollTop)
+      restore(ta, s + 2, s + 2 + normSel.length, ta.scrollTop)
       return
     }
     toggleWrap('[#', ']')
   }
-
   const wrapPair = (open: string, close: string) => {
     const ta = taRef.current
     if (!ta) return
     const s = ta.selectionStart ?? 0
     const e = ta.selectionEnd ?? 0
-    const next = c.slice(0, s) + open + c.slice(s, e) + close + c.slice(e)
+    const sel = c.slice(s, e)
+    const outerOk =
+      s >= open.length &&
+      e + close.length <= c.length &&
+      c.slice(s - open.length, s) === open &&
+      c.slice(e, e + close.length) === close
+    if (outerOk) {
+      const next = c.slice(0, s - open.length) + sel + c.slice(e + close.length)
+      setC(next)
+      restore(ta, s - open.length, e - open.length, ta.scrollTop)
+      return
+    }
+    const innerOk = sel.startsWith(open) && sel.endsWith(close) && sel.length >= open.length + close.length
+    if (innerOk) {
+      const next = c.slice(0, s) + sel.slice(open.length, sel.length - close.length) + c.slice(e)
+      setC(next)
+      restore(ta, s, e - open.length - close.length, ta.scrollTop)
+      return
+    }
+    if (open === '[sc:]' && scenesWouldNest(c, s, e)) {
+      setWarnText(t('scNestWarn'))
+      return
+    }
+    const next = c.slice(0, s) + open + sel + close + c.slice(e)
     setC(next)
     restore(ta, s + open.length, e + open.length, ta.scrollTop)
   }
@@ -902,6 +939,7 @@ export default function ChapterEditor({
         )}
                 <textarea
                   ref={taRef}
+                  data-wv-editor="1"
                   value={c}
                   onChange={(e) => setC(e.target.value)}
                   onSelect={updateSel}
@@ -1008,6 +1046,7 @@ export default function ChapterEditor({
           </form>
         </div>
       )}
+      <WarnDialog text={warnText} onClose={() => setWarnText(null)} />
     </div>
   )
 }

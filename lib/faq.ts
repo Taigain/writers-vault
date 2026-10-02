@@ -37,6 +37,18 @@ export const FAQ: Record<Lang, FaqItem[]> = {
       a: 'Выделите фрагмент в главе или в сцене и нажмите одну из шести цветных точек на панели — фрагмент обернётся в [hl=N]…[/hl]. В предпросмотре, режиме чтения и карточках сцены фрагмент подсвечивается соответствующим цветом; разные точки позволяют пометить несколько моментов разными цветами. В экспорте DOCX метки снимаются до обычного текста: цвет — рабочий инструмент внутри приложения, а не оформление рукописи. Точки доступны и в редакторе главы, и в карточке сцены.',
     },
     {
+      q: 'Маркеры и подсветки: тумблеры и вложенность',
+      a: 'Кнопки сцены, цвета и события работают как тумблеры: повторное нажатие на то же выделение (или на выделение, захватившее маркеры) снимает метки вместо добавления второго слоя. Сцены не могут пересекаться и вкладываться: если выделение касается существующей сцены, приложение показывает внутриапповое предупреждение и не вставляет метку — снимите прежнюю метку сцены или выберите участок вне её. Подсветки разных цветов вкладываться могут: внутренний фрагмент рисуется своим цветом, а после его закрытия внешний цвет продолжается до своей закрывающей метки.',
+    },
+    {
+      q: 'Сохранение и защита от потери текста',
+      a: 'Если в редакторе главы или в формах страницы остались несохранённые изменения, перед любым выходом приложение спрашивает, что делать. Переход между разделами внутри приложения открывает окно с тремя кнопками: «Сохранить и перейти» (текст глав сохраняется, грязные формы отправляются, затем происходит переход), «Не сохранять», «Отмена». Закрытие вкладки в веб-версии даёт нативный вопрос браузера, закрытие окна в десктопной — диалог «Сохранить и выйти / Выйти без сохранения / Отмена». Форма считается грязной с момента ввода до отправки, редактор главы — до сохранения или автосохранения.',
+    },
+    {
+      q: 'Куда устанавливается приложение и можно ли сменить папку',
+      a: 'Установщик-мастер предлагает папку установки (по умолчанию %LOCALAPPDATA%\\Programs\\writer-app) — при новой установке можно выбрать любой диск. Книги и данные лежат вне папки установки, в %APPDATA%\\writer-app, поэтому переезд и переустановка приложения их не трогают. Уже установленные копии обновляются на месте: автообновление ставит каждую новую версию в ту папку, которая записана в реестре. Удаление приложения данные не удаляет.',
+    },
+    {
       q: 'Как убрать форматирование?',
       a: 'Выделите фрагмент и нажмите «Ластик» на панели. Он снимет теги размера, жирный, курсив и метки выравнивания внутри выделения.',
     },
@@ -177,6 +189,18 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     {
       q: 'Color highlights of key moments',
       a: 'Select a passage in a chapter or a scene and press one of the six color dots on the toolbar — the passage is wrapped in [hl=N]…[/hl]. In preview, reading mode and scene cards the passage glows with the matching color; pressing different dots tags multiple moments. In DOCX export the tags are stripped to plain text: color is an in-app working tool, not manuscript formatting. The dots are available both in the chapter editor and in scene cards.',
+    },
+    {
+      q: 'Markers and highlights: toggles and nesting',
+      a: 'The scene, color and event buttons work as toggles: pressing again on the same selection (or a selection that captures the markers) removes the markers instead of adding a second layer. Scenes cannot overlap or nest: if the selection touches an existing scene, the app shows an in-app warning and inserts nothing — remove the old scene marker or pick a range outside it. Highlights of different colors may nest: the inner fragment glows in its color, and after its closing marker the outer color resumes until its own closing marker.',
+    },
+    {
+      q: 'Saving and protection from lost text',
+      a: 'If unsaved changes remain in the chapter editor or in page forms, the app asks before any exit. Switching sections inside the app opens a window with three buttons: "Save and continue" (chapter text is saved and dirty forms are submitted, then navigation proceeds), "Discard", "Cancel". Closing a tab in the web version triggers the native browser prompt; closing the desktop window triggers the "Save and exit / Exit without saving / Cancel" dialog. A form counts as dirty from the first input until submitted; the chapter editor — until saved or autosaved.',
+    },
+    {
+      q: 'Where is the app installed and can I change the folder',
+      a: 'The installer wizard offers the installation folder (by default %LOCALAPPDATA%\\Programs\\writer-app) — a fresh install can pick any disk. Books and data live outside the install folder, in %APPDATA%\\writer-app, so moving or reinstalling the app never touches them. Existing copies update in place: auto-update installs each new version into the folder recorded in the registry. Uninstalling the app does not delete your data.',
     },
     {
       q: 'How do I clear formatting?',

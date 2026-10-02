@@ -11,7 +11,13 @@ export type RichBlock = {
   align: Align
   lines: InlineRun[][]
 }
-type Base = { bold: boolean; italic: boolean; size: number | null; hl: number | null }
+type Base = {
+  bold: boolean
+  italic: boolean
+  size: number | null
+  hl: number | null
+  hlStack: number[]
+}
 const ALIGN_RE = /^\[(left|center|right)\]\s*/i
 const TOKEN_RE =
   /(\[@[^\]]*\])|(\[#[^\]]*\])|(\[sc:[^\]]*\])|(\[\/sc\])|(\[hl=\d+\])|(\[\/hl\])|(\*\*[\s\S]+?\*\*)|(\*[\s\S]+?\*)|(\[size=\d+\][\s\S]*?\[\/size\])/g
@@ -22,7 +28,14 @@ function parseInline(text: string, base: Base): InlineRun[] {
   let cur: Base = { ...base }
   const push = (t: string) => {
     if (!t) return
-    runs.push({ text: t, bold: cur.bold, italic: cur.italic, size: cur.size, mention: false, hl: cur.hl })
+    runs.push({
+      text: t,
+      bold: cur.bold,
+      italic: cur.italic,
+      size: cur.size,
+      mention: false,
+      hl: cur.hl,
+    })
   }
   const re = new RegExp(TOKEN_RE.source, 'g')
   let m: RegExpExecArray | null
@@ -30,13 +43,22 @@ function parseInline(text: string, base: Base): InlineRun[] {
     if (m.index > last) push(text.slice(last, m.index))
     const tok = m[0]
     if (m[1] || m[2]) {
-      runs.push({ text: tok.slice(2, -1), bold: true, italic: false, size: cur.size, mention: true, hl: cur.hl })
+      runs.push({
+        text: tok.slice(2, -1),
+        bold: true,
+        italic: false,
+        size: cur.size,
+        mention: true,
+        hl: cur.hl,
+      })
     } else if (m[3] || m[4]) {
       /* границы сцены: видимого текста нет */
     } else if (m[5]) {
-      cur = { ...cur, hl: parseInt(tok.slice(4, -1), 10) }
+      const n = parseInt(tok.slice(4, -1), 10)
+      cur = { ...cur, hl: n, hlStack: [...cur.hlStack, n] }
     } else if (m[6]) {
-      cur = { ...cur, hl: null }
+      const stack = cur.hlStack.slice(0, -1)
+      cur = { ...cur, hlStack: stack, hl: stack.length ? stack[stack.length - 1] : null }
     } else if (m[7]) {
       runs.push(...parseInline(tok.slice(2, -2), { ...cur, bold: true }))
     } else if (m[8]) {
@@ -72,7 +94,9 @@ export function parseRichText(text: string): RichBlock[] {
       align,
       lines: body
         .split('\n')
-        .map((ln) => parseInline(ln, { bold: false, italic: false, size: null, hl: null })),
+        .map((ln) =>
+          parseInline(ln, { bold: false, italic: false, size: null, hl: null, hlStack: [] }),
+        ),
     })
   }
   return blocks

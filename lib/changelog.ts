@@ -6,6 +6,22 @@ export type ChangeEntry = {
 }
 
 export const CHANGELOG: ChangeEntry[] = [  
+    {
+    version: '1.5.2',
+    date: '02.10.2026',
+    ru: [
+      'Защита от несохранённых изменений: перед переходом между разделами, закрытием вкладки в веб-версии и закрытием окна в десктопной приложение спрашивает «Сохранить изменения?»; «Сохранить и перейти» сохраняет текст глав и отправляет грязные формы, затем переходит',
+      'Кнопки маркеров стали тумблерами: повторное нажатие сцены, цвета или события на том же выделении снимает метки вместо наслоения; сцены не могут пересекаться — приложение предупреждает собственным диалогом «Предупреждение» вместо системного окна',
+      'Вложенные подсветки разных цветов рисуются непрерывно: внутренний фрагмент своим цветом, внешний после него продолжается до своего закрытия',
+      'Установщик стал мастером с выбором папки установки для новых установок; уже установленные копии обновляются на месте, удаление приложения не трогает книги',
+    ],
+    en: [
+      'Unsaved-changes protection: before switching sections, closing a web tab or closing the desktop window the app asks "Save changes?"; "Save and continue" saves chapter text and submits dirty forms, then navigates',
+      'Marker buttons became toggles: pressing scene, color or event again on the same selection removes the markers instead of stacking; scenes cannot overlap — the app warns with its own "Warning" dialog instead of a system box',
+      'Nested highlights of different colors render continuously: the inner fragment glows in its color and the outer one resumes after it until its closing marker',
+      'The installer is now a wizard with an installation folder choice for fresh installs; existing copies update in place, and uninstalling never touches books',
+    ],
+  },
   {
     version: '1.5.1',
     date: '02.10.2026',

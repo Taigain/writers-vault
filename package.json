@@ -1,6 +1,6 @@
 {
   "name": "writer-app",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "private": true,
   "description": "Локальный кабинет писателя: главы, персонажи, мир, таймлайн и облако связей.",
   "author": {
@@ -49,6 +49,12 @@
     "artifactName": "Writers-Vault-Setup-${version}.${ext}",
     "copyright": "© 2026 Taiga Develop",
     "compression": "maximum",
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": false,
+      "deleteAppDataOnUninstall": false
+    },
     "publish": {
       "provider": "github",
       "owner": "Taigain",

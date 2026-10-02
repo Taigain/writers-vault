@@ -40,12 +40,33 @@ function SceneCard({
     const e = ta.selectionEnd ?? 0
     const open = `[hl=${n}]`
     const close = '[/hl]'
-    const next = text.slice(0, s) + open + text.slice(s, e) + close + text.slice(e)
-    setText(next)
-    requestAnimationFrame(() => {
-      ta.focus()
-      ta.setSelectionRange(s + open.length, e + open.length)
-    })
+    const sel = text.slice(s, e)
+    const outerOk =
+      s >= open.length &&
+      e + close.length <= text.length &&
+      text.slice(s - open.length, s) === open &&
+      text.slice(e, e + close.length) === close
+    const apply = (next: string, ns: number, ne: number) => {
+      setText(next)
+      requestAnimationFrame(() => {
+        ta.focus()
+        ta.setSelectionRange(ns, ne)
+      })
+    }
+    if (outerOk) {
+      apply(text.slice(0, s - open.length) + sel + text.slice(e + close.length), s - open.length, e - open.length)
+      return
+    }
+    const innerOk = sel.startsWith(open) && sel.endsWith(close) && sel.length >= open.length + close.length
+    if (innerOk) {
+      apply(
+        text.slice(0, s) + sel.slice(open.length, sel.length - close.length) + text.slice(e),
+        s,
+        e - open.length - close.length,
+      )
+      return
+    }
+    apply(text.slice(0, s) + open + sel + close + text.slice(e), s + open.length, e + open.length)
   }
   return (
     <details className="acc" open={defaultOpen}>
@@ -76,10 +97,16 @@ function SceneCard({
             ))}
           </span>
         </div>
-        <textarea
-          ref={taRef}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
+        <form
+          action={async (fd) => {
+            await updateSceneText(scene.id, String(fd.get('text') ?? ''))
+          }}
+        >
+          <textarea
+            ref={taRef}
+            name="text"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
           rows={Math.min(18, Math.max(6, text.split('\n').length + 1))}
           className="textarea textarea-write"
         />
@@ -111,17 +138,12 @@ function SceneCard({
           </div>
           <RichPreview text={applyDict(text, dict ?? {})} />
         </div>
-        <div className="flex justify-end">
-          <button
-            type="button"
-            className="btn btn-primary btn-sm"
-            onClick={async () => {
-              await updateSceneText(scene.id, text)
-            }}
-          >
-            <Save size={13} /> {t('scSave')}
-          </button>
-        </div>
+          <div className="flex justify-end pt-3">
+            <button type="submit" className="btn btn-primary btn-sm">
+              <Save size={13} /> {t('scSave')}
+            </button>
+          </div>
+        </form>
       </div>
     </details>
   )

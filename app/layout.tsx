@@ -5,6 +5,7 @@ import { getBooksWithSeries } from '@/lib/actions'
 import './globals.css'
 import WhatsNewModal from '@/components/WhatsNewModal'
 import { APP_VERSION } from '@/lib/appinfo'
+import NavGuard from '@/components/NavGuard'
 
 export const metadata: Metadata = { title: "Writer's Vault" }
 
@@ -25,6 +26,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <script dangerouslySetInnerHTML={{ __html: BOOTSTRAP }} />
       </head>
       <body className="min-h-screen">
+        <NavGuard />
         <div className="flex h-screen overflow-hidden">
           <aside className="w-64 shrink-0 bg-[#211d19] flex flex-col">
             <Suspense fallback={<div className="p-4 text-xs text-white/40">…</div>}>
