@@ -13,8 +13,8 @@ export const FAQ: Record<Lang, FaqItem[]> = {
       a: 'В тексте главы пишите [@имя] для персонажей и [#описание] для событий — или выделите текст и нажмите кнопки @ и # на панели: метки вставятся сами, а для событий пробелы выделения автоматически станут подчёркиваниями ([#падение_станции]) — в тексте и экспорте они вернутся пробелами. Если помеченного события ещё нет, после сохранения редактор покажет баннер с чипом и плюсом: один клик создаёт событие в таймлайне с пустыми датами и привязкой к этой главе. В таймлайне чипы глав-упоминаний кликабельны и открывают текст ровно на месте метки; если книжная дата события спорит с порядком глав, карточка получит чип «Проверьте порядок». Персонажи дополнительно отзываются на псевдонимы, события — на метки-теги.',
     },
     {
-      q: 'Персонаж: упоминания, состояния, сцены и тепловая карта',
-      a: 'Каждая метка [@имя] в тексте становится отдельной строкой в карточке персонажа: глава, фрагмент контекста вокруг метки и поле состояния («ранен», «сомневается», «союзник») — заметка сохраняется при последующих правках главы. Чип главы в строке открывает текст на месте упоминания. Ниже — список сцен, в которых персонаж отмечен чипом (клик открывает карточку сцены), и тепловая карта с двумя цифрами: присутствие в главах (главы с упоминаниями / всех глав) и в сценах (сцены с персонажем / всех сцен), построчно по всем главам, включая главы без сцен. Первая цифра показывает, насколько персонаж проходит сквозь книгу, вторая — насколько он вовлечён в разыгранные сцены.',
+      q: 'Персонаж: вкладки карточки, упоминания и облако связей',
+      a: 'Карточка персонажа собрана вкладками, чтобы страница не росла от объёма книги. «Анкета» — портрет, роль, псевдонимы и поля характера. «Связи» — отношения с другими персонажами. «Упоминания» — компактные строки: каждая метка [@имя] в тексте даёт строку с главой, фрагментом контекста и полем состояния («ранен», «сомневается»); заметка переживает правки глав; показываются первые 15 строк, остальные — кнопкой «Показать все». «Сцены и присутствие» — список сцен персонажа и тепловая карта с двумя статистиками: главы с упоминаниями и сцены с персонажем. «Облако связей» — звезда вокруг персонажа: золотая линия — прямое отношение с подписью-заметкой, сплошная — общие сцены, пунктир — общие главы; толщина линии равна числу совместных появлений. Узлы перетаскиваются мышью, раскладка запоминается, кнопка сброса возвращает автораскладку; клик по узлу открывает карточку соседа.',
     },
     {
       q: 'Что такое «Тэги и псевдонимы» персонажа?',
@@ -39,6 +39,10 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     {
       q: 'Маркеры и подсветки: тумблеры и вложенность',
       a: 'Кнопки сцены, цвета и события работают как тумблеры: повторное нажатие на то же выделение (или на выделение, захватившее маркеры) снимает метки вместо добавления второго слоя. Сцены не могут пересекаться и вкладываться: если выделение касается существующей сцены, приложение показывает внутриапповое предупреждение и не вставляет метку — снимите прежнюю метку сцены или выберите участок вне её. Подсветки разных цветов вкладываться могут: внутренний фрагмент рисуется своим цветом, а после его закрытия внешний цвет продолжается до своей закрывающей метки.',
+    },
+    {
+      q: 'Проверка текста: три слоя линтера',
+      a: 'Текст проверяют три независимых слоя. Словарь (подчёркивания и контекстное меню правой кнопки) ловит искажённые слова. Панель пунктуации (кнопка со значком проверки в панели редактора) ловит пробелы у знаков, кавычки и похожие механические ошибки. Грамматический слой в той же панели ловит структурные ошибки, которые словарь не видит физически: слово, повторённое подряд («решил решил»), разрыв слитной формы пробелом («по чувствовал») и дефисом («по-смотреть», «об-катать»). У каждой проблемы есть кнопки: перейти к месту, исправить одну, а «Исправить всё» чинит весь список разом, идя с конца текста. Правила консервативны: легитимные «по работе», «по-настоящему», «тише, тише» не помечаются, и последнее слово всегда остаётся за автором.',
     },
     {
       q: 'Сохранение и защита от потери текста',
@@ -167,8 +171,8 @@ export const FAQ: Record<Lang, FaqItem[]> = {
       a: 'In chapter text write [@name] for characters and [#description] for events — or select text and press the @ and # toolbar buttons: markers insert themselves, and for events the selection spaces automatically become underscores ([#station_fall]) — in the text and export they return as spaces. If the marked event does not exist yet, after saving the editor shows a banner with a chip and a plus: one click creates the event in the timeline with empty dates and a link to this chapter. In the timeline, mention chapter chips are clickable and open the text exactly at the mark; if an event\'s book date conflicts with chapter order, the card gets a "Check the order" chip. Characters also respond to aliases, events to tag marks.',
     },
     {
-      q: 'Character: mentions, state, scenes and heat map',
-      a: 'Every [@name] tag in the text becomes its own row on the character card: chapter, a context excerpt around the tag and a state field ("wounded", "doubts", "ally") — the note survives later chapter edits. The row\'s chapter chip opens the text at the mention. Below sit the list of scenes the character is checked into (a click opens the scene card) and a two-number heat map: presence in chapters (chapters with mentions / all chapters) and in scenes (scenes with the character / all scenes), row per chapter including chapters without scenes. The first number shows how fully the character traverses the book, the second how deeply they are woven into played scenes.',
+      q: 'Character: card tabs, mentions and the relations cloud',
+      a: 'The character card is tabbed so the page does not grow with the book. "Profile" holds the portrait, role, aliases and personality fields. "Relations" holds ties to other characters. "Mentions" shows compact rows: every [@name] tag in the text becomes a row with the chapter, a context excerpt and a state field ("wounded", "doubts"); the note survives chapter edits; the first 15 rows show at once, the rest behind "Show all". "Scenes & presence" lists the character\'s scenes and the two-stat heat map: chapters with mentions and scenes with the character. "Relations cloud" draws a star around the character: a gold line is a direct relation with its note as the label, a solid line is shared scenes, a dashed line is shared chapters; line thickness equals the number of co-presences. Nodes drag with the mouse, the layout is remembered, the reset button restores the auto layout; clicking a node opens that character\'s card.',
     },
     {
       q: 'What are character "Tags & aliases"?',
@@ -193,6 +197,10 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     {
       q: 'Markers and highlights: toggles and nesting',
       a: 'The scene, color and event buttons work as toggles: pressing again on the same selection (or a selection that captures the markers) removes the markers instead of adding a second layer. Scenes cannot overlap or nest: if the selection touches an existing scene, the app shows an in-app warning and inserts nothing — remove the old scene marker or pick a range outside it. Highlights of different colors may nest: the inner fragment glows in its color, and after its closing marker the outer color resumes until its own closing marker.',
+    },
+    {
+      q: 'Text checking: the three linter layers',
+      a: 'Three independent layers check the text. The dictionary (underlines and the right-click context menu) catches misspelled words. The punctuation panel (the check-icon button in the editor toolbar) catches spacing around marks, quotes and similar mechanical slips. The grammar layer in the same panel catches structural errors a dictionary physically cannot see: a word repeated back-to-back ("решил решил"), a joined form split by a space ("по чувствовал") or by a hyphen ("по-смотреть", "об-катать"). Every issue has buttons: jump to the place, fix one, and "Fix all" repairs the whole list at once from the end of the text. The rules are conservative: legitimate "по работе", "по-настоящему", "тише, тише" are not flagged, and the final word always stays with the author.',
     },
     {
       q: 'Saving and protection from lost text',

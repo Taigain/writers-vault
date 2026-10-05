@@ -91,7 +91,7 @@ function startServer(port) {
 }
 
 function waitForServer(port, onOk, onFail, tries) {
-  const left = tries == null ? 40 : tries
+  const left = tries == null ? 160 : tries
   const req = http.get({ host: HOST, port, path: '/' }, (res) => {
     res.resume()
     log('server responded with status ' + res.statusCode)
@@ -100,11 +100,12 @@ function waitForServer(port, onOk, onFail, tries) {
       onOk()
     }
   })
-  req.setTimeout(1500, () => req.destroy(new Error('poll timeout')))
+  req.setTimeout(2500, () => req.destroy(new Error('poll timeout')))
   req.on('error', () => {
     if (settled) return
     if (left > 0) {
-      setTimeout(() => waitForServer(port, onOk, onFail, left - 1), 750)
+      if (left % 20 === 0) log('still waiting for server, tries left: ' + left)
+      setTimeout(() => waitForServer(port, onOk, onFail, left - 1), 700)
     } else {
       settled = true
       onFail()

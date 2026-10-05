@@ -34,5 +34,30 @@ export function checkPunctuation(text: string): PunctIssue[] {
     res.push(iss)
     lastEnd = iss.pos + iss.len
   }
+  // Повтор слова подряд: «решил решил»
+  const dupRe = /(?<![а-яёa-z-])([а-яёa-z]{2,})[ \t]+\1(?![а-яёa-z])/gi
+  for (const m of text.matchAll(dupRe)) {
+    const pos = m.index ?? 0
+    out.push({
+      pos,
+      len: m[0].length,
+      bad: m[0],
+      fix: m[1],
+      msgKey: 'pnDupWord',
+    })
+  }
+  // Разрыв слитных форм: «по чувствовал» → «почувствовал», «во обще» → «вообще»
+  const splitRe =
+    /(?<![а-яёa-z])(по|во)[ \t]+(чувств|смотр|став|дум|звон|тряс|тянул|верн|бежал|летел|ехал|шел|шла|шли|жал|обще|круг)[а-яё]*/gi
+  for (const m of text.matchAll(splitRe)) {
+    const pos = m.index ?? 0
+    out.push({
+      pos,
+      len: m[0].length,
+      bad: m[0],
+      fix: m[0].replace(/[ \t]+/, ''),
+      msgKey: 'pnSplit',
+    })
+  }
   return res
 }

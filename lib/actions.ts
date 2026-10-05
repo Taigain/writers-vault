@@ -1521,3 +1521,59 @@ export async function getCharacterAnalytics(characterId: string) {
     withScenes: scenes.length,
   }
 }
+
+export async function getCharacterEgo(characterId: string) {
+  await schemaReady
+  const center = await prisma.character.findUnique({
+    where: { id: characterId },
+    select: { id: true, name: true, bookId: true },
+  })
+  if (!center) return { center: null, nodes: [] as { id: string; name: string }[], edges: [] as { other: string; weight: number; kinds: string[]; note: string | null }[] }
+  const edgesMap = new Map<string, { other: string; weight: number; kinds: string[]; note: string | null }>()
+  const touch = (other: string, kind: string, note: string | null = null) => {
+    if (!other || other === characterId) return
+    const cur = edgesMap.get(other) ?? { other, weight: 0, kinds: [], note: null }
+    cur.weight++
+    if (!cur.kinds.includes(kind)) cur.kinds.push(kind)
+    if (note && !cur.note) cur.note = note
+    edgesMap.set(other, cur)
+  }
+  const relsOut = await prisma.characterRelation.findMany({ where: { characterId } })
+  for (const r of relsOut) touch(r.relatedId, 'relation', r.note)
+  const relsIn = await prisma.characterRelation.findMany({ where: { relatedId: characterId } })
+  for (const r of relsIn) touch(r.characterId, 'relation', r.note)
+  const sceneRows = await prisma.scene.findMany({
+    where: { chapter: { bookId: center.bookId }, characters: { some: { characterId } } },
+    include: { characters: { select: { characterId: true } } },
+  })
+  for (const s of sceneRows) for (const c of s.characters) touch(c.characterId, 'scene')
+  const mentionRows = await prisma.chapterMention.findMany({
+    where: { characterId, pos: { not: null } },
+    select: { chapterId: true },
+  })
+  const chapterIds = [...new Set(mentionRows.map((m) => m.chapterId))]
+  if (chapterIds.length > 0) {
+    const coRows = await prisma.chapterMention.findMany({
+      where: { chapterId: { in: chapterIds }, characterId: { not: null }, pos: { not: null } },
+      select: { chapterId: true, characterId: true },
+    })
+    const byChapter = new Map<string, string[]>()
+    for (const r of coRows) {
+      if (!r.characterId) continue
+      const arr = byChapter.get(r.chapterId) ?? []
+      arr.push(r.characterId)
+      byChapter.set(r.chapterId, arr)
+    }
+    for (const list of byChapter.values()) for (const other of list) touch(other, 'chapter')
+  }
+  const nodeIds = [...edgesMap.keys()]
+  const nodes = await prisma.character.findMany({
+    where: { id: { in: nodeIds } },
+    select: { id: true, name: true },
+  })
+  return {
+    center: { id: center.id, name: center.name },
+    nodes,
+    edges: [...edgesMap.values()],
+  }
+}

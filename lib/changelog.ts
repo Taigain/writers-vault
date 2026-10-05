@@ -7,6 +7,22 @@ export type ChangeEntry = {
 
 export const CHANGELOG: ChangeEntry[] = [  
   {
+    version: '1.5.4',
+    date: '06.10.2026',
+    ru: [
+      'Надёжность запуска: увеличен запас ожидания локального сервера после обновления — приложение доживает холодный старт и антивирусное сканирование первого запуска вместо экрана ошибки',
+      'Грамматический слой линтера: повторы слов подряд («решил решил»), разрывы слитных форм пробелом («по чувствовал») и дефисом («по-смотреть», «об-катать») с автоправкой; словарь и пунктуационная панель работают как прежде',
+      'Карточка персонажа стала вкладочной: Анкета, Связи, Упоминания (компактные строки с заметками состояния и постраничным показом), Сцены и присутствие, Облако связей — высота страницы больше не растёт от объёма книги',
+      'Облако связей персонажа: звезда вокруг героя с подписями на линиях (заметка отношения, тип связи, вес ×N), перетаскивание узлов мышью с запоминанием раскладки и кнопкой сброса, клик по узлу открывает карточку соседа',
+    ],
+    en: [
+      'Startup reliability: the wait budget for the local server after an update is increased — the app survives cold start and first-run antivirus scanning instead of showing the failure screen',
+      'Grammar layer of the linter: back-to-back word repeats ("решил решил"), split joined forms with a space ("по чувствовал") and with a hyphen ("по-смотреть", "об-катать"), all with auto-fix; the dictionary and the punctuation panel work as before',
+      'The character card is now tabbed: Profile, Relations, Mentions (compact rows with state notes and paged display), Scenes & presence, Relations cloud — page height no longer grows with the book',
+      'Per-character relations cloud: a star around the hero with labels on the lines (relation note, connection type, weight ×N), mouse-draggable nodes with a remembered layout and a reset button, clicking a node opens that character card',
+    ],
+  },
+  {
     version: '1.5.3',
     date: '05.10.2026',
     ru: [

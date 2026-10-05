@@ -31,6 +31,7 @@ import RichPreview from './RichPreview'
 import ExportButton from './ExportButton'
 import { useLang } from '@/lib/useLang'
 import { checkPunctuation, type PunctIssue } from '@/lib/punct'
+import { checkGrammar } from '@/lib/grammar'
 import { getQuoteStyle, normalizeQuotes } from '@/lib/quotes'
 import type { StrKey } from '@/lib/i18n'
 import {
@@ -488,14 +489,17 @@ export default function ChapterEditor({
   const [punctOpen, setPunctOpen] = useState(false)
   const [warnText, setWarnText] = useState<string | null>(null)
   const [unknownEvents, setUnknownEvents] = useState<string[]>([])
-  const punctIssues = useMemo(() => (punctOpen ? checkPunctuation(c) : []), [punctOpen, c])
+  const punctIssues = useMemo(
+    () => (punctOpen ? [...checkPunctuation(c), ...checkGrammar(c)] : []),
+    [punctOpen, c],
+  )
   const fixIssue = (iss: PunctIssue) => {
     setC((prev) => prev.slice(0, iss.pos) + iss.fix + prev.slice(iss.pos + iss.len))
   }
   const fixAllPunct = () => {
     setC((prev) => {
       let out = prev
-      const list = checkPunctuation(out).sort((a, b) => b.pos - a.pos)
+      const list = [...checkPunctuation(out), ...checkGrammar(out)].sort((a, b) => b.pos - a.pos)
       for (const iss of list) out = out.slice(0, iss.pos) + iss.fix + out.slice(iss.pos + iss.len)
       return out
     })
