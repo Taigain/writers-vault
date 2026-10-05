@@ -3,7 +3,8 @@ import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, Line
 import { prisma, schemaReady } from '@/lib/prisma'
 import { parseRichText } from '@/lib/richtext'
 import { getBookBlocks } from '@/lib/actions'
-import { buildDictMap, parseForms } from '@/lib/dict'
+import { applyDict, buildDictMap, parseForms } from '@/lib/dict'
+import { replaceDashes, type DashStyle } from '@/lib/dashes'
 
 const ALIGN_MAP = {
   left: AlignmentType.LEFT,
@@ -18,17 +19,22 @@ const prepMarkers = (s: string) =>
     .replace(/\[#(.*?)\]/g, (_m, g: string) => '[#' + g.replace(/_/g, ' ') + ']')
     .replace(/\[sc:[^\]]*\]/g, '')
     .replace(/\[\/sc\]/g, '')
-    .replace(/\[hl=\d+\]/g, '')
     .replace(/\[\/hl\]/g, '')
-
-const cleanPlain = (t: string) =>
-  t
-    .replace(/\[@(.*?)\]/g, '$1')
-    .replace(/\[#(.*?)\]/g, (_m, g: string) => g.replace(/_/g, ' '))
+    .replace(/\[\/hl\]/g, '')
 
 export async function GET(_req: Request, { params }: { params: Promise<{ bookId: string }> }) {
   const { bookId } = await params
   await schemaReady
+  const url = new URL(_req.url)
+  const dashStyle: DashStyle = url.searchParams.get('dash') === 'em' ? 'em' : 'en'
+  const D = (s: string) => replaceDashes(s, dashStyle)
+  const chapterOnly = url.searchParams.get('chapter')
+  const cleanPlain = (t: string) =>
+    D(
+      t
+        .replace(/\[@(.*?)\]/g, '$1')
+        .replace(/\[#(.*?)\]/g, (_m, g: string) => g.replace(/_/g, ' ')),
+    )
 
   const book = await prisma.book.findUnique({
     where: { id: bookId },
@@ -38,28 +44,28 @@ export async function GET(_req: Request, { params }: { params: Promise<{ bookId:
     return NextResponse.json({ error: 'Книга не найдена' }, { status: 404 })
   }
 
-  const blocks = await getBookBlocks(bookId)
-  const children: Paragraph[] = []
-
-  if (book.exportMeta) {
-    children.push(
-      new Paragraph({
-        text: cleanPlain(book.title),
-        heading: HeadingLevel.TITLE,
-        alignment: AlignmentType.CENTER,
-        spacing: BODY_SPACING,
-      }),
-    )
-    if (book.annotation.trim()) {
-      children.push(
-        new Paragraph({
-          text: cleanPlain(book.annotation),
-          alignment: AlignmentType.CENTER,
-          spacing: BODY_SPACING,
-        }),
-      )
+  let chapterRow: { id: string; title: string; content: string } | null = null
+  if (chapterOnly) {
+    const row = await prisma.chapter.findUnique({
+      where: { id: chapterOnly },
+      select: { id: true, title: true, content: true, bookId: true },
+    })
+    if (!row || row.bookId !== bookId) {
+      return NextResponse.json({ error: 'Глава не найдена' }, { status: 404 })
     }
+    chapterRow = { id: row.id, title: row.title, content: row.content }
   }
+
+  const dictRows = await prisma.dictEntry.findMany({
+    where: { bookId },
+    select: { key: true, word: true, forms: true },
+  })
+  const dictMap = buildDictMap(
+    dictRows.map((r) => ({ key: r.key, word: r.word, forms: parseForms(r.forms) })),
+  )
+
+  const blocks = chapterRow ? [] : await getBookBlocks(bookId)
+  const children: Paragraph[] = []
 
   const pushChapter = (
     ch: { id: string; title: string; content: string },
@@ -72,8 +78,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ bookId:
         spacing: BODY_SPACING,
       }),
     )
-
-    for (const block of parseRichText(prepMarkers(ch.content))) {
+    for (const block of parseRichText(D(prepMarkers(applyDict(ch.content, dictMap))))) {
       for (const line of block.lines) {
         if (line.every((r) => !r.text.trim())) continue
         const runs: TextRun[] = line.map(
@@ -97,23 +102,43 @@ export async function GET(_req: Request, { params }: { params: Promise<{ bookId:
     }
   }
 
-  for (const b of blocks) {
-    if (b.kind === 'act') {
+  if (chapterRow) {
+    pushChapter(chapterRow, HeadingLevel.HEADING_1)
+  } else {
+    if (book.exportMeta) {
       children.push(
         new Paragraph({
-          text: cleanPlain(b.name),
-          heading: HeadingLevel.HEADING_1,
+          text: cleanPlain(book.title),
+          heading: HeadingLevel.TITLE,
+          alignment: AlignmentType.CENTER,
           spacing: BODY_SPACING,
         }),
       )
-      for (const ch of b.chs) pushChapter(ch, HeadingLevel.HEADING_2)
-    } else {
-      pushChapter(b.ch, HeadingLevel.HEADING_1)
+      if (book.annotation.trim()) {
+        children.push(
+          new Paragraph({
+            text: cleanPlain(book.annotation),
+            alignment: AlignmentType.CENTER,
+            spacing: BODY_SPACING,
+          }),
+        )
+      }
+    }
+    for (const b of blocks) {
+      if (b.kind === 'act') {
+        children.push(
+          new Paragraph({
+            text: cleanPlain(b.name),
+            heading: HeadingLevel.HEADING_1,
+            spacing: BODY_SPACING,
+          }),
+        )
+        for (const ch of b.chs) pushChapter(ch, HeadingLevel.HEADING_2)
+      } else {
+        pushChapter(b.ch, HeadingLevel.HEADING_1)
+      }
     }
   }
-
-  const dictRows = await prisma.dictEntry.findMany({ where: { bookId }, select: { key: true, word: true, forms: true } })
-  const dictMap = buildDictMap(dictRows.map((r) => ({ key: r.key, word: r.word, forms: parseForms(r.forms) })))
 
   const doc = new Document({
     creator: 'Taiga Develop',
@@ -157,9 +182,10 @@ export async function GET(_req: Request, { params }: { params: Promise<{ bookId:
     },
     sections: [{ properties: {}, children }],
   })
-  const buffer = await Packer.toBuffer(doc)
 
-  const safeName = book.title.replace(/[\\/:*?"<>|]/g, '_') || 'book'
+  const buffer = await Packer.toBuffer(doc)
+  const safeName =
+    (chapterRow ? chapterRow.title : book.title).replace(/[\/:*?"<>|]/g, '_') || 'book'
   return new NextResponse(new Uint8Array(buffer), {
     headers: {
       'Content-Type':

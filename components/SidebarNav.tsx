@@ -24,7 +24,7 @@ import {
   Clapperboard,
 } from 'lucide-react'
 import { useLang } from '@/lib/useLang'
-import { APP_NAME } from '@/lib/appinfo'
+import { APP_NAME, APP_VERSION } from '@/lib/appinfo'
 
 export type SidebarBook = {
   id: string
@@ -273,6 +273,9 @@ export default function SidebarNav({ books }: { books: SidebarBook[] }) {
         <Link href="/help" className="sb-link">
           <HelpCircle size={14} /> {t('navHelp')}
         </Link>
+        <div className="px-4 pb-3 text-[10px]" style={{ color: 'rgba(243,237,228,.35)' }}>
+          {t('sbVersion', { v: APP_VERSION })}
+        </div>
         <div className="px-4 pb-3 text-[10px]" style={{ color: 'rgba(243,237,228,.4)' }}>
           {t('footer1')} {t('footer2')}
         </div>

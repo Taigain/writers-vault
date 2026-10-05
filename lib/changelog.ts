@@ -6,7 +6,23 @@ export type ChangeEntry = {
 }
 
 export const CHANGELOG: ChangeEntry[] = [  
-    {
+  {
+    version: '1.5.3',
+    date: '05.10.2026',
+    ru: [
+      'Типографское тире: двойной дефис -- в тексте глав и сцен заменяется в предпросмотре, режиме чтения и DOCX на тире из настроек (– среднее или — длинное); одиночный дефис остаётся собой',
+      'Поглавный экспорт: кнопка в панели редактора сохраняет DOCX только текущей главы (название + текст), имя файла берётся из заголовка главы',
+      'Статистика книги: раскрывающийся блок на паспорте — главы, сцены, слова, знаки, авторские листы и книжные страницы со сносками о стандартах, а также счётчики персонажей, локаций и записей о мире',
+      'Версия приложения продублирована внизу сайдбара: установленный релиз виден без открытия настроек',
+    ],
+    en: [
+      'Typographic dash: a double hyphen -- in chapter and scene text is replaced in preview, reading mode and DOCX with the dash chosen in settings (– en dash or — em dash); a single hyphen stays a hyphen',
+      'Per-chapter export: a toolbar button in the editor saves a DOCX of the current chapter only (title + text), named after the chapter heading',
+      'Book statistics: a collapsible block on the passport — chapters, scenes, words, characters, author sheets and book pages with footnotes about the standards, plus counts of characters, locations and world entries',
+      'The app version is duplicated at the bottom of the sidebar: the installed release is visible without opening settings',
+    ],
+  },
+  {
     version: '1.5.2',
     date: '02.10.2026',
     ru: [

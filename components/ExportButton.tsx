@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Download } from 'lucide-react'
 import { getSavedDir } from '@/lib/fsAccess'
 import { useLang } from '@/lib/useLang'
@@ -9,13 +9,26 @@ export default function ExportButton({
   bookId,
   baseName,
   primary,
+  chapterId,
+  mini,
 }: {
   bookId: string
   baseName: string
   primary?: boolean
+  chapterId?: string
+  mini?: boolean
 }) {
   const { t } = useLang()
   const [status, setStatus] = useState<string | null>(null)
+  const [dash, setDash] = useState<'en' | 'em'>('en')
+
+  useEffect(() => {
+    try {
+      setDash(localStorage.getItem('wv-dash') === 'em' ? 'em' : 'en')
+    } catch {
+      /* ignore */
+    }
+  }, [])
 
   const flash = (msg: string) => {
     setStatus(msg)
@@ -25,11 +38,11 @@ export default function ExportButton({
   const onClick = async () => {
     try {
       setStatus(t('exPreparing'))
-      const res = await fetch(`/api/export/${bookId}`)
+      const url = `/api/export/${bookId}?dash=${dash}${chapterId ? `&chapter=${chapterId}` : ''}`
+      const res = await fetch(url)
       if (!res.ok) throw new Error('server error')
       const blob = await res.blob()
-      const fileName = baseName.replace(/[\\/:*?"<>|]/g, '_') + '.docx'
-
+      const fileName = baseName.replace(/[\/:*?"<>|]/g, '_') + '.docx'
       const dir = await getSavedDir()
       if (dir) {
         const anyDir = dir as unknown as {
@@ -47,17 +60,32 @@ export default function ExportButton({
         await writable.close()
         flash(t('exSaved', { name: dir.name }))
       } else {
-        const url = URL.createObjectURL(blob)
+        const url2 = URL.createObjectURL(blob)
         const a = document.createElement('a')
-        a.href = url
+        a.href = url2
         a.download = fileName
         a.click()
-        URL.revokeObjectURL(url)
+        URL.revokeObjectURL(url2)
         flash(t('exDownloaded'))
       }
     } catch (e) {
       flash(t('exError', { msg: (e as Error).message }))
     }
+  }
+
+  if (mini) {
+    return (
+      <span className="inline-flex items-center gap-2">
+        <button type="button" onClick={onClick} className="mini-btn" title={t('chTbExport')}>
+          <Download size={14} />
+        </button>
+        {status && (
+          <span className="text-xs" style={{ color: 'var(--soft)' }}>
+            {status}
+          </span>
+        )}
+      </span>
+    )
   }
 
   return (
@@ -70,7 +98,9 @@ export default function ExportButton({
         <Download size={14} /> {primary ? t('exBtnPrimary') : t('exBtn')}
       </button>
       {status && (
-        <span className="text-xs" style={{ color: 'var(--soft)' }}>{status}</span>
+        <span className="text-xs" style={{ color: 'var(--soft)' }}>
+          {status}
+        </span>
       )}
     </span>
   )

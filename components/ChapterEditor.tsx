@@ -28,6 +28,7 @@ import {
   Clapperboard,
 } from 'lucide-react'
 import RichPreview from './RichPreview'
+import ExportButton from './ExportButton'
 import { useLang } from '@/lib/useLang'
 import { checkPunctuation, type PunctIssue } from '@/lib/punct'
 import { getQuoteStyle, normalizeQuotes } from '@/lib/quotes'
@@ -863,6 +864,8 @@ export default function ChapterEditor({
                   >
                     <Save size={15} />
                   </button>
+                  <span className="tb-sep" />
+                  <ExportButton bookId={bookId} baseName={chTitle || t('chUntitled')} chapterId={id} mini />
                   <span className="tb-sep" />
                   <button
                     type="button"

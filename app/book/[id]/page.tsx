@@ -23,6 +23,7 @@ import { ROLES } from '@/lib/roles'
 import { getLang } from '@/lib/lang-server'
 import { tr } from '@/lib/i18n'
 import { buildDictMap } from '@/lib/dict'
+import BookStats from '@/components/BookStats'
 import {
   getBook,
   getSeriesList,
@@ -377,14 +378,14 @@ export default async function BookPage({
             status={book.status}
             exportMeta={book.exportMeta}
           />
-          <div className="flex flex-wrap gap-2 mt-4">
-            <span className="chip"><BookOpen size={12} /> {tr(lang, 'pgChapters')}: {chapters.length}</span>
-            <span className="chip"><Feather size={12} /> {tr(lang, 'pgWords')}: {totalWords.toLocaleString('ru-RU')}</span>
-            <span className="chip"><Type size={12} /> {tr(lang, 'pgChars')}: {totalChars.toLocaleString('ru-RU')}</span>
-            <span className="chip"><Users size={12} /> {tr(lang, 'pgCharacters')}: {characters.length}</span>
-            <span className="chip"><Globe2 size={12} /> {tr(lang, 'pgLore')}: {lore.length}</span>
-            <span className="chip"><MapPin size={12} /> {tr(lang, 'pgLocations')}: {locations.length}</span>
-          </div>
+          <BookStats
+            chapters={chapters.map((c) => ({ id: c.id, title: c.title, content: c.content }))}
+            characters={characters.map((c) => ({ id: c.id, name: c.name }))}
+            locations={locations.map((l) => ({ id: l.id, name: l.name }))}
+            lore={lore.map((l) => ({ id: l.id, text: l.text }))}
+            totalWords={totalWords}
+            totalChars={totalChars}
+          />
           <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
             <DeleteButton
               onConfirm={async () => {

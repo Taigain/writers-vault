@@ -12,6 +12,7 @@ import ContactForm from '@/components/ContactForm'
 import ChangelogButton from '@/components/ChangelogButton'
 import QuoteStyleSetting from '@/components/QuoteStyleSetting'
 import PaletteSetting from '@/components/PaletteSetting'
+import DashSetting from '@/components/DashSetting'
 
 const UI_FONTS: { key: string; labelKey: StrKey; stack: string }[] = [
   { key: 'system', labelKey: 'fontSystem', stack: '"Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif' },
@@ -175,6 +176,7 @@ export default function SettingsPage() {
         <div className="text-sm font-bold mb-2">{t('setEditor')}</div>
         <AutosaveSetting />
         <QuoteStyleSetting />
+        <DashSetting />
         <PaletteSetting />
       </section>
       

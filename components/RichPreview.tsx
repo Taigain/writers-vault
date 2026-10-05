@@ -1,6 +1,8 @@
 import type { InlineRun } from '@/lib/richtext'
 import { parseRichText } from '@/lib/richtext'
 import { HL_COLORS } from '@/lib/scenes'
+import { useEffect, useState } from 'react'
+import { getDashStyle, replaceDashes, type DashStyle } from '@/lib/dashes'
 
 function escapeReg(s: string) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -50,7 +52,11 @@ function RunView({ r, highlight }: { r: InlineRun; highlight?: string }) {
 }
 
 export default function RichPreview({ text, highlight }: { text: string; highlight?: string }) {
-  const blocks = parseRichText(text)
+  const [dash, setDash] = useState<DashStyle>('en')
+  useEffect(() => {
+    setDash(getDashStyle())
+  }, [])
+  const blocks = parseRichText(replaceDashes(text, dash))
   if (blocks.length === 0) return null
   return (
     <div className="prose-write">
