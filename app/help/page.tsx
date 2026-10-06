@@ -8,7 +8,7 @@ export default async function HelpPage() {
   const items = FAQ[lang]
 
   return (
-    <div className="max-w-3xl mx-auto px-8 py-10 anim-fade">
+    <div className="page-wrap mx-auto px-8 py-10 anim-fade">
       <h1 className="text-3xl font-bold tracking-tight mb-2">{tr(lang, 'helpTitle')}</h1>
       <p className="text-sm mb-8" style={{ color: 'var(--soft)' }}>{tr(lang, 'helpSub')}</p>
 

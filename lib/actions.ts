@@ -1577,3 +1577,72 @@ export async function getCharacterEgo(characterId: string) {
     edges: [...edgesMap.values()],
   }
 }
+
+export async function getRefInfo(bookId: string, kind: string, key: string) {
+  await schemaReady
+  const norm = (s: unknown) => String(s ?? '').trim().toLowerCase().replace(/\s+/g, '_')
+  const k = norm(key).replace(/^#/, '')
+  if (kind === 'char') {
+    const rows = await prisma.character.findMany({
+      where: { bookId },
+      select: {
+        id: true,
+        name: true,
+        role: true,
+        aliases: true,
+        bio: true,
+        decisions: true,
+        arc: true,
+        portraitBase64: true,
+      },
+    })
+    const hit = rows.find(
+      (r) =>
+        r.name.trim().toLowerCase() === k ||
+        r.aliases
+          .split(',')
+          .map((s) => s.trim().toLowerCase())
+          .includes(k),
+    )
+    if (!hit) return null
+    return { kind: 'char' as const, ...hit }
+  }
+  const evs = await prisma.timelineEvent.findMany({ where: { bookId } })
+  const asRec = (e: unknown) => e as Record<string, unknown>
+  const matchKey = (e: Record<string, unknown>) => {
+    for (const c of [e.mark, e.tag, e.label, e.title, e.name]) {
+      if (typeof c === 'string' && c.trim()) return norm(c).replace(/^#/, '')
+    }
+    return ''
+  }
+  const displayTitle = (e: Record<string, unknown>) => {
+    for (const c of [e.title, e.name, e.mark, e.tag]) {
+      if (typeof c === 'string' && c.trim()) return c.replace(/^#/, '')
+    }
+    return ''
+  }
+  const hitEv = evs.find((e) => {
+    const r = asRec(e)
+    return matchKey(r) === k || displayTitle(r) === k
+  })
+  if (!hitEv) return null
+  const h = asRec(hitEv)
+  return {
+    kind: 'event' as const,
+    id: String(h.id ?? ''),
+    title: displayTitle(h),
+    desc: String(h.desc ?? h.summary ?? h.text ?? ''),
+    dateType: String(h.dateType ?? 'book'),
+    date: h.date != null ? String(h.date) : null,
+    bookYear: (h.bookYear as number | null) ?? null,
+    bookDay: (h.bookDay as number | null) ?? null,
+  }
+}
+
+export async function updateCharacterFields(
+  id: string,
+  patch: { bio?: string; decisions?: string; arc?: string },
+) {
+  await schemaReady
+  await prisma.character.update({ where: { id }, data: patch })
+}

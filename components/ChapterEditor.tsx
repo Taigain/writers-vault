@@ -47,6 +47,7 @@ import { registerEditor, setEditorDirty, unregisterEditor } from '@/lib/autosave
 import { applyDict, type DictMap } from '@/lib/dict'
 import { HL_COLORS, scenesWouldNest } from '@/lib/scenes'
 import WarnDialog from './WarnDialog'
+import RefDock, { type RefKey } from './RefDock'
 
 const wordsOf = (s: string) => (s.trim() ? s.trim().split(/\s+/).length : 0)
 const SIZES = [14, 16, 18, 20, 24, 32]
@@ -186,6 +187,23 @@ export default function ChapterEditor({
   }, [highlight, c])
 
   const [cur, setCur] = useState(0)
+
+  const [refs, setRefs] = useState<RefKey[]>([])
+  const openRef = (kind: 'char' | 'event', key: string) =>
+    setRefs((cur) =>
+      cur.some((r) => r.kind === kind && r.key === key) ? cur : [...cur, { kind, key }],
+    )
+
+  const reorderRefs = (fromKey: string, toKey: string) =>
+    setRefs((curList) => {
+      const from = curList.findIndex((r) => r.kind + ':' + r.key === fromKey)
+      const to = curList.findIndex((r) => r.kind + ':' + r.key === toKey)
+      if (from < 0 || to < 0 || from === to) return curList
+      const next = [...curList]
+      const [item] = next.splice(from, 1)
+      next.splice(to, 0, item)
+      return next
+    })
 
   const scrollToPos = (ta: HTMLTextAreaElement, pos: number) => {
     const mirror = document.createElement('div')
@@ -579,7 +597,8 @@ export default function ChapterEditor({
   }
 
   return (
-    <div className="acc" ref={rootRef}>
+    <div className={`editor-shell ${refs.length > 0 && !zen ? 'with-dock' : ''}`}>
+      <div className="acc min-w-0" ref={rootRef}>
       <div
         role="button"
         tabIndex={0}
@@ -1015,7 +1034,7 @@ export default function ChapterEditor({
                     <EyeOff size={14} />
                   </button>
                 </div>
-                <RichPreview text={applyDict(c, dict ?? {})} highlight={highlight} />
+                <RichPreview text={applyDict(c, dict ?? {})} highlight={highlight} onRef={openRef} />
               </div>
             )}
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1053,7 +1072,18 @@ export default function ChapterEditor({
           </form>
         </div>
       )}
-      <WarnDialog text={warnText} onClose={() => setWarnText(null)} />
+        <WarnDialog text={warnText} onClose={() => setWarnText(null)} />
+      </div>
+      {refs.length > 0 && !zen && (
+        <RefDock
+          bookId={bookId}
+          refs={refs}
+          onClose={(r) =>
+            setRefs((cur) => cur.filter((x) => !(x.kind === r.kind && x.key === r.key)))
+          }
+          onReorder={reorderRefs}
+        />
+      )}
     </div>
   )
 }

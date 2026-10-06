@@ -452,6 +452,12 @@ export const STR = {
     egoHint: 'Толщина линии — число совместных присутствий; клик по узлу открывает карточку персонажа.',
     egoReset: 'Расставить заново',
     egoDrag: 'Узлы перетаскиваются мышью, раскладка запоминается.',
+    sbCollapse: 'Свернуть панель',
+    sbExpand: 'Развернуть панель',
+    dockClose: 'Закрыть справку',
+    dockOpen: 'Открыть в разделе',
+    dockNotFound: 'Карточка не найдена: возможно, персонаж или событие переименованы.',
+    dockDrag: 'Перетащить карточку',
   },
   en: {
     tagline: "author's cabinet",
@@ -902,6 +908,12 @@ export const STR = {
     egoHint: 'Line thickness is the number of co-presences; clicking a node opens that character card.',
     egoReset: 'Reset layout',
     egoDrag: 'Nodes can be dragged with the mouse; the layout is remembered.',
+    sbCollapse: 'Collapse sidebar',
+    sbExpand: 'Expand sidebar',
+    dockClose: 'Close reference',
+    dockOpen: 'Open in section',
+    dockNotFound: 'Reference not found: the character or event may have been renamed.',
+    dockDrag: 'Drag card',
   },
 } as const
 

@@ -6,6 +6,7 @@ export type InlineRun = {
   size: number | null
   mention: boolean
   hl: number | null
+  refKind: 'char' | 'event' | null
 }
 export type RichBlock = {
   align: Align
@@ -35,6 +36,7 @@ function parseInline(text: string, base: Base): InlineRun[] {
       size: cur.size,
       mention: false,
       hl: cur.hl,
+      refKind: null,
     })
   }
   const re = new RegExp(TOKEN_RE.source, 'g')
@@ -50,6 +52,7 @@ function parseInline(text: string, base: Base): InlineRun[] {
         size: cur.size,
         mention: true,
         hl: cur.hl,
+        refKind: m[1] ? 'char' : 'event',
       })
     } else if (m[3] || m[4]) {
       /* границы сцены: видимого текста нет */

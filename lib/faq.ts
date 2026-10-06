@@ -45,6 +45,18 @@ export const FAQ: Record<Lang, FaqItem[]> = {
       a: 'Текст проверяют три независимых слоя. Словарь (подчёркивания и контекстное меню правой кнопки) ловит искажённые слова. Панель пунктуации (кнопка со значком проверки в панели редактора) ловит пробелы у знаков, кавычки и похожие механические ошибки. Грамматический слой в той же панели ловит структурные ошибки, которые словарь не видит физически: слово, повторённое подряд («решил решил»), разрыв слитной формы пробелом («по чувствовал») и дефисом («по-смотреть», «об-катать»). У каждой проблемы есть кнопки: перейти к месту, исправить одну, а «Исправить всё» чинит весь список разом, идя с конца текста. Правила консервативны: легитимные «по работе», «по-настоящему», «тише, тише» не помечаются, и последнее слово всегда остаётся за автором.',
     },
     {
+      q: 'Сайдбар: сворачивание в рейку и ширина рабочей области',
+      a: 'Кнопка со стрелкой вверху сайдбара сворачивает его до рейки 60 px: логотип, главная, аватарки книг с тултипами и иконки настроек/помощи — навигация сохраняется, а рабочая область расширяется. Состояние рейки запоминается между запусками. Ширина полотна страницы связана с состоянием панели: в свёрнутом виде контейнеры страниц расширяются со 1160 px до 1680 px (или до 100% на узких окнах) с плавным переходом, в развёрнутом возвращаются к привычной ширине. Аватарка книги в рейке открывает её паспорт, клик по стрелке обратно разворачивает полную навигацию с группами, сериями и вкладками.',
+    },
+    {
+      q: 'Сетки разделов и одиночное изображение локации',
+      a: 'Карточные разделы («Локации», «Мир», «Персонажи») выкладываются мозаикой: каждая карточка занимает свою естественную высоту, следующие заполняют колонки независимо, без выравнивания «этажами» и пустот. Колонок две в обычном виде, три при свёрнутом сайдбаре и одна на окнах уже 1000 px. В карточке локации изображение теперь одно: большое вверху карточки; миниатюра под полями убрана, кнопки «Заменить» и «Удалить изображение» остались на месте.',
+    },
+    {
+      q: 'Док справок: карточки персонажей и событий рядом с текстом',
+      a: 'В предпросмотре главы имена [@персонаж] и метки событий [#событие] стали кликабельными (пунктирное подчёркивание). Клик закрепляет справа от редактора справочную карточку: у персонажа — портрет, роль, псевдонимы и три редактируемых поля (описание, принятые решения, арка) с сохранением по уходу курсора; у события — название, календарная или книжная дата и описание. Карточки перетаскиваются за ручку-грип в шапке, закрываются крестиком, кнопка «Открыть в разделе» уводит на вкладку персонажей или таймлайна. Порядок карточек живёт до конца сессии главы; zen-режим док скрывает. Если персонаж или событие переименованы и метка больше не находится, карточка вежливо сообщает об этом вместо ошибки.',
+    },
+    {
       q: 'Сохранение и защита от потери текста',
       a: 'Если в редакторе главы или в формах страницы остались несохранённые изменения, перед любым выходом приложение спрашивает, что делать. Переход между разделами внутри приложения открывает окно с тремя кнопками: «Сохранить и перейти» (текст глав сохраняется, грязные формы отправляются, затем происходит переход), «Не сохранять», «Отмена». Закрытие вкладки в веб-версии даёт нативный вопрос браузера, закрытие окна в десктопной — диалог «Сохранить и выйти / Выйти без сохранения / Отмена». Форма считается грязной с момента ввода до отправки, редактор главы — до сохранения или автосохранения.',
     },
@@ -201,6 +213,18 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     {
       q: 'Text checking: the three linter layers',
       a: 'Three independent layers check the text. The dictionary (underlines and the right-click context menu) catches misspelled words. The punctuation panel (the check-icon button in the editor toolbar) catches spacing around marks, quotes and similar mechanical slips. The grammar layer in the same panel catches structural errors a dictionary physically cannot see: a word repeated back-to-back ("решил решил"), a joined form split by a space ("по чувствовал") or by a hyphen ("по-смотреть", "об-катать"). Every issue has buttons: jump to the place, fix one, and "Fix all" repairs the whole list at once from the end of the text. The rules are conservative: legitimate "по работе", "по-настоящему", "тише, тише" are not flagged, and the final word always stays with the author.',
+    },
+    {
+      q: 'Sidebar: collapsing to a rail and the working area width',
+      a: 'The arrow button at the top of the sidebar collapses it to a 60 px rail: logo, home, book avatars with tooltips and the settings/help icons — navigation stays available while the working area grows. The rail state is remembered between launches. The page canvas width is tied to the panel state: collapsed, page containers grow from 1160 px to 1680 px (or to 100% on narrow windows) with a smooth transition; expanded, they return to the familiar width. A book avatar in the rail opens its passport; clicking the arrow back expands the full navigation with groups, series and tabs.',
+    },
+    {
+      q: 'Section grids and the single location image',
+      a: 'Card sections (Locations, World, Characters) lay out as masonry: every card keeps its natural height and the next ones fill the columns independently, without floor-like alignment and gaps. There are two columns normally, three with the sidebar collapsed and one on windows narrower than 1000 px. A location card now shows a single image: the large one at the top of the card; the thumbnail under the fields is gone while the Replace and Remove image buttons stay in place.',
+    },
+    {
+      q: 'Reference dock: character and event cards beside the text',
+      a: 'In the chapter preview, [@character] names and [#event] marks became clickable (dashed underline). A click pins a reference card to the right of the editor: a character shows portrait, role, aliases and three editable fields (description, decisions, arc) saved when the cursor leaves; an event shows its title, calendar or book date and description. Cards drag by the grip handle in the header, close with the cross, and the "Open in section" button jumps to the characters or timeline tab. The card order lives until the end of the chapter session; zen mode hides the dock. If a character or event was renamed and the mark no longer resolves, the card politely says so instead of failing.',
     },
     {
       q: 'Saving and protection from lost text',

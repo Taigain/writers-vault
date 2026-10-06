@@ -47,6 +47,7 @@ function LoreForm({
       />
       <ImageAttach
         name="image"
+        showPreview={false}
         value={entry?.imageBase64 ?? null}
         maxDim={1200}
         labelAttach={useLang().t('wlImgAttach')}
@@ -162,7 +163,7 @@ export default function LoreSection({ bookId, entries }: { bookId: string; entri
               {t('wlEmpty')}
             </div>
           )}
-          <div className="space-y-3">
+          <div className="masonry">
             {filtered.map((e) => (
               <details key={e.id} className="acc">
                 <summary className="acc-head">

@@ -28,7 +28,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body className="min-h-screen">
         <NavGuard />
         <div className="flex h-screen overflow-hidden">
-          <aside className="w-64 shrink-0 bg-[#211d19] flex flex-col">
+          <aside className="sb-aside shrink-0 bg-[#211d19] flex flex-col">
             <Suspense fallback={<div className="p-4 text-xs text-white/40">…</div>}>
               <SidebarNav books={books} />
             </Suspense>

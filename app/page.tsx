@@ -128,7 +128,7 @@ export default async function Home() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-8 py-10 anim-fade">
+    <div className="page-wrap mx-auto px-8 py-10 anim-fade">
       <header className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight">{tr(lang, 'homeTitle')}</h1>
         <p className="text-sm mt-1" style={{ color: 'var(--soft)' }}>{tr(lang, 'homeSub')}</p>

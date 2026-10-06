@@ -22,6 +22,7 @@ import {
   Home,
   Languages,
   Clapperboard,
+  ChevronLeft,
 } from 'lucide-react'
 import { useLang } from '@/lib/useLang'
 import { APP_NAME, APP_VERSION } from '@/lib/appinfo'
@@ -43,7 +44,7 @@ type TabKey =
   | 'secGraph'
   | 'secNotes'
   | 'secPlot'
-  | 'secDict'  
+  | 'secDict'
 
 const BOOK_TABS: { tab: string; key: TabKey; icon: React.ComponentType<{ size?: number }> }[] = [
   { tab: 'chapters', key: 'secChapters', icon: BookOpenText },
@@ -71,6 +72,31 @@ export default function SidebarNav({ books }: { books: SidebarBook[] }) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const currentTab = searchParams.get('tab')
+
+  const [collapsed, setCollapsed] = useState(false)
+  useEffect(() => {
+    let saved = '0'
+    try {
+      saved = localStorage.getItem('wv-sb') || '0'
+    } catch {
+      /* ignore */
+    }
+    const c = saved === '1'
+    setCollapsed(c)
+    document.documentElement.style.setProperty('--sbw', c ? '60px' : '256px')
+    document.body.classList.toggle('sb-collapsed', c)
+  }, [])
+  const toggleCollapsed = () => {
+    const next = !collapsed
+    setCollapsed(next)
+    try {
+      localStorage.setItem('wv-sb', next ? '1' : '0')
+    } catch {
+      /* ignore */
+    }
+    document.documentElement.style.setProperty('--sbw', next ? '60px' : '256px')
+    document.body.classList.toggle('sb-collapsed', next)
+  }
 
   const activeBookId = useMemo(() => {
     const m = pathname.match(/^\/book\/([^/]+)/)
@@ -124,7 +150,11 @@ export default function SidebarNav({ books }: { books: SidebarBook[] }) {
   }, [activeBookId, books])
 
   const grouped = useMemo(() => {
-    const out: Record<'idea' | 'active' | 'archive', SidebarBook[]> = { idea: [], active: [], archive: [] }
+    const out: Record<'idea' | 'active' | 'archive', SidebarBook[]> = {
+      idea: [],
+      active: [],
+      archive: [],
+    }
     for (const b of books) {
       const st = b.status === 'idea' || b.status === 'archive' ? b.status : 'active'
       out[st].push(b)
@@ -174,8 +204,23 @@ export default function SidebarNav({ books }: { books: SidebarBook[] }) {
 
   return (
     <>
+      <div className="flex justify-end px-2 pt-2">
+        <button
+          type="button"
+          className="mini-btn"
+          title={collapsed ? t('sbExpand') : t('sbCollapse')}
+          onClick={toggleCollapsed}
+        >
+          {collapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
+        </button>
+      </div>
+
       <div
-        className="flex items-center gap-2.5 px-4 pt-4 pb-3 border-b"
+        className={
+          collapsed
+            ? 'flex items-center justify-center pt-2 pb-3 border-b'
+            : 'flex items-center gap-2.5 px-4 pt-2 pb-3 border-b'
+        }
         style={{ borderColor: 'rgba(255,255,255,.08)' }}
       >
         <span
@@ -193,7 +238,7 @@ export default function SidebarNav({ books }: { books: SidebarBook[] }) {
         >
           <img src="/favicon.ico" alt="" width={24} height={24} />
         </span>
-        <div className="min-w-0">
+        <div className="min-w-0 sb-hide">
           <div className="text-sm font-bold truncate" style={{ color: '#f3ede4' }}>
             {APP_NAME}
           </div>
@@ -202,11 +247,37 @@ export default function SidebarNav({ books }: { books: SidebarBook[] }) {
           </div>
         </div>
       </div>
-      <Link href="/" className="sb-top">
+
+      {collapsed && (
+        <div className="flex-1 overflow-y-auto flex flex-col items-center gap-2 py-3">
+          <Link
+            href="/"
+            title={t('homeTitle')}
+            className="sb-link"
+            style={{ width: 40, justifyContent: 'center' }}
+          >
+            <Home size={16} />
+          </Link>
+          {books.map((b) => (
+            <Link
+              key={b.id}
+              href={`/book/${b.id}`}
+              title={b.title}
+              className="avatar"
+              style={{ width: 34, height: 34, fontSize: 13 }}
+            >
+              {b.title.charAt(0).toUpperCase()}
+            </Link>
+          ))}
+        </div>
+      )}
+
+      <Link href="/" className={`sb-top ${collapsed ? 'sb-hide' : ''}`}>
         <Home size={16} />
         <span className="truncate">{t('homeTitle')}</span>
       </Link>
-      <div className="sb-section">
+
+      <div className={`sb-section ${collapsed ? 'sb-hide' : ''}`}>
         {GROUPS.map((g) => {
           const list = grouped[g.status]
           if (list.length === 0) return null
@@ -266,17 +337,18 @@ export default function SidebarNav({ books }: { books: SidebarBook[] }) {
           )
         })}
       </div>
+
       <div className="sb-bottom">
-        <Link href="/settings" className="sb-link">
-          <Settings size={14} /> {t('navSettings')}
+        <Link href="/settings" className={`sb-link ${collapsed ? 'justify-center' : ''}`}>
+          <Settings size={14} /> <span className="sb-hide">{t('navSettings')}</span>
         </Link>
-        <Link href="/help" className="sb-link">
-          <HelpCircle size={14} /> {t('navHelp')}
+        <Link href="/help" className={`sb-link ${collapsed ? 'justify-center' : ''}`}>
+          <HelpCircle size={14} /> <span className="sb-hide">{t('navHelp')}</span>
         </Link>
-        <div className="px-4 pb-3 text-[10px]" style={{ color: 'rgba(243,237,228,.35)' }}>
+        <div className="px-4 pb-1 text-[10px] sb-hide" style={{ color: 'rgba(243,237,228,.35)' }}>
           {t('sbVersion', { v: APP_VERSION })}
         </div>
-        <div className="px-4 pb-3 text-[10px]" style={{ color: 'rgba(243,237,228,.4)' }}>
+        <div className="px-4 pb-3 text-[10px] sb-hide" style={{ color: 'rgba(243,237,228,.4)' }}>
           {t('footer1')} {t('footer2')}
         </div>
       </div>

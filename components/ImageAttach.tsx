@@ -51,6 +51,7 @@ export default function ImageAttach({
   labelAttach,
   labelReplace,
   labelRemove,
+  showPreview = true,
 }: {
   name: string
   value: string | null
@@ -59,6 +60,7 @@ export default function ImageAttach({
   labelAttach: string
   labelReplace: string
   labelRemove: string
+  showPreview?: boolean
 }) {
   const [preview, setPreview] = useState<string | null>(value)
   const [removed, setRemoved] = useState(false)
@@ -67,7 +69,7 @@ export default function ImageAttach({
 
   return (
     <div className="img-attach">
-      {shown && (
+      {showPreview && shown && (
         <div className="img-attach-preview" style={aspect ? { aspectRatio: `${aspect}` } : undefined}>
           <ZoomImage src={shown} />
         </div>

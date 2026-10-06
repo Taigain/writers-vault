@@ -26,9 +26,27 @@ function markText(text: string, q?: string) {
   )
 }
 
-function RunView({ r, highlight }: { r: InlineRun; highlight?: string }) {
+function RunView({
+  r,
+  highlight,
+  onRef,
+}: {
+  r: InlineRun
+  highlight?: string
+  onRef?: (kind: 'char' | 'event', key: string) => void
+}) {
   let node: React.ReactNode = r.mention ? (
-    <span className="mention-hl">{markText(r.text, highlight)}</span>
+    onRef && r.refKind ? (
+      <button
+        type="button"
+        className="mention-hl run-mention"
+        onClick={() => onRef(r.refKind === 'event' ? 'event' : 'char', r.text)}
+      >
+        {markText(r.text, highlight)}
+      </button>
+    ) : (
+      <span className="mention-hl">{markText(r.text, highlight)}</span>
+    )
   ) : (
     markText(r.text, highlight)
   )
@@ -51,7 +69,15 @@ function RunView({ r, highlight }: { r: InlineRun; highlight?: string }) {
   return <>{node}</>
 }
 
-export default function RichPreview({ text, highlight }: { text: string; highlight?: string }) {
+export default function RichPreview({
+  text,
+  highlight,
+  onRef,
+}: {
+  text: string
+  highlight?: string
+  onRef?: (kind: 'char' | 'event', key: string) => void
+}) {
   const [dash, setDash] = useState<DashStyle>('en')
   useEffect(() => {
     setDash(getDashStyle())
@@ -66,7 +92,7 @@ export default function RichPreview({ text, highlight }: { text: string; highlig
             <span key={j}>
               {j > 0 && <br />}
               {line.map((r, k) => (
-                <RunView key={k} r={r} highlight={highlight} />
+                <RunView key={k} r={r} highlight={highlight} onRef={onRef} />
               ))}
             </span>
           ))}

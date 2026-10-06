@@ -7,6 +7,22 @@ export type ChangeEntry = {
 
 export const CHANGELOG: ChangeEntry[] = [  
   {
+    version: '1.5.5',
+    date: '07.10.2026',
+    ru: [
+      'Сворачивание сайдбара в рейку 60 px: кнопка-стрелка, аватарки книг с тултипами, иконки настроек и помощи; состояние запоминается, рабочая область расширяется синхронно с шириной полотна страницы',
+      'Динамические мозаичные сетки в «Локациях», «Мире» и «Персонажах»: карточки естественной высоты, две колонки, три при свёрнутой панели и одна на узких окнах; в карточке локации изображение стало одиночным',
+      'Док справок справа от редактора: клик по имени или метке события в предпросмотре закрепляет карточку; у персонажа редактируемые описание, решения и арка с автосохранением, у события дата и описание',
+      'Карточки дока переставляются перетаскиванием за ручку, закрываются крестиком и ведут в свой раздел; zen-режим док скрывает',
+    ],
+    en: [
+      'Sidebar collapses to a 60 px rail: arrow toggle, book avatars with tooltips, settings and help icons; the state is remembered and the working area grows together with the page canvas width',
+      'Dynamic masonry grids in Locations, World and Characters: natural-height cards, two columns, three with the collapsed panel and one on narrow windows; the location card now shows a single image',
+      'Reference dock to the right of the editor: clicking a name or an event mark in the preview pins a card; characters offer editable description, decisions and arc with autosave, events show date and description',
+      'Dock cards reorder by dragging their grip handle, close with the cross and link to their section; zen mode hides the dock',
+    ],
+  },
+  {
     version: '1.5.4',
     date: '06.10.2026',
     ru: [

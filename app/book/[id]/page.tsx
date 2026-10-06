@@ -250,7 +250,7 @@ export default async function BookPage({
           {tr(lang, 'pgLocsEmpty')}
         </div>
       )}
-      <div className="grid md:grid-cols-2 gap-5">
+        <div className="masonry">
         {locations.map((loc) => (
           <details key={loc.id} className="acc">
             <summary className="acc-head">
@@ -295,6 +295,7 @@ export default async function BookPage({
                   labelAttach={tr(lang, 'pgLocImgAttach')}
                   labelReplace={tr(lang, 'pgLocImgReplace')}
                   labelRemove={tr(lang, 'pgLocImgRemove')}
+                  showPreview={false}
                 />
                 <div className="flex justify-end">
                   <button type="submit" className="btn btn-primary btn-sm">
@@ -357,7 +358,7 @@ export default async function BookPage({
 
   /* ---------- СБОРКА ---------- */
   return (
-    <div className="max-w-6xl mx-auto px-8 py-8 anim-fade">
+    <div className="page-wrap mx-auto px-8 py-8 anim-fade">
       {view === 'passport' ? (
         <>
           <Link

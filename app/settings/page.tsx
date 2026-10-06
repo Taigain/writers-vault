@@ -88,7 +88,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-8 py-10 anim-fade">
+    <div className="page-wrap mx-auto px-8 py-10 anim-fade">
       <h1 className="text-3xl font-bold tracking-tight mb-8">{t('setTitle')}</h1>
 
       <section className="card p-5 mb-6">
