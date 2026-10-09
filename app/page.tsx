@@ -1,32 +1,13 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
-import {
-  Plus,
-  BookOpenText,
-  CalendarDays,
-  Image as ImageIcon,
-  Library,
-  Lightbulb,
-  PenLine,
-  Archive,
-  ArchiveRestore,
-  Upload,
-} from 'lucide-react'
-import {
-  getBooksWithSeries,
-  createBook,
-  createSeries,
-  deleteSeries,
-  getSeriesList,
-  setSeriesStatus,
-  importBookFromDocx,
-} from '@/lib/actions'
-import DeleteButton from '@/components/DeleteButton'
-import ImportDocxButton from '@/components/ImportDocxButton'
+import { BookOpenText, CalendarDays, Library, Lightbulb, PenLine, Archive, NotebookPen } from 'lucide-react'
+import { getBooksWithSeries, createBook, importBookFromDocx, getBookVolumes, getSeriesList, getIdeaNotes } from '@/lib/actions'
 import CollapsibleSection from '@/components/CollapsibleSection'
+import HomeView, { type ShelfBook } from '@/components/HomeView'
 import { getLang } from '@/lib/lang-server'
 import { tr } from '@/lib/i18n'
 import CoverOptimizer from '@/components/CoverOptimizer'
+import IdeaBoard from '@/components/IdeaBoard'
 
 type BookRow = Awaited<ReturnType<typeof getBooksWithSeries>>[number]
 type Status = 'idea' | 'active' | 'archive'
@@ -44,6 +25,11 @@ function BookCard({ b, lang }: { b: BookRow; lang: 'ru' | 'en' }) {
               {b.title.charAt(0).toUpperCase()}
             </div>
           )}
+          {b.genre ? (
+            <div className="text-xs mt-0.5 truncate" style={{ color: 'var(--soft)' }}>
+              {tr(lang, ('g_' + b.genre) as 'g_fantasy')}
+            </div>
+          ) : null}
         </div>
         <div className="p-3.5">
           <div className="font-semibold text-sm truncate">{b.title}</div>
@@ -61,15 +47,31 @@ export default async function Home() {
   const books = await getBooksWithSeries()
   const allSeries = await getSeriesList()
   const lang = await getLang()
-
-  const seriesArchived = new Map<string, boolean>()
-  for (const s of allSeries) {
-    const inSeries = books.filter((b) => b.seriesId === s.id)
-    seriesArchived.set(
-      s.id,
-      inSeries.length > 0 && inSeries.every((b) => b.status === 'archive'),
-    )
-  }
+  const volumes = await getBookVolumes()
+  const ideaNotes = await getIdeaNotes()
+  const statusOrder: Record<string, number> = { active: 0, idea: 1, archive: 2 }
+  const shelfBooks: ShelfBook[] = books
+    .slice()
+    .sort((a, b) => {
+      const so = (statusOrder[a.status] ?? 3) - (statusOrder[b.status] ?? 3)
+      if (so !== 0) return so
+      return a.createdAt.getTime() - b.createdAt.getTime()
+    })
+    .map((b) => {
+      const v = volumes[b.id] ?? { chars: 0, words: 0 }
+      return {
+        id: b.id,
+        title: b.title,
+        status: b.status,
+        series: b.series?.name ?? null,
+        sheets: v.chars / 40000,
+        words: v.words,
+        genre: b.genre ?? '',
+        spineColor: b.spineColor ?? '',
+        spineStyle: b.spineStyle ?? 'tome',
+        createdAt: b.createdAt.getTime(),
+      }
+    })
 
   const renderGroup = (
     status: Status,
@@ -133,79 +135,40 @@ export default async function Home() {
         <h1 className="text-3xl font-bold tracking-tight">{tr(lang, 'homeTitle')}</h1>
         <p className="text-sm mt-1" style={{ color: 'var(--soft)' }}>{tr(lang, 'homeSub')}</p>
       </header>
-      <form action={createBook} className="card p-4 mb-8 flex flex-wrap items-center gap-3">
-        <input name="title" required placeholder={tr(lang, 'homePh')} className="input flex-1 min-w-[220px]" />
-        <label className="btn btn-ghost cursor-pointer">
-          <ImageIcon size={16} /> {tr(lang, 'homeCover')}
-          <input type="file" name="cover" accept="image/*" className="hidden" />
-        </label>
-        <button type="submit" className="btn btn-primary">
-          <Plus size={16} /> {tr(lang, 'homeCreate')}
-        </button>
-        <ImportDocxButton label={tr(lang, 'homeImportDocx')} onFile={importBookFromDocx} />
-      </form>
-      <section className="card p-4 mb-8">
-        <div className="field-label">{tr(lang, 'homeSeriesManage')}</div>
-        <form
-          action={async (fd: FormData) => {
-            'use server'
-            await createSeries(fd)
-          }}
-          className="flex flex-wrap gap-2"
+      <HomeView
+        books={shelfBooks}
+        createAction={createBook}
+        onImport={importBookFromDocx}
+        series={allSeries.map((s) => ({ id: s.id, name: s.name }))}
+        tiles={
+          books.length === 0 ? (
+            <div className="card p-14 text-center">
+              <BookOpenText size={40} className="mx-auto mb-4" style={{ color: 'var(--gold)' }} />
+              <div className="font-semibold text-lg mb-1">{tr(lang, 'homeEmptyTitle')}</div>
+              <p className="text-sm" style={{ color: 'var(--soft)' }}>{tr(lang, 'homeEmptySub')}</p>
+            </div>
+          ) : (
+            <div className="space-y-10">
+              {renderGroup('idea', 'homeGroupIdeas', <Lightbulb size={17} style={{ color: 'var(--gold)' }} />)}
+              {renderGroup('active', 'homeGroupActive', <PenLine size={17} style={{ color: 'var(--gold)' }} />)}
+              {renderGroup('archive', 'homeGroupArchive', <Archive size={17} style={{ color: 'var(--soft)' }} />)}
+            </div>
+          )
+        }
+      />
+      <div className="mt-10">
+        <CollapsibleSection
+          id="idea-board"
+          title={tr(lang, 'ibTitle')}
+          count={ideaNotes.length}
+          icon={<NotebookPen size={17} style={{ color: 'var(--gold)' }} />}
         >
-          <input name="name" required placeholder={tr(lang, 'homeSeriesPh')} className="input flex-1 min-w-[220px]" />
-          <button className="btn btn-primary btn-sm">
-            <Plus size={14} /> {tr(lang, 'homeSeriesAdd')}
-          </button>
-        </form>
-        {allSeries.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-3">
-            {allSeries.map((s) => (
-              <span key={s.id} className="chip flex items-center">
-                <Library size={11} /> {s.name}
-                <form
-                  action={async () => {
-                    'use server'
-                    await setSeriesStatus(s.id, seriesArchived.get(s.id) ? 'active' : 'archive')
-                  }}
-                >
-                  <button
-                    type="submit"
-                    className="mini-btn"
-                    title={
-                      seriesArchived.get(s.id) ? tr(lang, 'homeSeriesRestore') : tr(lang, 'homeSeriesArchive')
-                    }
-                  >
-                    {seriesArchived.get(s.id) ? <ArchiveRestore size={12} /> : <Archive size={12} />}
-                  </button>
-                </form>
-                <DeleteButton
-                  onConfirm={async () => {
-                    'use server'
-                    await deleteSeries(s.id)
-                  }}
-                  label=""
-                  confirmText={tr(lang, 'homeSeriesDeleteConfirm', { name: s.name })}
-                  className="btn btn-ghost btn-sm"
-                />
-              </span>
-            ))}
-          </div>
-        )}
-      </section>
-      {books.length === 0 ? (
-        <div className="card p-14 text-center">
-          <BookOpenText size={40} className="mx-auto mb-4" style={{ color: 'var(--gold)' }} />
-          <div className="font-semibold text-lg mb-1">{tr(lang, 'homeEmptyTitle')}</div>
-          <p className="text-sm" style={{ color: 'var(--soft)' }}>{tr(lang, 'homeEmptySub')}</p>
-        </div>
-      ) : (
-        <div className="space-y-10">
-          {renderGroup('idea', 'homeGroupIdeas', <Lightbulb size={17} style={{ color: 'var(--gold)' }} />)}
-          {renderGroup('active', 'homeGroupActive', <PenLine size={17} style={{ color: 'var(--gold)' }} />)}
-          {renderGroup('archive', 'homeGroupArchive', <Archive size={17} style={{ color: 'var(--soft)' }} />)}
-        </div>
-      )}
+          <IdeaBoard
+            notes={ideaNotes.map((n) => ({ id: n.id, text: n.text, x: n.x, y: n.y, color: n.color }))}
+          />
+          <p className="text-xs mt-2" style={{ color: 'var(--soft)' }}>{tr(lang, 'ibHint')}</p>
+        </CollapsibleSection>
+      </div>
     </div>
   )
 }

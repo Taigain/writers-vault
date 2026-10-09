@@ -6,6 +6,8 @@ import './globals.css'
 import WhatsNewModal from '@/components/WhatsNewModal'
 import { APP_VERSION } from '@/lib/appinfo'
 import NavGuard from '@/components/NavGuard'
+import LanguageGate from '@/components/LanguageGate'
+import BookBar from '@/components/BookBar'
 
 export const metadata: Metadata = { title: "Writer's Vault" }
 
@@ -35,6 +37,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           </aside>
           <main className="flex-1 overflow-auto">{children}</main>
         </div>
+        <LanguageGate />
+        <BookBar />
         <WhatsNewModal current={APP_VERSION} />
       </body>
     </html>

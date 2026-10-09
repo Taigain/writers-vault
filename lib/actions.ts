@@ -40,18 +40,31 @@ export async function getBooks() {
   return prisma.book.findMany({ orderBy: { createdAt: 'desc' } })
 }
 
-export async function createBook(formData: FormData) {
-  const title = formData.get('title') as string
-  const coverFile = formData.get('cover') as File
-
-  let coverBase64 = null
-  if (coverFile && coverFile.size > 0) {
-    const buffer = Buffer.from(await coverFile.arrayBuffer())
-    coverBase64 = `data:${coverFile.type};base64,${buffer.toString('base64')}`
+export async function createBook(fd: FormData) {
+  await schemaReady
+  const title = String(fd.get('title') ?? '').trim()
+  if (!title) return { ok: false as const, error: 'title' }
+  const img = await readImageField(fd, 'cover')
+  const genre = String(fd.get('genre') ?? '')
+  const spineColor = String(fd.get('spineColor') ?? '')
+  let seriesId: string | null = String(fd.get('seriesId') ?? '') || null
+  const spineStyle = String(fd.get('spineStyle') ?? '') || 'tome'
+  const seriesNew = String(fd.get('seriesNew') ?? '').trim()
+  if (seriesNew) {
+    const existing = await prisma.series.findFirst({ where: { name: seriesNew } })
+    seriesId = existing ? existing.id : (await prisma.series.create({ data: { name: seriesNew } })).id
   }
-
-  await prisma.book.create({ data: { title, coverBase64 } })
-  revalidatePath('/')
+  const book = await prisma.book.create({
+    data: {
+      title,
+      coverBase64: img.value ?? null,
+      genre,
+      spineColor,
+      seriesId,
+      spineStyle,
+    },
+  })
+  return { ok: true as const, bookId: book.id }
 }
 
 export async function getBook(id: string) {
@@ -1645,4 +1658,37 @@ export async function updateCharacterFields(
 ) {
   await schemaReady
   await prisma.character.update({ where: { id }, data: patch })
+}
+
+export async function getBookVolumes() {
+  await schemaReady
+  const rows = await prisma.chapter.findMany({ select: { bookId: true, content: true } })
+  const out: Record<string, { chars: number; words: number }> = {}
+  for (const r of rows) {
+    const cur = out[r.bookId] ?? { chars: 0, words: 0 }
+    cur.chars += r.content.length
+    cur.words += r.content.trim() ? r.content.trim().split(/\s+/).length : 0
+    out[r.bookId] = cur
+  }
+  return out
+}
+
+export async function getIdeaNotes() {
+  await schemaReady
+  return prisma.ideaNote.findMany({ orderBy: { createdAt: 'asc' } })
+}
+export async function createIdeaNote(x: number, y: number, text: string, color: string) {
+  await schemaReady
+  return prisma.ideaNote.create({ data: { x, y, text, color } })
+}
+export async function updateIdeaNote(
+  id: string,
+  patch: { text?: string; x?: number; y?: number; color?: string },
+) {
+  await schemaReady
+  await prisma.ideaNote.update({ where: { id }, data: patch })
+}
+export async function deleteIdeaNote(id: string) {
+  await schemaReady
+  await prisma.ideaNote.delete({ where: { id } })
 }

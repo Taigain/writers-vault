@@ -130,11 +130,66 @@ function pageHtml(title, bodyHtml) {
   )
 }
 
-function loadingPage() {
-  return pageHtml(
-    "Writer's Vault",
-    '<h2>Writer\u2019s Vault</h2><p>Запуск локального сервера… Обычно это занимает 1–3 секунды.</p>'
-  )
+function loadingPage(logPath) {
+  const log = typeof logPath === 'string' ? logPath : ''
+  return `<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<style>
+  html,body{height:100%;margin:0;background:#f6f3ec;font-family:Georgia,'Times New Roman',serif;color:#201c17;-webkit-user-select:none;user-select:none;overflow:hidden}
+  .wrap{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+  .logo{width:76px;height:76px;border-radius:50%;background:#211d19;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 22px rgba(32,28,23,.28);animation:pop .55s cubic-bezier(.2,1.4,.4,1) both}
+  .logo svg{width:42px;height:42px}
+  @keyframes pop{from{transform:scale(.55);opacity:0}to{transform:scale(1);opacity:1}}
+  .name{font-size:30px;font-style:italic;letter-spacing:.4px;min-height:40px}
+  .caret{display:inline-block;width:2px;height:26px;background:#8c3a2b;vertical-align:-3px;margin-left:3px;animation:blink 1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+  .ink{width:230px;height:26px;margin-top:-6px}
+  .ink path{fill:none;stroke:#8c3a2b;stroke-width:2;stroke-linecap:round;stroke-dasharray:260;stroke-dashoffset:260;animation:draw 2.1s ease .55s forwards;opacity:.85}
+  @keyframes draw{to{stroke-dashoffset:0}}
+  .status{font-size:13px;color:#6b6257;font-family:'Segoe UI',Arial,sans-serif}
+  .dots span{animation:dot 1.2s infinite}
+  .dots span:nth-child(2){animation-delay:.2s}
+  .dots span:nth-child(3){animation-delay:.4s}
+  @keyframes dot{0%,60%,100%{opacity:.2}30%{opacity:1}}
+  .log{position:fixed;bottom:10px;left:0;right:0;text-align:center;font-size:11px;color:#9a9184;font-family:Consolas,monospace}
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important}
+    .ink path{stroke-dashoffset:0}
+    .caret{opacity:1}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="logo">
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M20 4c-3.2 0-8.2 2.1-11.2 6.1C6.7 12.8 5.8 16.2 5.8 19c2.8 0 6.2-.7 8.9-2.7C18.2 13.5 20 8.2 20 4Z" fill="#f5f0e8"/>
+      <path d="M6.2 18.8 4.4 20.6" stroke="#f5f0e8" stroke-width="1.6" stroke-linecap="round"/>
+    </svg>
+  </div>
+  <div class="name" data-full="Writer&#8217;s Vault"><span id="t"></span><span class="caret"></span></div>
+  <svg class="ink" viewBox="0 0 230 26" aria-hidden="true">
+    <path d="M4 16 C 30 6, 54 22, 80 12 S 132 4, 158 14 S 206 20, 226 8"/>
+  </svg>
+  <div class="status">Запуск локального сервера<span class="dots"><span>.</span><span>.</span><span>.</span></span></div>
+  <div class="status" style="opacity:.75">Обычно это занимает 1–3 секунды.</div>
+</div>
+<div class="log">${log}</div>
+<script>
+  var host = document.querySelector('.name');
+  var full = host.getAttribute('data-full') || '';
+  var el = document.getElementById('t');
+  var i = 0;
+  var iv = setInterval(function () {
+    i += 1;
+    el.textContent = full.slice(0, i);
+    if (i >= full.length) clearInterval(iv);
+  }, 85);
+</script>
+</body>
+</html>`
 }
 
 function tailOfLog() {

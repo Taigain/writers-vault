@@ -27,7 +27,19 @@ model Book {
   status          String          @default("active")
   storylines      Storyline[]
   plotBeats       PlotBeat[]
+  genre           String          @default("")
+  spineColor      String          @default("")
+  spineStyle      String          @default("tome")
   dict DictEntry[]
+}
+
+model IdeaNote {
+  id        String   @id @default(cuid())
+  text      String   @default("")
+  x         Int      @default(40)
+  y         Int      @default(40)
+  createdAt DateTime @default(now())
+  color     String   @default("")
 }
 
 model Note {

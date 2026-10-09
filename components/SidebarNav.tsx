@@ -149,6 +149,17 @@ export default function SidebarNav({ books }: { books: SidebarBook[] }) {
     setBookOpen((c) => (c[activeBookId] !== undefined ? c : { ...c, [activeBookId]: true }))
   }, [activeBookId, books])
 
+  useEffect(() => {
+    const onSet = (e: Event) => {
+      const v = (e as CustomEvent).detail === '1'
+      setCollapsed(v)
+      document.documentElement.style.setProperty('--sbw', v ? '60px' : '256px')
+      document.body.classList.toggle('sb-collapsed', v)
+    }
+    window.addEventListener('wv-sb-set', onSet)
+    return () => window.removeEventListener('wv-sb-set', onSet)
+  }, [])
+
   const grouped = useMemo(() => {
     const out: Record<'idea' | 'active' | 'archive', SidebarBook[]> = {
       idea: [],

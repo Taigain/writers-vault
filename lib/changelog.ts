@@ -7,6 +7,26 @@ export type ChangeEntry = {
 
 export const CHANGELOG: ChangeEntry[] = [  
   {
+    version: '1.6.0',
+    date: '09.10.2026',
+    ru: [
+      'Выбор языка при первом запуске: полноэкранный гейт с двумя плитками до интерфейса; выбор запоминается и меняется в настройках',
+      'Анимированный экран запуска: логотип, «печатающееся» имя и чернильная роспись с пульсом ожидания вместо технической заглушки',
+      'Книжная полка на «Моих книгах»: корешки с толщиной по объёму, цветом по палитре или статусу, значком статуса и орнаментом стиля; виды и сортировка; окно создания книги с живым предпросмотром, жанрами, серией (существующей или новой) и палитрой цветов',
+      'Доска идей на главной: липкие заметки с созданием через попап, восемью цветами бумаги, авто-высотой по тексту, булавками и перетаскиванием',
+      'Нижняя панель разделов книги и автосворачивание сайдбара в рейку при уходе с паспорта книги (отключается в настройках)',
+      'Настройки в едином стиле: группы строк с подсказками; выпадающие списки шрифтов показывают каждый шрифт его собственным начертанием',
+    ],
+    en: [
+      'Language choice on first launch: a fullscreen gate with two tiles before the interface; the choice is remembered and changeable in settings',
+      'Animated startup screen: logo, a "typing" name and an ink signature with a waiting pulse instead of the technical placeholder',
+      'Book shelf on "My Books": spines with volume-based thickness, palette or status color, status icon and style ornament; views and sorting; the creation window with live preview, genres, series (existing or new) and a color palette',
+      'Idea board on the home page: sticky notes created via a popup, eight paper colors, auto-height by text, pins and dragging',
+      'Bottom section bar on book pages and sidebar auto-collapse to the rail when leaving the book passport (disableable in settings)',
+      'Settings in a unified style: grouped rows with hints; font dropdowns render every font in its own typeface',
+    ],
+  },
+  {
     version: '1.5.5',
     date: '07.10.2026',
     ru: [

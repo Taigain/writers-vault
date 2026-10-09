@@ -57,6 +57,22 @@ export const FAQ: Record<Lang, FaqItem[]> = {
       a: 'В предпросмотре главы имена [@персонаж] и метки событий [#событие] стали кликабельными (пунктирное подчёркивание). Клик закрепляет справа от редактора справочную карточку: у персонажа — портрет, роль, псевдонимы и три редактируемых поля (описание, принятые решения, арка) с сохранением по уходу курсора; у события — название, календарная или книжная дата и описание. Карточки перетаскиваются за ручку-грип в шапке, закрываются крестиком, кнопка «Открыть в разделе» уводит на вкладку персонажей или таймлайна. Порядок карточек живёт до конца сессии главы; zen-режим док скрывает. Если персонаж или событие переименованы и метка больше не находится, карточка вежливо сообщает об этом вместо ошибки.',
     },
     {
+      q: 'Книжная полка и окно создания книги',
+      a: 'Страница «Мои книги» показывает книги корешками на полке: толщина зависит от объёма текста, цвет — от выбранной палитры или статуса, значок — от статуса (замысел, в работе, архив), орнамент — от стиля корешка («Том» с ромбом, «Классический» линиями, «Простой» без украшений). Переключатели рядом с сортировкой выбирают вид (полка или плитки обложек) и порядок (по статусу, жанру, серии, дате). Плюс-слот открывает окно создания: слева живой предпросмотр корешка и обложки, справа название, чипы жанров, серия (существующая или «Новая серия…» с инлайн-полем), восемь именованных цветов и свой цвет, стиль корешка; импорт из DOCX там же. Созданная книга сразу встаёт на полку.',
+    },
+    {
+      q: 'Доска идей: липкие заметки на главной',
+      a: 'Под полкой живёт доска идей: двойной клик по пустому месту открывает попап с полем текста (оно окрашивается в выбранную бумагу), восемью цветами и кнопкой «Закрепить заметку». Заметка встаёт в точку клика, перетаскивается за карточку (поле текста при этом выделяет текст, а не тянет заметку), растёт по объёму текста, сохраняется по уходу курсора и на отпускание перетаскивания. Булавка держит заметку визуально; крестик удаляет. Координаты, текст и цвет переживают перезапуск приложения.',
+    },
+    {
+      q: 'Нижняя панель разделов и автосворачивание сайдбара',
+      a: 'На страницах книги внизу по центру живёт пилюля — панель разделов: паспорт и девять разделов иконками, активный подписан. Клики переключают разделы без сайдбара. При переходе с паспорта книги в любой раздел сайдбар сворачивается в рейку, и панель становится основным меню разделов; ручное раскрытие работает и живёт до следующего выхода на паспорт. Поведение отключается пунктом настроек «Сворачивать панель при входе в разделы книги». Вне книжных страниц пилюли нет, zen-режим её перекрывает.',
+    },
+    {
+      q: 'Настройки: единый стиль и самопоказывающиеся шрифты',
+      a: 'Настройки собраны в четыре группы строками: название и подсказка слева, контроль справа, между строками разделители. Язык и тема переключаются чипами, как во всём приложении. Выпадающие списки шрифтов заменены пикерами: кнопка и каждая опция списка набраны тем шрифтом, о котором речь, поэтому выбор становится визуальным сравнением, а не гаданием по названию. Папка экспорта, автосохранение, кавычки, тире и палитры живут в той же сетке; все изменения применяются мгновенно и запоминаются.',
+    },
+    {
       q: 'Сохранение и защита от потери текста',
       a: 'Если в редакторе главы или в формах страницы остались несохранённые изменения, перед любым выходом приложение спрашивает, что делать. Переход между разделами внутри приложения открывает окно с тремя кнопками: «Сохранить и перейти» (текст глав сохраняется, грязные формы отправляются, затем происходит переход), «Не сохранять», «Отмена». Закрытие вкладки в веб-версии даёт нативный вопрос браузера, закрытие окна в десктопной — диалог «Сохранить и выйти / Выйти без сохранения / Отмена». Форма считается грязной с момента ввода до отправки, редактор главы — до сохранения или автосохранения.',
     },
@@ -225,6 +241,22 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     {
       q: 'Reference dock: character and event cards beside the text',
       a: 'In the chapter preview, [@character] names and [#event] marks became clickable (dashed underline). A click pins a reference card to the right of the editor: a character shows portrait, role, aliases and three editable fields (description, decisions, arc) saved when the cursor leaves; an event shows its title, calendar or book date and description. Cards drag by the grip handle in the header, close with the cross, and the "Open in section" button jumps to the characters or timeline tab. The card order lives until the end of the chapter session; zen mode hides the dock. If a character or event was renamed and the mark no longer resolves, the card politely says so instead of failing.',
+    },
+    {
+      q: 'Book shelf and the book creation window',
+      a: 'The "My Books" page shows books as spines on a shelf: thickness follows the text volume, color follows the chosen palette or status, the icon follows the status (idea, in work, archive), the ornament follows the spine style ("Tome" with a diamond, "Classic" with lines, "Plain" without). The toggles next to sorting pick the view (shelf or cover tiles) and the order (by status, genre, series, date). The plus slot opens the creation window: a live spine and cover preview on the left; title, genre chips, series (existing or "New series…" with an inline field), eight named colors plus a custom one, and spine style on the right; DOCX import lives there too. A created book takes its place on the shelf at once.',
+    },
+    {
+      q: 'Idea board: sticky notes on the home page',
+      a: 'Below the shelf lives the idea board: a double-click on empty space opens a popup with a text field (tinted in the chosen paper), eight colors and a "Pin note" button. The note lands at the click point, drags by its card (the text field selects text instead of dragging), grows with the text, saves when the cursor leaves and when the drag ends. The pin holds the note in place visually; the cross deletes it. Coordinates, text and color survive app restarts.',
+    },
+    {
+      q: 'Bottom section bar and sidebar auto-collapse',
+      a: 'Book pages get a centered pill at the bottom — the section bar: the passport and nine sections as icons, the active one labeled. Clicks switch sections without the sidebar. Leaving the book passport for any section collapses the sidebar to the rail so the bar becomes the primary section menu; a manual expand still works and lives until the next exit to the passport. The behavior is disabled by the settings item "Collapse sidebar when entering book sections". Outside book pages the pill is absent; zen mode covers it.',
+    },
+    {
+      q: 'Settings: unified style and self-showing fonts',
+      a: 'Settings are gathered into four groups of rows: name and hint on the left, control on the right, dividers between rows. Language and theme switch with chips like everywhere in the app. Font dropdowns are replaced by pickers: the button and every option in the list are set in the very font they name, so the choice becomes a visual comparison instead of guessing by label. Export folder, autosave, quotes, dashes and palettes live in the same grid; every change applies instantly and is remembered.',
     },
     {
       q: 'Saving and protection from lost text',
