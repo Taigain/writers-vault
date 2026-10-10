@@ -4,17 +4,29 @@ const g = globalThis as unknown as { prisma?: PrismaClient; schemaReady?: Promis
 export const prisma = g.prisma ?? new PrismaClient()
 if (!g.prisma) g.prisma = prisma
 
+const MIGRATIONS: string[] = [
+  "ALTER TABLE Book ADD COLUMN genre TEXT NOT NULL DEFAULT ''",
+  "ALTER TABLE Book ADD COLUMN spineColor TEXT NOT NULL DEFAULT ''",
+  "ALTER TABLE Book ADD COLUMN spineStyle TEXT NOT NULL DEFAULT 'tome'",
+  "CREATE TABLE IF NOT EXISTS IdeaNote (id TEXT NOT NULL PRIMARY KEY, text TEXT NOT NULL DEFAULT '', color TEXT NOT NULL DEFAULT '', x INTEGER NOT NULL DEFAULT 40, y INTEGER NOT NULL DEFAULT 40, createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP)",
+]
+
+async function runMigrations() {
+  for (const sql of MIGRATIONS) {
+    try {
+      await prisma.$executeRawUnsafe(sql)
+    } catch {
+      /* колонка или таблица уже существуют — пропускаем */
+    }
+  }
+}
+
 async function ensureSchema() {
   try {
     await prisma.$executeRawUnsafe(
-      `CREATE TABLE IF NOT EXISTS "Series" (
-        "id" TEXT NOT NULL PRIMARY KEY,
-        "name" TEXT NOT NULL,
-        "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-      )`,
+      `CREATE TABLE IF NOT EXISTS "Series" ( "id" TEXT NOT NULL PRIMARY KEY, "name" TEXT NOT NULL, "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP )`,
     )
     await prisma.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "Series_name_key" ON "Series"("name")`)
-
     const bookCols = await prisma.$queryRawUnsafe<Array<{ name: string }>>(`PRAGMA table_info("Book")`)
     if (!bookCols.some((c) => c.name === 'exportMeta')) {
       await prisma.$executeRawUnsafe(`ALTER TABLE "Book" ADD COLUMN "exportMeta" BOOLEAN NOT NULL DEFAULT 1`)
@@ -25,38 +37,31 @@ async function ensureSchema() {
     if (!bookCols.some((c) => c.name === 'structure')) {
       await prisma.$executeRawUnsafe(`ALTER TABLE "Book" ADD COLUMN "structure" TEXT`)
     }
-
     const charCols = await prisma.$queryRawUnsafe<Array<{ name: string }>>(`PRAGMA table_info("Character")`)
     if (!charCols.some((c) => c.name === 'aliases')) {
       await prisma.$executeRawUnsafe(`ALTER TABLE "Character" ADD COLUMN "aliases" TEXT NOT NULL DEFAULT ''`)
     }
-
     const chCols = await prisma.$queryRawUnsafe<Array<{ name: string }>>(`PRAGMA table_info("Chapter")`)
     if (!chCols.some((c) => c.name === 'actName')) {
       await prisma.$executeRawUnsafe(`ALTER TABLE "Chapter" ADD COLUMN "actName" TEXT`)
       await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "Chapter_actName_idx" ON "Chapter"("actName")`)
     }
-
     const charCols2 = await prisma.$queryRawUnsafe<Array<{ name: string }>>(`PRAGMA table_info("Character")`)
     if (!charCols2.some((c) => c.name === 'portraitBase64')) {
       await prisma.$executeRawUnsafe(`ALTER TABLE "Character" ADD COLUMN "portraitBase64" TEXT`)
     }
-
     const loreCols = await prisma.$queryRawUnsafe<Array<{ name: string }>>(`PRAGMA table_info("LoreEntry")`)
     if (!loreCols.some((c) => c.name === 'imageBase64')) {
       await prisma.$executeRawUnsafe(`ALTER TABLE "LoreEntry" ADD COLUMN "imageBase64" TEXT`)
     }
-
     const evCols = await prisma.$queryRawUnsafe<Array<{ name: string }>>(`PRAGMA table_info("TimelineEvent")`)
     if (!evCols.some((c) => c.name === 'tag')) {
       await prisma.$executeRawUnsafe(`ALTER TABLE "TimelineEvent" ADD COLUMN "tag" TEXT`)
     }
-
-        const emCols = await prisma.$queryRawUnsafe<Array<{ name: string }>>(`PRAGMA table_info("EventMention")`)
+    const emCols = await prisma.$queryRawUnsafe<Array<{ name: string }>>(`PRAGMA table_info("EventMention")`)
     if (!emCols.some((c) => c.name === 'pos')) {
       await prisma.$executeRawUnsafe(`ALTER TABLE "EventMention" ADD COLUMN "pos" INTEGER`)
     }
-
     await prisma.$executeRawUnsafe(
       `CREATE TABLE IF NOT EXISTS "Storyline" (
         "id" TEXT NOT NULL PRIMARY KEY,
@@ -107,7 +112,6 @@ async function ensureSchema() {
     await prisma.$executeRawUnsafe(
       `CREATE UNIQUE INDEX IF NOT EXISTS "BeatCharacter_beatId_characterId_key" ON "BeatCharacter"("beatId", "characterId")`,
     )
-
     const beatCols = await prisma.$queryRawUnsafe<Array<{ name: string }>>(`PRAGMA table_info("PlotBeat")`)
     if (!beatCols.some((c) => c.name === 'bookId')) {
       await prisma.$executeRawUnsafe(`ALTER TABLE "PlotBeat" ADD COLUMN "bookId" TEXT`)
@@ -115,7 +119,6 @@ async function ensureSchema() {
         `UPDATE "PlotBeat" SET "bookId" = (SELECT "bookId" FROM "Storyline" WHERE "Storyline"."id" = "PlotBeat"."lineId")`,
       )
     }
-
     const pbCols = await prisma.$queryRawUnsafe<Array<{ name: string; notnull: number }>>(
       `PRAGMA table_info("PlotBeat")`,
     )
@@ -147,7 +150,6 @@ async function ensureSchema() {
         await prisma.$executeRawUnsafe(`PRAGMA foreign_keys = ON`)
       }
     }
-
     await prisma.$executeRawUnsafe(
       `CREATE TABLE IF NOT EXISTS "BeatLine" (
         "id" TEXT NOT NULL PRIMARY KEY,
@@ -167,7 +169,6 @@ async function ensureSchema() {
        WHERE "lineId" IS NOT NULL
          AND NOT EXISTS (SELECT 1 FROM "BeatLine" bl WHERE bl."beatId" = "PlotBeat"."id" AND bl."lineId" = "PlotBeat"."lineId")`,
     )
-
     await prisma.$executeRawUnsafe(
       `CREATE TABLE IF NOT EXISTS "DictEntry" (
         "id" TEXT NOT NULL PRIMARY KEY,
@@ -213,6 +214,8 @@ async function ensureSchema() {
     }
   } catch (e) {
     console.error('ensureSchema failed:', e)
+  } finally {
+    await runMigrations()
   }
 }
 

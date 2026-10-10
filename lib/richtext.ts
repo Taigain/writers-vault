@@ -21,7 +21,7 @@ type Base = {
 }
 const ALIGN_RE = /^\[(left|center|right)\]\s*/i
 const TOKEN_RE =
-  /(\[@[^\]]*\])|(\[#[^\]]*\])|(\[sc:[^\]]*\])|(\[\/sc\])|(\[hl=\d+\])|(\[\/hl\])|(\*\*[\s\S]+?\*\*)|(\*[\s\S]+?\*)|(\[size=\d+\][\s\S]*?\[\/size\])/g
+  /(\[@[^\]]*\])|(\[#[^\]]*\])|(\[sc:[^\]]*\])|(\[\/sc\])|(\[hl=\d+\])|(\[\/hl\])|(\*\*[\s\S]+?\*\*)|(\*[\s\S]+?\*)|(\[size=\d+\][\s\S]*?\[\/size\])|(\[lng\])|(\[\/lng\])/g
 
 function parseInline(text: string, base: Base): InlineRun[] {
   const runs: InlineRun[] = []
@@ -72,6 +72,8 @@ function parseInline(text: string, base: Base): InlineRun[] {
         const size = parseInt(sm[1], 10)
         const inner = tok.slice(sm[0].length, tok.length - '[/size]'.length)
         runs.push(...parseInline(inner, { ...cur, size }))
+    } else if (m[10] || m[11]) {
+      /* границы языковых зон: видимого текста нет */
       }
     }
     last = m.index + tok.length

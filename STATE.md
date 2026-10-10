@@ -38,6 +38,14 @@
 9. i18n набора: hv*, cb* (включая cbStyle, cbSort*, cbPreview*, cbSeries*), st_tome/st_classic/st_plain,
    g_* классические + легаси, ib* (ibTitle/ibHint/ibPh/ibNew/ibPin/ibCancel), setSub/setGroup*/
    setUpdatesRow/setSbAuto/setSbAutoHint/setOn/setOff, bbPassport, c* свотчи.
+10. Словарь v2: DictSection.tsx — поиск, счётчики использований (getDictUsage в actions.ts), видимые ошибки
+    добавления, инлайн-редактирование пар d/b; кнопки копирования [~ключ] и подтверждения удаления;
+    применение словаря через onsubmit с router.refresh() и сохранённой ссылкой на форму.
+11. Языковые зоны [lng]…[/lng]: lib/dict.ts (applyDictZones с ZONE_RE, substituteToken, transferCase),
+    границы зон невидимы в richtext.ts (TOKEN_RE группы m[10]/m[11]), кнопка Globe2 на панели редактора,
+    снятие зон в clearFormatting.
+12. Премиум-задел: группы словарей с именованными зонами [lang:имя] — архитектура готова (applyDictZones
+    принимает карту словаря параметром), схема не требует миграций.
 
 ## Правила проекта (из выстраданных ошибок)
 - Переменной --bg НЕТ: фоны — явные цвета или --soft-bg/--line с проверкой [data-theme='dark'].
@@ -83,6 +91,7 @@
 - Стили корешков «С полосами» и «Гримуар»; счётчики на пилюле BookBar.
 - Карта мира с точками; генеалогическое древо; эстетический проход (облако, виджеты);
    календарь мира — премиум; монетизация фазы 0–3; Yandex Speller opt-in.
+- Премиум-словари: группировка записей по языкам + именованные зоны [lang:имя]; фильтрующий слой перед applyDictZones.
 
 ## Процедура релиза
 Grep-чек-лист выше → changelog → FAQ → bump package.json + appinfo → db push --skip-generate + generate →

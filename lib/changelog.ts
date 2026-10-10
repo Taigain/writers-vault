@@ -5,7 +5,21 @@ export type ChangeEntry = {
   en: string[]
 }
 
-export const CHANGELOG: ChangeEntry[] = [  
+export const CHANGELOG: ChangeEntry[] = [ 
+  {
+    version: '1.6.1',
+    date: '10.10.2026',
+    ru: [
+      'Словарь полностью переработан: видимые ошибки при пустых полях, мгновенный поиск, счётчики использований маркеров [~ключ] по главам и инлайн-редактирование без модалок',
+      'Языковые зоны: выделите речь в [lng]…[/lng] — в предпросмотре, чтении и экспорте слова внутри автоматически заменяются на термины словаря с сохранением регистра',
+      'Подготовлена основа премиум-функции: группы словарей с именованными зонами ([lang:эльфийский]…[/lang]) для нескольких языков в одной книге',
+    ],
+    en: [
+      'Dictionary fully reworked: visible errors on empty fields, instant search, usage counters of [~key] marks across chapters, and inline editing without modals',
+      'Language zones: wrap speech in [lng]…[/lng] — in preview, reading and export, the words inside automatically become dictionary terms with case preserved',
+      'Foundation for a premium feature laid: dictionary groups with named zones ([lang:Elvish]…[/lang]) for several languages in one book',
+    ],
+  }, 
   {
     version: '1.6.0',
     date: '09.10.2026',
@@ -16,6 +30,7 @@ export const CHANGELOG: ChangeEntry[] = [
       'Доска идей на главной: липкие заметки с созданием через попап, восемью цветами бумаги, авто-высотой по тексту, булавками и перетаскиванием',
       'Нижняя панель разделов книги и автосворачивание сайдбара в рейку при уходе с паспорта книги (отключается в настройках)',
       'Настройки в едином стиле: группы строк с подсказками; выпадающие списки шрифтов показывают каждый шрифт его собственным начертанием',
+      'Надёжность обновлений: приложение само достраивает схему базы при старте — новые поля книг и таблица заметок появляются на любых старых базах без ручных действий',
     ],
     en: [
       'Language choice on first launch: a fullscreen gate with two tiles before the interface; the choice is remembered and changeable in settings',
@@ -24,6 +39,7 @@ export const CHANGELOG: ChangeEntry[] = [
       'Idea board on the home page: sticky notes created via a popup, eight paper colors, auto-height by text, pins and dragging',
       'Bottom section bar on book pages and sidebar auto-collapse to the rail when leaving the book passport (disableable in settings)',
       'Settings in a unified style: grouped rows with hints; font dropdowns render every font in its own typeface',
+      'Update reliability: the app extends the database schema on startup — new book columns and the notes table appear on any old database without manual steps',
     ],
   },
   {

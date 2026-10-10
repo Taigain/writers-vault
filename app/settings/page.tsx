@@ -15,7 +15,7 @@ import {
 import { saveDirHandle, getSavedDirName, clearSavedDir } from '@/lib/fsAccess'
 import { useLang, setLangEverywhere } from '@/lib/useLang'
 import type { Lang, StrKey } from '@/lib/i18n'
-import { APP_NAME, APP_VERSION, APP_AUTHOR, APP_YEAR, DONATE_LINKS } from '@/lib/appinfo'
+import { APP_NAME, APP_VERSION, APP_AUTHOR, APP_YEAR, DONATE_LINKS, APP_URL } from '@/lib/appinfo'
 import AutosaveSetting from '@/components/AutosaveSetting'
 import CheckUpdatesButton from '@/components/CheckUpdatesButton'
 import ContactForm from '@/components/ContactForm'
@@ -267,7 +267,17 @@ export default function SettingsPage() {
           <History size={16} className="set-ico" />
           <div className="min-w-0">
             <div className="set-t">{t('setUpdatesRow')}</div>
-            <div className="set-h">{t('aboutAuthor')}: {APP_AUTHOR}</div>
+            <div className="set-h">
+              {t('aboutAuthor')}:{' '}
+              <a
+                href={APP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="link-author"
+              >
+                {APP_AUTHOR}
+              </a>
+            </div>
           </div>
           <div className="set-ctl">
             <CheckUpdatesButton />

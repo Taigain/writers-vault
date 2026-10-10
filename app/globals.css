@@ -1483,3 +1483,13 @@ body.has-book-bar main {
     padding-bottom: 0;
   }
 }
+
+.link-author {
+  color: var(--gold);
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 3px;
+}
+.link-author:hover {
+  text-decoration-style: solid;
+}

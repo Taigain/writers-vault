@@ -65,6 +65,18 @@ export const FAQ: Record<Lang, FaqItem[]> = {
       a: 'Под полкой живёт доска идей: двойной клик по пустому месту открывает попап с полем текста (оно окрашивается в выбранную бумагу), восемью цветами и кнопкой «Закрепить заметку». Заметка встаёт в точку клика, перетаскивается за карточку (поле текста при этом выделяет текст, а не тянет заметку), растёт по объёму текста, сохраняется по уходу курсора и на отпускание перетаскивания. Булавка держит заметку визуально; крестик удаляет. Координаты, текст и цвет переживают перезапуск приложения.',
     },
     {
+      q: 'Словарь: как работает замена слов',
+      a: 'В словаре книги у каждой записи есть три поля: «Слово» (термин-цель, что подставляется), «Значение» (человеческое слово, по которому строится ключ [~значение]) и пары форм (человеческие словоформы → терминоформы). В тексте главы используйте явный маркер [~значение] — в предпросмотре, чтении и DOCX-экспорте он заменяется термином с сохранением регистра: «эльф» → «Тир\'ион», «ЭЛЬФ» → «ТИР\'ИОН». Счётчик «N исп.» рядом с записью показывает, сколько раз маркер встретился в главах — так сразу видно, какие термины живые, а какие забыты. Ошибки добавления показываются текстом под формой: ключ формируется из значения, при совпадении к нему автоматически дописывается номер.',
+    },
+    {
+      q: 'Языковые зоны: речь на другом языке',
+      a: 'Когда персонаж говорит на эльфийском, орочьем или любом вымышленном языке, выделите его реплику маркерами [lng]…[/lng]. Внутри зоны слова, совпавшие с человеческими формами словаря (ключ и пары d), автоматически заменяются терминами с сохранением регистра; границы зоны в предпросмотре, чтении и экспорте невидимы — как и границы сцен. Вы сами решаете, выделять ли зону курсивом в тексте. Вне зон работают только явные маркеры [~ключ]. Именованные зоны вида [lang:эльфийский]…[/lang] для нескольких языков в одной книге — будущая премиум-возможность, под которую схема уже подготовлена.',
+    },
+    {
+      q: 'Языковые зоны: премиум-возможность',
+      a: 'Для книг с несколькими вымышленными языками (эльфийский, орочий, гоблинский и так далее) запланирована премиум-функция: группы словарей, каждая со своим именем, и именованные зоны [lang:имя]…[/lang]. В таком режиме зона заменяет слова только по словарю указанной группы, а остальные термины остаются нетронутыми. Основа уже лежит в коде — при выходе функции вы сможете разделять словари по языкам и управлять заменой точечно, не переписывая главу.',
+    },
+    {
       q: 'Нижняя панель разделов и автосворачивание сайдбара',
       a: 'На страницах книги внизу по центру живёт пилюля — панель разделов: паспорт и девять разделов иконками, активный подписан. Клики переключают разделы без сайдбара. При переходе с паспорта книги в любой раздел сайдбар сворачивается в рейку, и панель становится основным меню разделов; ручное раскрытие работает и живёт до следующего выхода на паспорт. Поведение отключается пунктом настроек «Сворачивать панель при входе в разделы книги». Вне книжных страниц пилюли нет, zen-режим её перекрывает.',
     },
@@ -249,6 +261,18 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     {
       q: 'Idea board: sticky notes on the home page',
       a: 'Below the shelf lives the idea board: a double-click on empty space opens a popup with a text field (tinted in the chosen paper), eight colors and a "Pin note" button. The note lands at the click point, drags by its card (the text field selects text instead of dragging), grows with the text, saves when the cursor leaves and when the drag ends. The pin holds the note in place visually; the cross deletes it. Coordinates, text and color survive app restarts.',
+    },
+    {
+      q: 'Dictionary: how word substitution works',
+      a: 'Every entry in a book\'s dictionary has three fields: "Word" (the target term that gets inserted), "Meaning" (the human word from which the [~meaning] key is built) and form pairs (human wordforms → term wordforms). In a chapter\'s text, use an explicit [~meaning] mark — in preview, reading and DOCX export it is replaced by the term with case preserved: "elf" → "Tir\'ion", "ELF" → "TIR\'ION". The "N uses" counter next to an entry tells how many times the mark appeared across chapters, so live terms and forgotten ones are visible at a glance. Addition errors show as text below the form: the key is built from the meaning, and on a collision a number is appended automatically.',
+    },
+    {
+      q: 'Language zones: speech in another language',
+      a: 'When a character speaks Elvish, Orcish or any invented language, wrap the line in [lng]…[/lng]. Inside the zone, words that match the dictionary\'s human forms (the key and the d-pairs) are automatically replaced by their terms with case preserved; the zone boundaries stay invisible in preview, reading and export — just like scene boundaries. You decide yourself whether to mark the zone with italics in the text. Outside zones, only explicit [~key] marks apply. Named zones like [lang:Elvish]…[/lang] for several languages in one book are a future premium feature; the schema is already prepared for it.',
+    },
+    {
+      q: 'Language zones: the premium option',
+      a: 'For books with several invented languages (Elvish, Orcish, Goblin, and so on) a premium feature is planned: dictionary groups, each with its own name, and named zones [lang:name]…[/lang]. In that mode a zone substitutes words only from the named group\'s dictionary while the other terms stay untouched. The foundation already sits in the code — when the feature ships, you will be able to split dictionaries by language and control substitution precisely, without rewriting the chapter.',
     },
     {
       q: 'Bottom section bar and sidebar auto-collapse',

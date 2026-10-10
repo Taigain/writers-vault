@@ -525,6 +525,13 @@ export const STR = {
     setSbAutoHint: 'При переходе с паспорта книги в любой раздел сайдбар убирается в рейку: нижняя панель становится основным меню разделов.',
     setOn: 'Вкл',
     setOff: 'Выкл',
+    dcZoneHint: 'Оберните речь в [lng]…[/lng]: внутри зоны слова, совпавшие с человеческими формами словаря (ключ и формы d), в предпросмотре, чтении и экспорте заменяются терминами с сохранением регистра. Несколько словарей и именованные зоны — будущая премиум-возможность.',
+    dcSearch: 'Поиск по словарю…',
+    dcNotFound: 'Ничего не найдено по запросу.',
+    dcErr_word: 'Укажите слово-термин: что подставлять вместо человеческого слова.',
+    dcErr_meaning: 'Укажите человеческое значение: что заменяем и что ищем в зонах.',
+    dcUses: '{n} исп.',
+    chTbLang: 'Языковая зона [lng]…[/lng]',
   },
   en: {
     tagline: "author's cabinet",
@@ -1048,6 +1055,13 @@ export const STR = {
     setSbAutoHint: 'Leaving the book passport for any section tucks the sidebar into the rail: the bottom bar becomes the primary section menu.',
     setOn: 'On',
     setOff: 'Off',
+    dcZoneHint: 'Wrap speech in [lng]…[/lng]: inside the zone, words matching the dictionary human forms (key and d-forms) become their terms in preview, reading and export, case preserved. Multiple dictionaries and named zones are a future premium feature.',
+    dcSearch: 'Search the dictionary…',
+    dcNotFound: 'Nothing found for the query.',
+    dcErr_word: 'Provide the term word: what substitutes the human word.',
+    dcErr_meaning: 'Provide the human meaning: what we replace and look for in zones.',
+    dcUses: '{n} uses',
+    chTbLang: 'Language zone [lng]…[/lng]',
   },
 } as const
 

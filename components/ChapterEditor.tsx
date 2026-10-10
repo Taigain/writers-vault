@@ -26,6 +26,7 @@ import {
   Quote,
   X,
   Clapperboard,
+  Globe2,
 } from 'lucide-react'
 import RichPreview from './RichPreview'
 import ExportButton from './ExportButton'
@@ -477,6 +478,7 @@ export default function ChapterEditor({
     if (sel === original) return
     setC(c.slice(0, start) + sel + c.slice(end))
     setSel(start, start + sel.length, scroll)
+    sel = sel.replace(/\[lng\]/g, '').replace(/\[\/lng\]/g, '')
   }
 
   const setAlign = (align: 'left' | 'center' | 'right') => {
@@ -790,6 +792,9 @@ export default function ChapterEditor({
                   </button>
                   <button type="button" title={t('chTbDict')} onClick={() => toggleWrap('[~', ']')}>
                     <Languages size={15} />
+                  </button>
+                  <button type="button" title={t('chTbLang')} onClick={() => wrapPair('[lng]', '[/lng]')}>
+                    <Globe2 size={15} />
                   </button>
                   <button type="button" title={t('chTbPunct')} onClick={() => setPunctOpen(!punctOpen)}>
                     <SpellCheck size={15} />

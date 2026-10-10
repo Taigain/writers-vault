@@ -45,6 +45,7 @@ import {
   getStorylines,
   getBookBeats,
   getDict,
+  getDictUsage,
   importChaptersFromDocx,
   getScenes,
   readImageField,
@@ -79,6 +80,7 @@ export default async function BookPage({
   const lines = await getStorylines(id)
   const allBeats = await getBookBeats(id)
   const dictRows = await getDict(id)
+  const dictUsage = await getDictUsage(id)
   const scenes = await getScenes(id)
   const dictMap = buildDictMap(dictRows)
   const chapterOptions = chapters.map((c) => ({ id: c.id, title: c.title }))
@@ -349,7 +351,7 @@ export default async function BookPage({
   )
 
   /* ---------- СЛОВАРЬ ---------- */
-  const dictSection = <DictSection bookId={id} entries={dictRows} />
+  const dictSection = <DictSection bookId={id} entries={dictRows} usage={dictUsage} />
 
   /* ---------- СЦЕНЫ ---------- */
   const scenesSection = (

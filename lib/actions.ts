@@ -1285,20 +1285,38 @@ export async function getDict(bookId: string): Promise<DictRow[]> {
   return rows.map((r) => ({ id: r.id, key: r.key, word: r.word, meaning: r.meaning, forms: parseForms(r.forms) }))
 }
 
-export async function createDictEntry(bookId: string, fd: FormData) {
+export async function createDictEntry(
+  bookId: string,
+  fd: FormData,
+): Promise<{ ok: true } | { ok: false; error: 'word' | 'meaning' }> {
   await schemaReady
   const word = ((fd.get('word') as string) ?? '').trim()
   const meaning = ((fd.get('meaning') as string) ?? '').trim()
-  if (!word || !meaning) return
+  if (!word) return { ok: false, error: 'word' }
+  if (!meaning) return { ok: false, error: 'meaning' }
   let key = makeKey(meaning)
   const exists = await prisma.dictEntry.findUnique({ where: { bookId_key: { bookId, key } } })
   if (exists) {
     let n = 2
-    while (await prisma.dictEntry.findUnique({ where: { bookId_key: { bookId, key: key + '_' + n } } })) n++
-    key = key + '_' + n
+    while (await prisma.dictEntry.findUnique({ where: { bookId_key: { bookId, key: key + n } } })) n++
+    key = key + n
   }
   await prisma.dictEntry.create({ data: { bookId, key, word, meaning } })
   revalidatePath(`/book/${bookId}`)
+  return { ok: true }
+}
+
+export async function getDictUsage(bookId: string): Promise<Record<string, number>> {
+  await schemaReady
+  const rows = await prisma.chapter.findMany({ where: { bookId }, select: { content: true } })
+  const out: Record<string, number> = {}
+  for (const r of rows) {
+    for (const m of r.content.matchAll(/\[~([^\]\n]+)\]/g)) {
+      const k = m[1].trim().toLowerCase()
+      out[k] = (out[k] ?? 0) + 1
+    }
+  }
+  return out
 }
 
 export async function saveDictEntry(id: string, fd: FormData) {
