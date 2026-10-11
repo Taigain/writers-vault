@@ -9,6 +9,8 @@ const MIGRATIONS: string[] = [
   "ALTER TABLE Book ADD COLUMN spineColor TEXT NOT NULL DEFAULT ''",
   "ALTER TABLE Book ADD COLUMN spineStyle TEXT NOT NULL DEFAULT 'tome'",
   "CREATE TABLE IF NOT EXISTS IdeaNote (id TEXT NOT NULL PRIMARY KEY, text TEXT NOT NULL DEFAULT '', color TEXT NOT NULL DEFAULT '', x INTEGER NOT NULL DEFAULT 40, y INTEGER NOT NULL DEFAULT 40, createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP)",
+  "UPDATE TimelineEvent SET tag = REPLACE(tag, '_', ' ') WHERE instr(tag, '_') > 0",
+  "UPDATE TimelineEvent SET description = REPLACE(description, '_', ' ') WHERE instr(description, '_') > 0",
 ]
 
 async function runMigrations() {

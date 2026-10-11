@@ -77,6 +77,10 @@ export const FAQ: Record<Lang, FaqItem[]> = {
       a: 'Для книг с несколькими вымышленными языками (эльфийский, орочий, гоблинский и так далее) запланирована премиум-функция: группы словарей, каждая со своим именем, и именованные зоны [lang:имя]…[/lang]. В таком режиме зона заменяет слова только по словарю указанной группы, а остальные термины остаются нетронутыми. Основа уже лежит в коде — при выходе функции вы сможете разделять словари по языкам и управлять заменой точечно, не переписывая главу.',
     },
     {
+      q: 'События: метки в главе и таймлайн-синопсис',
+      a: 'Метка [#Название события] в тексте главы при сохранении сама создаёт событие в таймлайне, если такого ещё нет, — как границы сцен создают сцены. Метки хранятся по-человечески, с пробелами; старые подчёркивания в названиях событий исправлены автоматически, а снятие зоны в редакторе вычищает подчёркивания из текста. Карточка на таймлайне читается как синопсис: дата, название события, тег, ваше описание из поля события (без него — первая фраза главы, очищенная от разметки), глава и участники чипами. Повторные сохранения не плодят дубли: метка узнаёт своё событие по названию или тегу без учёта регистра и пробелов.',
+    },
+    {
       q: 'Нижняя панель разделов и автосворачивание сайдбара',
       a: 'На страницах книги внизу по центру живёт пилюля — панель разделов: паспорт и девять разделов иконками, активный подписан. Клики переключают разделы без сайдбара. При переходе с паспорта книги в любой раздел сайдбар сворачивается в рейку, и панель становится основным меню разделов; ручное раскрытие работает и живёт до следующего выхода на паспорт. Поведение отключается пунктом настроек «Сворачивать панель при входе в разделы книги». Вне книжных страниц пилюли нет, zen-режим её перекрывает.',
     },
@@ -273,6 +277,10 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     {
       q: 'Language zones: the premium option',
       a: 'For books with several invented languages (Elvish, Orcish, Goblin, and so on) a premium feature is planned: dictionary groups, each with its own name, and named zones [lang:name]…[/lang]. In that mode a zone substitutes words only from the named group\'s dictionary while the other terms stay untouched. The foundation already sits in the code — when the feature ships, you will be able to split dictionaries by language and control substitution precisely, without rewriting the chapter.',
+    },
+    {
+      q: 'Events: marks in chapters and the timeline synopsis',
+      a: 'A [#Event name] mark in a chapter creates the event in the timeline on save when it does not exist yet — the way scene boundaries create scenes. Marks are stored human-readably, with spaces; legacy underscores in event names are fixed automatically, and unwrapping a zone in the editor cleans underscores from the text. The timeline card reads as a synopsis: date, event name, tag, your description from the event field (without it — the chapter\'s first sentence, stripped of markup), chapter and participants as chips. Repeated saves never duplicate: a mark recognizes its event by name or tag regardless of case and spaces.',
     },
     {
       q: 'Bottom section bar and sidebar auto-collapse',

@@ -7,6 +7,22 @@ export type ChangeEntry = {
 
 export const CHANGELOG: ChangeEntry[] = [ 
   {
+    version: '1.6.2',
+    date: '11.10.2026',
+    ru: [
+      'События создаются сами: метка [#Название] при сохранении главы добавляет событие в таймлайн, если его ещё нет, — по тому же принципу, по которому границы сцен создают сцены',
+      'Метки событий и названия хранятся по-человечески, с пробелами; старые подчёркивания исправлены автоматически, снятие зоны в редакторе вычищает их из текста',
+      'Таймлайн стал синопсисом: карточка события показывает дату, название, тег, авторское описание, главу и участников чипами; запасной текст главы приходит без сырых маркеров',
+      'Редактор стабилен на циклах «обернуть / снять зону события»: выделение восстанавливается точно, автосохранение не зависает',
+    ],
+    en: [
+      'Events create themselves: a [#Name] mark adds the event to the timeline on chapter save when it does not exist yet — the same way scene boundaries create scenes',
+      'Event marks and names are stored human-readably, with spaces; legacy underscores are fixed automatically, and unwrapping a zone in the editor cleans them from the text',
+      'The timeline reads as a synopsis: an event card shows the date, name, tag, author description, chapter and participants as chips; the fallback chapter sentence arrives without raw markup',
+      'The editor stays stable across wrap/unwrap event-zone cycles: the selection restores precisely and autosave never hangs',
+    ],
+  },
+  {
     version: '1.6.1',
     date: '10.10.2026',
     ru: [

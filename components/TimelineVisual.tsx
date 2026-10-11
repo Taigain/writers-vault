@@ -1,9 +1,9 @@
 'use client'
 
-import { CalendarDays, BookOpen, Feather } from 'lucide-react'
 import type { TimelineRow } from '@/lib/actions'
 import { useLang } from '@/lib/useLang'
 import { fmtCalendarShort, fmtBookDate } from '@/lib/i18n'
+import TimelineCard from './TimelineCard'
 
 type VisualProps = {
   events: TimelineRow[]
@@ -18,20 +18,9 @@ function sortKey(e: TimelineRow): number {
   return (e.bookYear ?? 0) * 1_000_000 + (e.bookDay ?? 0)
 }
 
-function pinTitle(e: TimelineRow): string {
-  if (e.chapterId && e.chapterTitle) return e.chapterTitle
-  return e.description || '—'
-}
-
-function pinSummary(e: TimelineRow): string {
-  if (e.chapterId && e.chapterFirstSentence) return e.chapterFirstSentence
-  return e.summary || e.description || '—'
-}
-
 export default function TimelineVisual({ events, type }: VisualProps) {
   const { lang, t } = useLang()
   const sorted = [...events].sort((a, b) => sortKey(a) - sortKey(b))
-
   if (sorted.length === 0) return null
 
   const dateLabel = (e: TimelineRow): string => {
@@ -49,17 +38,12 @@ export default function TimelineVisual({ events, type }: VisualProps) {
           const isChapter = Boolean(e.chapterId)
           const side = i % 2 === 0 ? 'top' : 'bottom'
           return (
-            <div key={e.id} className={`tv-pin tv-pin-${side} ${isChapter ? 'tv-chapter' : 'tv-event'}`}>
+            <div
+              key={e.id}
+              className={`tv-pin tv-pin-${side} ${isChapter ? 'tv-chapter' : 'tv-event'}`}
+            >
               <div className="tv-tape" />
-              <div className="tv-date">
-                {type === 'calendar' ? <CalendarDays size={11} /> : <BookOpen size={11} />}
-                {dateLabel(e)}
-              </div>
-              <div className="tv-title">
-                {isChapter && <Feather size={13} />}
-                {pinTitle(e)}
-              </div>
-              <p className="tv-summary">{pinSummary(e)}</p>
+              <TimelineCard row={e} dateLabel={dateLabel(e)} icon={type === 'book' ? 'book' : 'calendar'} />
             </div>
           )
         })}

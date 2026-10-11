@@ -546,21 +546,21 @@ export default function ChapterEditor({
     if (e > s) {
       const sel = c.slice(s, e)
       if (sel.startsWith('[#') && sel.endsWith(']')) {
-        const next = c.slice(0, s) + sel.slice(2, -1) + c.slice(e)
+        const next = c.slice(0, s) + sel.slice(2, -1).replace(/_/g, ' ') + c.slice(e)
         setC(next)
         restore(ta, s, e - 3, ta.scrollTop)
         return
       }
       if (s >= 2 && e + 1 <= c.length && c.slice(s - 2, e + 1).startsWith('[#') && c.slice(s - 2, e + 1).endsWith(']')) {
-        const next = c.slice(0, s - 2) + sel + c.slice(e + 1)
+        const next = c.slice(0, s - 2) + c.slice(s, e).replace(/_/g, ' ') + c.slice(e + 1)
         setC(next)
         restore(ta, s - 2, e - 2, ta.scrollTop)
         return
       }
-      const normSel = sel.trim().replace(/\s+/g, '_')
-      const next = c.slice(0, s) + '[#' + normSel + ']' + c.slice(e)
+      const rawSel = sel.trim()
+      const next = c.slice(0, s) + '[#' + rawSel + ']' + c.slice(e)
       setC(next)
-      restore(ta, s + 2, s + 2 + normSel.length, ta.scrollTop)
+      restore(ta, s + 2, s + 2 + rawSel.length, ta.scrollTop)
       return
     }
     toggleWrap('[#', ']')
@@ -956,7 +956,16 @@ export default function ChapterEditor({
                     className="mini-btn"
                     title={t('chEvCreate')}
                     onClick={async () => {
-                      const pos = c.indexOf('[#' + name + ']')
+                      let pos = -1
+                      for (const m of c.matchAll(/\[#(.*?)\]/g)) {
+                        if (
+                          m[1].trim().replace(/\s+/g, '_').toLowerCase() ===
+                          String(name).trim().replace(/\s+/g, '_').toLowerCase()
+                        ) {
+                          pos = m.index ?? 0
+                          break
+                        }
+                      }
                       await createEventFromMark(bookId, name, id, pos >= 0 ? pos : null)
                       setUnknownEvents((cur) => cur.filter((x) => x !== name))
                     }}

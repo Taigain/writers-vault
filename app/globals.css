@@ -1493,3 +1493,56 @@ body.has-book-bar main {
 .link-author:hover {
   text-decoration-style: solid;
 }
+
+.tl-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.tl-card-date {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--soft);
+}
+.tl-card-title {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--fg);
+}
+.tl-card-tag {
+  align-self: flex-start;
+}
+.tl-card-summary {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--fg);
+}
+.tl-card-fallback {
+  color: var(--soft);
+  font-style: italic;
+}
+.tl-card-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 2px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--line);
+}
+.tl-card-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--soft);
+}
+.tl-chip {
+  font-size: 11px;
+  padding: 1px 8px;
+}

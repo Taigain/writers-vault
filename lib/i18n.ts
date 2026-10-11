@@ -532,6 +532,8 @@ export const STR = {
     dcErr_meaning: 'Укажите человеческое значение: что заменяем и что ищем в зонах.',
     dcUses: '{n} исп.',
     chTbLang: 'Языковая зона [lng]…[/lng]',
+    tlYearDay: 'Год {y}, день {d}',
+    tlYearOnly: 'Год {y}',
   },
   en: {
     tagline: "author's cabinet",
@@ -1062,6 +1064,8 @@ export const STR = {
     dcErr_meaning: 'Provide the human meaning: what we replace and look for in zones.',
     dcUses: '{n} uses',
     chTbLang: 'Language zone [lng]…[/lng]',
+    tlYearDay: 'Year {y}, day {d}',
+    tlYearOnly: 'Year {y}',
   },
 } as const
 

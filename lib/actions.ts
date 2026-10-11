@@ -175,39 +175,57 @@ export async function saveChapter(
   }
   if (mentionRows.length > 0) await prisma.chapterMention.createMany({ data: mentionRows })
 
-  const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, '_')
-  const eventMarks: { name: string; pos: number }[] = []
-  for (const m of content.matchAll(/\[#(.*?)\]/g)) {
-    const raw = m[1].trim()
-    if (!raw) continue
-    eventMarks.push({ name: norm(raw), pos: m.index ?? 0 })
-  }
-  const events = await prisma.timelineEvent.findMany({ where: { bookId } })
-  await prisma.eventMention.deleteMany({ where: { chapterId } })
-  const unknown: string[] = []
-  const seen = new Set<string>()
-  const links: { eventId: string; pos: number }[] = []
-  for (const mk of eventMarks) {
-    const ev = events.find((e) => {
-      const tag = (e.tag ?? '').replace(/^#/, '')
-      return norm(tag) === mk.name || norm(e.description) === mk.name
-    })
-    if (!ev) {
-      if (!unknown.includes(mk.name)) unknown.push(mk.name)
-      continue
+    const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, '_')
+    const eventMarks: { name: string; raw: string; pos: number }[] = []
+    for (const m of content.matchAll(/\[#(.*?)\]/g)) {
+      const raw = m[1].trim()
+      if (!raw) continue
+      eventMarks.push({ name: norm(raw), raw, pos: m.index ?? 0 })
     }
-    if (seen.has(ev.id)) continue
-    seen.add(ev.id)
-    links.push({ eventId: ev.id, pos: mk.pos })
-    if (ev.chapterId == null) {
-      await prisma.timelineEvent.update({ where: { id: ev.id }, data: { chapterId } })
+    const events = await prisma.timelineEvent.findMany({ where: { bookId } })
+    await prisma.eventMention.deleteMany({ where: { chapterId } })
+    const unknown: string[] = []
+    const seen = new Set<string>()
+    const links: { eventId: string; pos: number }[] = []
+    for (const mk of eventMarks) {
+      let ev = events.find((e) => {
+        const tag = (e.tag ?? '').replace(/^#/, '')
+        return norm(tag) === mk.name || norm(e.description) === mk.name
+      })
+      if (!ev) {
+        try {
+          ev = await prisma.timelineEvent.create({
+            data: {
+              bookId,
+              dateType: 'book',
+              date: '',
+              bookYear: null,
+              bookDay: null,
+              description: mk.raw,
+              summary: '',
+              chapterId,
+              tag: '#' + mk.raw,
+            },
+          })
+          events.push(ev)
+        } catch (e) {
+          console.error('[saveChapter] event autocreate skipped:', e)
+          if (!unknown.includes(mk.name)) unknown.push(mk.name)
+          continue
+        }
+      }
+      if (seen.has(ev.id)) continue
+      seen.add(ev.id)
+      links.push({ eventId: ev.id, pos: mk.pos })
+      if (ev.chapterId == null) {
+        await prisma.timelineEvent.update({ where: { id: ev.id }, data: { chapterId } })
+      }
     }
-  }
-  if (links.length > 0) {
-    await prisma.eventMention.createMany({
-      data: links.map((l) => ({ chapterId, eventId: l.eventId, pos: l.pos })),
-    })
-  }
+    if (links.length > 0) {
+      await prisma.eventMention.createMany({
+        data: links.map((l) => ({ chapterId, eventId: l.eventId, pos: l.pos })),
+      })
+    }
 
   const parsed = parseScenes(content)
   const existing = await prisma.scene.findMany({ where: { chapterId }, orderBy: { order: 'asc' } })
@@ -241,8 +259,7 @@ export async function createEventFromMark(
   pos: number | null,
 ) {
   await schemaReady
-  const norm = mark.trim().toLowerCase().replace(/\s+/g, '_')
-  const display = norm.replace(/_/g, ' ')
+  const raw = mark.trim()
   const ev = await prisma.timelineEvent.create({
     data: {
       bookId,
@@ -250,10 +267,10 @@ export async function createEventFromMark(
       date: '',
       bookYear: null,
       bookDay: null,
-      description: display,
+      description: raw,
       summary: '',
       chapterId,
-      tag: '#' + norm,
+      tag: '#' + raw,
     },
   })
   try {
@@ -392,15 +409,26 @@ export type TimelineRow = {
   mentions: { chapterId: string; title: string; pos: number | null }[]
   tag: string | null
   orderWarning: boolean
+  participants: { id: string; name: string }[]
 }
 
 function extractFirstSentence(text: string): string | null {
   if (!text) return null
   const cleaned = text
-    .replace(/\[@(.*?)\]/g, '$1')
-    .replace(/\[#(.*?)\]/g, (_m, g: string) => g.replace(/_/g, ' '))
+    .replace(/\[@([^\]]*)\]/g, '$1')
+    .replace(/\[#([^\]]*)\]/g, '$1')
+    .replace(/\[sc:[^\]]*\]/g, '')
+    .replace(/\[\/sc\]/g, '')
+    .replace(/\[hl=\d+\]/g, '')
+    .replace(/\[\/hl\]/g, '')
+    .replace(/\[lng\]/g, '')
+    .replace(/\[\/lng\]/g, '')
+    .replace(/\[size=\d+\]/g, '')
+    .replace(/\[\/size\]/g, '')
+    .replace(/\*\*([^*]*)\*\*/g, '$1')
+    .replace(/\*([^*]*)\*/g, '$1')
     .replace(/\s+/g, ' ')
-    .trim() 
+    .trim()
   const match = cleaned.match(/[^.!?…]+[.!?…]+/)
   if (match) return match[0].trim()
   return cleaned.length > 120 ? cleaned.slice(0, 120) + '…' : cleaned || null
@@ -411,7 +439,7 @@ export async function getTimeline(bookId: string) {
     where: { bookId },
     include: {
       chapter: { select: { title: true, content: true, order: true } },
-      participants: { select: { characterId: true } },
+      participants: { select: { characterId: true, character: { select: { id: true, name: true } } } },
       mentions: { select: { pos: true, chapter: { select: { id: true, title: true, order: true } } } },
     },
   })
@@ -430,6 +458,7 @@ export async function getTimeline(bookId: string) {
       chapterTitle: r.chapter?.title ?? null,
       chapterFirstSentence: r.chapter ? extractFirstSentence(r.chapter.content) : null,
       participantIds: r.participants.map((p) => p.characterId),
+      participants: r.participants.map((p) => ({ id: p.characterId, name: p.character.name })),
       mentions: r.mentions.map((m) => ({ chapterId: m.chapter.id, title: m.chapter.title, pos: m.pos })),
       tag: r.tag,
       orderWarning: false,
