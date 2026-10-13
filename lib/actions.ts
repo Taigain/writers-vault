@@ -7,6 +7,7 @@ import { ROLES } from './roles'
 import { importDocx } from './importDocx'
 import { parseForms } from './dict'
 import { parseScenes } from './scenes'
+import type { CharRelation } from '@/components/characterTypes'
 
 const validRole = (role: string): string =>
   ROLES.some((r) => r.key === role) ? role : 'secondary'
@@ -301,6 +302,41 @@ export type CharacterInput = {
   arc: string
   aliases?: string
   portraitBase64?: string | null
+  age?: string
+  gender?: string
+  birth?: string
+  race?: string
+  country?: string
+  language?: string
+  archetype?: string
+  goal?: string
+  conflict?: string
+  trauma?: string
+  obsession?: string
+  strengths?: string
+  weaknesses?: string
+  height?: string
+  weight?: string
+  build?: string
+  eyes?: string
+  hair?: string
+  clothing?: string
+  posture?: string
+  voice?: string
+}
+
+export async function setCharacterPortrait(id: string, fd: FormData) {
+  await schemaReady
+  const img = await readImageField(fd, 'portrait')
+  const gender = (fd.get('gender') as string) ?? ''
+  await prisma.character.update({
+    where: { id },
+    data: {
+      ...(img.clear ? { portraitBase64: null } : img.keep ? {} : { portraitBase64: img.value }),
+      gender,
+    },
+  })
+  revalidatePath(await characterBookPath(id))
 }
 
 export async function getCharacters(bookId: string) {
@@ -662,6 +698,56 @@ export async function deleteCharacter(id: string) {
   revalidatePath(path)
 }
 
+export async function duplicateCharacter(id: string) {
+  await schemaReady
+  const c = await prisma.character.findUnique({ where: { id } })
+  if (!c) return null
+  const copy = await prisma.character.create({
+    data: {
+      bookId: c.bookId,
+      name: c.name + ' (копия)',
+      role: c.role,
+      bio: c.bio,
+      appearance: c.appearance,
+      personality: c.personality,
+      decisions: c.decisions,
+      arc: c.arc,
+      aliases: c.aliases,
+      portraitBase64: c.portraitBase64,
+    },
+  })
+  revalidatePath(`/book/${c.bookId}`)
+  return copy
+}
+
+export async function createCharacterMinimal(bookId: string, name: string, role: string) {
+  await schemaReady
+  const n = name.trim()
+  if (!n) return null
+  const c = await prisma.character.create({ data: { bookId, name: n, role: role || 'secondary' } })
+  revalidatePath(`/book/${bookId}`)
+  return c
+}
+
+export async function getCharacterRelations(bookId: string): Promise<CharRelation[]> {
+  await schemaReady
+  const rows = await prisma.characterRelation.findMany({
+    where: { character: { bookId } },
+    select: { id: true, characterId: true, relatedId: true, note: true },
+  })
+  return rows
+}
+
+export async function moveCharacterOnBoard(id: string, x: number, y: number) {
+  await schemaReady
+  await prisma.character.update({ where: { id }, data: { boardX: Math.round(x), boardY: Math.round(y) } })
+}
+
+export async function setBookBoardHeight(bookId: string, h: number | null) {
+  await schemaReady
+  await prisma.book.update({ where: { id: bookId }, data: { boardH: h === null ? null : Math.round(h) } })
+}
+
 export async function deleteLocation(id: string) {
   const loc = await prisma.location.findUnique({ where: { id }, select: { bookId: true } })
   await prisma.location.delete({ where: { id } })
@@ -691,6 +777,16 @@ export async function createSeries(fd: FormData) {
     await prisma.series.create({ data: { name } })
   }
   revalidatePath('/')
+}
+
+export async function createSeriesNamed(name: string): Promise<string | null> {
+  await schemaReady
+  const n = name.trim()
+  if (!n) return null
+  const ex = await prisma.series.findFirst({ where: { name: n } })
+  if (ex) return ex.id
+  const s = await prisma.series.create({ data: { name: n } })
+  return s.id
 }
 
 export async function deleteSeries(id: string) {
@@ -858,6 +954,16 @@ async function renumberBook(bookId: string) {
 export async function setBookExportMeta(bookId: string, value: boolean) {
   await schemaReady
   await prisma.book.update({ where: { id: bookId }, data: { exportMeta: value } })
+  revalidatePath(`/book/${bookId}`)
+}
+
+export async function setBookExportFlag(
+  bookId: string,
+  field: 'exportTitle' | 'exportAnnotation' | 'exportSynopsis',
+  value: boolean,
+) {
+  await schemaReady
+  await prisma.book.update({ where: { id: bookId }, data: { [field]: value } })
   revalidatePath(`/book/${bookId}`)
 }
 

@@ -11,6 +11,7 @@ import {
   Heart,
   History,
   PanelLeftClose,
+  Sparkles,
 } from 'lucide-react'
 import { saveDirHandle, getSavedDirName, clearSavedDir } from '@/lib/fsAccess'
 import { useLang, setLangEverywhere } from '@/lib/useLang'
@@ -24,6 +25,8 @@ import QuoteStyleSetting from '@/components/QuoteStyleSetting'
 import PaletteSetting from '@/components/PaletteSetting'
 import DashSetting from '@/components/DashSetting'
 import FontPicker from '@/components/FontPicker'
+import { useLicense } from '@/components/LicenseProvider'
+import { PREMIUM_LAUNCH } from '@/lib/premium'
 
 const UI_FONTS: { key: string; labelKey: StrKey; stack: string }[] = [
   { key: 'system', labelKey: 'fontSystem', stack: '"Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif' },
@@ -80,6 +83,8 @@ export default function SettingsPage() {
     localStorage.setItem('wv-font-ui', f.stack)
     document.documentElement.style.setProperty('--font-ui', f.stack)
   }
+
+  const { state, open } = useLicense()
 
   const applyWriteFont = (key: string) => {
     const f = WRITE_FONTS.find((x) => x.key === key) ?? WRITE_FONTS[0]
@@ -251,6 +256,20 @@ export default function SettingsPage() {
         <div className="set-block"><PaletteSetting /></div>
       </div>
 
+  {PREMIUM_LAUNCH && (
+   <section className="card p-5 mb-6">
+     <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+       <Sparkles size={16} /> {t('licSection')}
+     </h2>
+     <div className="text-sm mb-3" style={{ color: 'var(--soft)' }}>
+       {state.isPro ? t('licStatusPro') : t('licStatusFree')}
+     </div>
+     <button type="button" className="btn btn-ghost btn-sm" onClick={open}>
+       <Sparkles size={13} /> {t('licDialogTitle')}
+     </button>
+   </section>
+  )}
+
       <div className="set-label">{t('setGroupAbout')}</div>
       <div className="card set-card mb-6">
         <div className="set-row">
@@ -288,6 +307,7 @@ export default function SettingsPage() {
           <div className="set-t mb-2">{t('ctTitle')}</div>
           <ContactForm />
         </div>
+        {!state.isPro && (
         <div className="set-block">
           <div className="set-h mb-2">{t('aboutThanksHint')}</div>
           <div className="flex flex-wrap gap-2">
@@ -304,6 +324,7 @@ export default function SettingsPage() {
             ))}
           </div>
         </div>
+        )}
       </div>
     </div>
   )

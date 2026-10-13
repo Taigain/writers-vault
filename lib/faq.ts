@@ -25,6 +25,10 @@ export const FAQ: Record<Lang, FaqItem[]> = {
       a: 'Короткий код события в таймлайне, например #падение_станции (поле в карточке события). В главе достаточно написать [#падение_станции] вместо полного описания события — связь создастся по метке. Полное описание в [#…] продолжает работать для старых глав. Метка видна чипом в карточке события.',
     },
     {
+      q: 'Персонажи: альбом, пробковая доска и полноэкранное досье',
+      a: 'В разделе персонажей два вида: «Альбом» — полароидные карточки с лёгким наклоном, поиском и действиями по наведению (редактировать, дублировать, удалить); «Доска» — пробковое полотно, где снимки держатся красными кнопками-пинами, а между связанными персонажами натянуты нити, цвет которых зависит от типа отношения (легенда под доской). Карточки на доске перетаскиваются мышью, раскладка запоминается; высоту доски можно растянуть за ручку внизу, двойной клик по ручке возвращает авто-высоту по числу рядов. Клик по фото или карточке открывает полноэкранное досье: липкая шапка с кнопкой сохранения, вкладки (Анкета, Связи, Упоминания, Сцены, Облако связей), пунктирные поля демографии, деталей личности и внешности. Справа — полароид портрета: если своего фото нет, подставляется стоковая заглушка по полу (мужская, женская или нейтральная). «Новый персонаж» создаёт героя и сразу открывает его досье для заполнения.',
+    },
+    {
       q: 'Команды форматирования текста',
       a: '**жирный** — полужирный, *курсив* — курсив, [size=24]текст[/size] — размер шрифта, [center], [right], [left] в начале абзаца — выравнивание. Кнопки панели инструментов сами ставят и снимают эти метки с выделенного текста.',
     },
@@ -225,6 +229,10 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     {
       q: 'What is an event tag?',
       a: 'A short code for a timeline event, e.g. #station_fall (field on the event card). In a chapter it is enough to write [#station_fall] instead of the full event description — the link is created by tag. Full descriptions in [#…] keep working for older chapters. The tag is shown as a chip on the event card.',
+    },
+    {
+      q: 'Characters: album, cork board and the fullscreen dossier',
+      a: 'The characters section has two views: "Album" — polaroid cards with a slight tilt, search and hover actions (edit, duplicate, delete); "Board" — a cork canvas where photos hang on red push-pins and colored threads stretch between related characters, the color following the relationship type (legend under the board). Cards drag with the mouse and the layout is remembered; the board stretches by its bottom handle, and a double-click on the handle resets to the auto height by row count. Clicking a photo or card opens the fullscreen dossier: a sticky header with the save button, tabs (Profile, Relations, Mentions, Scenes, Relations cloud) and dotted fields for demographics, personality details and appearance. On the right sits the portrait polaroid: without your own photo, a stock placeholder by gender is shown (male, female or neutral). "New character" creates the hero and immediately opens the dossier for filling in.',
     },
     {
       q: 'Text formatting commands',

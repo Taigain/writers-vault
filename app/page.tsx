@@ -8,6 +8,7 @@ import { getLang } from '@/lib/lang-server'
 import { tr } from '@/lib/i18n'
 import CoverOptimizer from '@/components/CoverOptimizer'
 import IdeaBoard from '@/components/IdeaBoard'
+import ImportProjectButton from '@/components/ImportProjectButton'
 
 type BookRow = Awaited<ReturnType<typeof getBooksWithSeries>>[number]
 type Status = 'idea' | 'active' | 'archive'
@@ -135,6 +136,9 @@ export default async function Home() {
         <h1 className="text-3xl font-bold tracking-tight">{tr(lang, 'homeTitle')}</h1>
         <p className="text-sm mt-1" style={{ color: 'var(--soft)' }}>{tr(lang, 'homeSub')}</p>
       </header>
+      <div className="mb-3 flex justify-end">
+        <ImportProjectButton />
+      </div>
       <HomeView
         books={shelfBooks}
         createAction={createBook}

@@ -15,6 +15,9 @@ model Book {
   synopsis        String            @default("")
   structure       String?
   exportMeta      Boolean           @default(true)
+  exportTitle      Boolean          @default(false)
+  exportAnnotation Boolean          @default(false)
+  exportSynopsis   Boolean          @default(false)
   seriesId        String?
   series          Series?           @relation(fields: [seriesId], references: [id], onDelete: SetNull)
   createdAt       DateTime          @default(now())
@@ -31,6 +34,7 @@ model Book {
   spineColor      String          @default("")
   spineStyle      String          @default("tome")
   dict DictEntry[]
+  boardH Int?
 }
 
 model IdeaNote {
@@ -75,6 +79,29 @@ model Character {
   relatedIn   CharacterRelation[] @relation("RelatedRelations")
   eventLinks  EventCharacter[]
   beatLinks   BeatCharacter[]
+  age         String @default("")
+  gender      String @default("")
+  birth       String @default("")
+  race        String @default("")
+  country     String @default("")
+  language    String @default("")
+  archetype   String @default("")
+  goal        String @default("")
+  conflict    String @default("")
+  trauma      String @default("")
+  obsession   String @default("")
+  strengths   String @default("")
+  weaknesses  String @default("")
+  height      String @default("")
+  weight      String @default("")
+  build       String @default("")
+  eyes        String @default("")
+  hair        String @default("")
+  clothing    String @default("")
+  posture     String @default("")
+  voice       String @default("")
+  boardX Int?
+  boardY Int?
 }
 
 model CharacterRelation {
@@ -258,4 +285,12 @@ model SceneCharacter {
   character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
 
   @@unique([sceneId, characterId])
+}
+
+model License {
+  id          String    @id @default("local")
+  keyText     String    @default("")
+  proUntil    DateTime?
+  trialUsedAt DateTime?
+  updatedAt   DateTime  @updatedAt
 }

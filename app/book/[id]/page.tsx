@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Save, Plus, MapPin, Globe2, BookOpen, Feather, Users, Type, ChevronRight } from 'lucide-react'
-import CharacterCard from '@/components/CharacterCard'
 import LoreSection from '@/components/LoreSection'
 import TimelineSection from '@/components/TimelineSection'
 import GraphCloud from '@/components/GraphCloud'
@@ -50,6 +49,8 @@ import {
   getScenes,
   readImageField,
 } from '@/lib/actions'
+import CharactersRegistry from '@/components/CharactersRegistry'
+import { getCharacterRelations } from '@/lib/actions'
 
 const words = (t: string) => (t.trim() ? t.trim().split(/\s+/).length : 0)
 const VIEWS = ['chapters', 'characters', 'world', 'locations', 'timeline', 'graph', 'notes', 'plot', 'dict', 'scenes']
@@ -192,38 +193,14 @@ export default async function BookPage({
   )
 
   /* ---------- ПЕРСОНАЖИ ---------- */
-  const charactersSection = (
-    <div>
-      <form
-        action={async (fd: FormData) => {
-          'use server'
-          await createCharacter(id, fd.get('name') as string, (fd.get('role') as string) || 'secondary')
-        }}
-        className="card p-4 mb-5 create-row"
-      >
-        <input name="name" required placeholder={tr(lang, 'pgCharNamePh')} className="input" />
-        <select name="role" required defaultValue="" className="input">
-          <option value="" disabled>{tr(lang, 'pgRolePh')}</option>
-          {ROLES.map((r) => (
-            <option key={r.key} value={r.key}>{lang === 'ru' ? r.ru : r.en}</option>
-          ))}
-        </select>
-        <button className="btn btn-primary btn-sm">
-          <Plus size={14} /> {tr(lang, 'pgAdd')}
-        </button>
-      </form>
-      {characters.length === 0 && (
-        <div className="card p-10 text-center text-sm" style={{ color: 'var(--soft)' }}>
-          {tr(lang, 'pgCharsEmpty')}
-        </div>
-      )}
-      <div className="space-y-6">
-        {characters.map((c) => (
-          <CharacterCard key={c.id} character={c} allCharacters={characters} />
-        ))}
-      </div>
-    </div>
-  )
+const charactersSection = (
+  <CharactersRegistry
+    bookId={id}
+    characters={characters}
+    relations={await getCharacterRelations(id)}
+    boardHeight={book.boardH}
+  />
+)
 
   /* ---------- МИР ---------- */
   const worldSection = (
@@ -379,7 +356,9 @@ export default async function BookPage({
             series={seriesList}
             seriesId={book.seriesId}
             status={book.status}
-            exportMeta={book.exportMeta}
+            exportTitle={book.exportTitle}
+            exportAnnotation={book.exportAnnotation}
+            exportSynopsis={book.exportSynopsis}
           />
           <BookStats
             chapters={chapters.map((c) => ({ id: c.id, title: c.title, content: c.content }))}

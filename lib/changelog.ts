@@ -6,6 +6,32 @@ export type ChangeEntry = {
 }
 
 export const CHANGELOG: ChangeEntry[] = [ 
+    {
+    version: '1.6.3',
+    date: '13.10.2026',
+    ru: [
+      'Окно «Что нового» снова открывается при обновлении и не теряется между запусками десктопа с разными портами',
+      'В паспорте книги серию можно создать на месте, не возвращаясь к окну создания',
+      'В «О программе» имя разработчика стало ссылкой на сайт',
+      'Корешки на полке стали стройнее: ширина растёт по корню из объёма, толстые тома больше не выглядят энциклопедиями',
+      'Метаданные экспорта DOCX стали тремя независимыми галочками — название, аннотация, синопсис — по умолчанию выключенными',
+      'Проект переносится одним файлом: «Скачать .wvproj» в паспорте книги и «Импорт .wvproj» на главной — архив со всеми главами, персонажами, таймлайном и словарём возвращается копией книги без коллизий; эта же основа послужит будущей облачной синхронизации',
+      'Раздел персонажей стал альбомом полароидных карточек: наклон и смещение как у фотографий на столе, поиск, дубликат и удаление прямо с карточки',
+      'Режим «Доска»: пробковая доска со снимками на кнопках-пинах, цветными нитями от кнопки к кнопке и легендой отношений; карточки перетаскиваются мышью с запоминанием раскладки, высоту доски можно растянуть за ручку, двойной клик по ручке возвращает авто-высоту',
+      'Карточка персонажа открывается полноэкранным досье: липкая шапка с сохранением, вкладки, пунктирные поля демографии, деталей личности и внешности; портрет сбоку со стоковой заглушкой по полу, а создание сразу приводит на страницу нового героя',  
+    ],
+    en: [
+      'The "What’s new" window opens again on upgrades and no longer gets lost between desktop launches on different ports',
+      'A series can now be created right in the book passport, without returning to the creation window',
+      'The developer name in "About" is now a clickable link to the site',
+      'Shelf spines are slimmer: width grows by the square root of volume, so hefty volumes no longer look like encyclopedias',
+      'DOCX export metadata is now three independent checkboxes — title, annotation, synopsis — all off by default',
+      'A project travels in a single file: "Download .wvproj" in the book passport and "Import .wvproj" on the home page — the archive with all chapters, characters, timeline and dictionary returns as a collision-free book copy; the same foundation will power future cloud sync',
+      'The characters section is now an album of polaroid cards: tilt and offset like photos on a desk, search, duplicate and delete right from the card',
+      'A "Board" view: a cork board with photos on push-pins, colored threads from pin to pin and a relationship legend; cards drag with the mouse and remember their layout, the board stretches by its bottom handle, and a double-click on the handle resets to auto height',
+      'The character card opens as a fullscreen dossier: a sticky header with save, tabs, dotted fields for demographics, personality details and appearance; a side portrait with a gender-based stock placeholder, and creation lands straight on the new character page',
+    ],
+  },
   {
     version: '1.6.2',
     date: '11.10.2026',

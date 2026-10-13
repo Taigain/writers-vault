@@ -1,10 +1,16 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import { Save, Image as ImageIcon, Trash2 } from 'lucide-react'
-import { saveBook, removeBookCover, setBookStatus } from '@/lib/actions'
+import { useRouter } from 'next/navigation'
+import { Save, Image as ImageIcon, Trash2, Plus, Download, X } from 'lucide-react'
+import {
+  saveBook,
+  removeBookCover,
+  setBookStatus,
+  setBookSeries,
+  createSeriesNamed,
+} from '@/lib/actions'
 import { useLang } from '@/lib/useLang'
-import SeriesPicker from './SeriesPicker'
 import ExportMetaToggle from './ExportMetaToggle'
 import DownloadImage from './DownloadImage'
 
@@ -22,7 +28,9 @@ export default function BookPassport({
   series,
   seriesId,
   status,
-  exportMeta,
+  exportTitle,
+  exportAnnotation,
+  exportSynopsis,
 }: {
   id: string
   title: string
@@ -32,12 +40,17 @@ export default function BookPassport({
   series: SeriesOption[]
   seriesId: string | null
   status: string
-  exportMeta: boolean
+  exportTitle: boolean
+  exportAnnotation: boolean
+  exportSynopsis: boolean
 }) {
   const { t } = useLang()
+  const router = useRouter()
   const [annLen, setAnnLen] = useState(annotation.length)
   const [synLen, setSynLen] = useState(synopsis.length)
   const [preview, setPreview] = useState<string | null>(coverBase64)
+  const [seriesNewOpen, setSeriesNewOpen] = useState(false)
+  const [seriesNewName, setSeriesNewName] = useState('')
   const fileRef = useRef<HTMLInputElement | null>(null)
 
   const onCoverChange = (file: File | null) => {
@@ -45,6 +58,26 @@ export default function BookPassport({
     const reader = new FileReader()
     reader.onload = () => setPreview(typeof reader.result === 'string' ? reader.result : null)
     reader.readAsDataURL(file)
+  }
+
+  const applySeries = async (v: string) => {
+    if (v === '__new') {
+      setSeriesNewOpen(true)
+      return
+    }
+    setSeriesNewOpen(false)
+    await setBookSeries(id, v || null)
+    router.refresh()
+  }
+
+  const createSeriesInline = async () => {
+    const newId = await createSeriesNamed(seriesNewName)
+    if (newId) {
+      await setBookSeries(id, newId)
+      setSeriesNewName('')
+      setSeriesNewOpen(false)
+      router.refresh()
+    }
   }
 
   return (
@@ -69,7 +102,6 @@ export default function BookPassport({
           ))}
         </div>
       </div>
-      
       <div className="flex flex-wrap items-start gap-5">
         <div className="w-24 h-32 rounded-lg overflow-hidden shrink-0 shadow-md bg-[#f1e9db] flex items-center justify-center text-[#7a5c22]">
           {preview ? (
@@ -78,15 +110,51 @@ export default function BookPassport({
             <span className="font-write text-3xl">{title.charAt(0).toUpperCase()}</span>
           )}
         </div>
-
         <div className="flex-1 min-w-[260px] space-y-3">
           <div>
             <label className="field-label">{t('bpTitle')}</label>
             <input name="title" defaultValue={title} required className="input font-semibold" />
           </div>
-
-          <SeriesPicker bookId={id} series={series} seriesId={seriesId} />
-
+          <div>
+            <label className="field-label">{t('cbSeries')}</label>
+            <select
+              className="input"
+              value={seriesNewOpen ? '__new' : seriesId ?? ''}
+              onChange={(e) => applySeries(e.target.value)}
+            >
+              <option value="">{t('cbSeriesNone')}</option>
+              {series.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+              <option value="__new">{t('cbSeriesNew')}</option>
+            </select>
+            {seriesNewOpen && (
+              <div className="flex gap-2 mt-2">
+                <input
+                  className="input flex-1"
+                  value={seriesNewName}
+                  onChange={(e) => setSeriesNewName(e.target.value)}
+                  placeholder={t('cbSeriesNewPh')}
+                  autoFocus
+                />
+                <button type="button" className="btn btn-primary btn-sm" onClick={() => void createSeriesInline()}>
+                  <Plus size={13} /> {t('homeCreate')}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => {
+                    setSeriesNewOpen(false)
+                    setSeriesNewName('')
+                  }}
+                >
+                  <X size={13} />
+                </button>
+              </div>
+            )}
+          </div>
           <div>
             <div className="flex items-center justify-between">
               <label className="field-label">{t('bpAnnotation')}</label>
@@ -104,7 +172,6 @@ export default function BookPassport({
               placeholder={t('bpAnnPh')}
             />
           </div>
-
           <div>
             <div className="flex items-center justify-between">
               <label className="field-label">{t('bpSynopsis')}</label>
@@ -124,38 +191,46 @@ export default function BookPassport({
           </div>
         </div>
       </div>
-
       <div className="flex flex-wrap items-center gap-2 justify-end">
-         <div className="mr-auto">
-          <ExportMetaToggle bookId={id} initial={exportMeta} />
-         </div>
+        <div className="mr-auto">
+          <ExportMetaToggle
+            bookId={id}
+            initial={{ title: exportTitle, annotation: exportAnnotation, synopsis: exportSynopsis }}
+          />
+        </div>
+        <a
+          className="btn btn-ghost btn-sm"
+          href={`/api/project/export?bookId=${id}&name=${encodeURIComponent(title)}`}
+        >
+          <Download size={13} /> {t('ppExport')}
+        </a>
         <label className="btn btn-ghost btn-sm cursor-pointer">
-           <ImageIcon size={13} /> {preview ? t('bpCoverReplace') : t('bpCoverUpload')}
+          <ImageIcon size={13} /> {preview ? t('bpCoverReplace') : t('bpCoverUpload')}
           <input
-             ref={fileRef}
-             type="file"
+            ref={fileRef}
+            type="file"
             name="cover"
             accept="image/*"
             className="hidden"
             onChange={(e) => onCoverChange(e.target.files?.[0] ?? null)}
           />
         </label>
-         {preview && <DownloadImage src={preview} name={title} />}
-         {preview && (
-           <button
-             type="button"
-             className="btn btn-ghost btn-sm"
-             onClick={async () => {
+        {preview && <DownloadImage src={preview} name={title} />}
+        {preview && (
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm"
+            onClick={async () => {
               setPreview(null)
               if (fileRef.current) fileRef.current.value = ''
-               await removeBookCover(id)
-             }}
-           >
-             <Trash2 size={13} /> {t('bpCoverRemove')}
-           </button>
+              await removeBookCover(id)
+            }}
+          >
+            <Trash2 size={13} /> {t('bpCoverRemove')}
+          </button>
         )}
         <button type="submit" className="btn btn-primary btn-sm">
-           <Save size={13} /> {t('bpSave')}
+          <Save size={13} /> {t('bpSave')}
         </button>
       </div>
     </form>

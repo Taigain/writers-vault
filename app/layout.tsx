@@ -8,6 +8,7 @@ import { APP_VERSION } from '@/lib/appinfo'
 import NavGuard from '@/components/NavGuard'
 import LanguageGate from '@/components/LanguageGate'
 import BookBar from '@/components/BookBar'
+import LicenseProvider from '@/components/LicenseProvider'
 
 export const metadata: Metadata = { title: "Writer's Vault" }
 
@@ -28,18 +29,20 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <script dangerouslySetInnerHTML={{ __html: BOOTSTRAP }} />
       </head>
       <body className="min-h-screen">
-        <NavGuard />
-        <div className="flex h-screen overflow-hidden">
-          <aside className="sb-aside shrink-0 bg-[#211d19] flex flex-col">
-            <Suspense fallback={<div className="p-4 text-xs text-white/40">…</div>}>
-              <SidebarNav books={books} />
-            </Suspense>
-          </aside>
-          <main className="flex-1 overflow-auto">{children}</main>
-        </div>
-        <LanguageGate />
-        <BookBar />
-        <WhatsNewModal current={APP_VERSION} />
+        <LicenseProvider>
+          <NavGuard />
+          <div className="flex h-screen overflow-hidden">
+            <aside className="sb-aside shrink-0 bg-[#211d19] flex flex-col">
+              <Suspense fallback={<div className="p-4 text-xs text-white/40">…</div>}>
+                <SidebarNav books={books} />
+              </Suspense>
+            </aside>
+            <main className="flex-1 overflow-auto">{children}</main>
+          </div>
+          <LanguageGate />
+          <BookBar />
+          <WhatsNewModal current={APP_VERSION} />
+        </LicenseProvider>
       </body>
     </html>
   )

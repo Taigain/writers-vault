@@ -216,7 +216,7 @@ export default function HomeView({
         <div className="shelf-wrap">
           <div className="shelf">
             {sorted.map((b, i) => {
-              const w = Math.max(55, Math.min(172, 55 + Math.round(b.sheets * 18)))
+              const w = Math.max(46, Math.min(132, 46 + Math.round(26 * Math.sqrt(b.sheets))))
               const tilt = ((i % 3) - 1) * 0.7
               const bg = b.spineColor || STATUS_COLOR[b.status] || '#6b6257'
               const fg = isDark(bg) ? '#f3ede4' : '#201c17'

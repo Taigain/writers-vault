@@ -38,7 +38,16 @@ export async function GET(_req: Request, { params }: { params: Promise<{ bookId:
 
   const book = await prisma.book.findUnique({
     where: { id: bookId },
-    select: { id: true, title: true, annotation: true, exportMeta: true },
+    select: {
+      id: true,
+      title: true,
+      annotation: true,
+      synopsis: true,
+      exportMeta: true,
+      exportTitle: true,
+      exportAnnotation: true,
+      exportSynopsis: true,
+    }
   })
   if (!book) {
     return NextResponse.json({ error: 'Книга не найдена' }, { status: 404 })
@@ -105,24 +114,14 @@ export async function GET(_req: Request, { params }: { params: Promise<{ bookId:
   if (chapterRow) {
     pushChapter(chapterRow, HeadingLevel.HEADING_1)
   } else {
-    if (book.exportMeta) {
-      children.push(
-        new Paragraph({
-          text: cleanPlain(book.title),
-          heading: HeadingLevel.TITLE,
-          alignment: AlignmentType.CENTER,
-          spacing: BODY_SPACING,
-        }),
-      )
-      if (book.annotation.trim()) {
-        children.push(
-          new Paragraph({
-            text: cleanPlain(book.annotation),
-            alignment: AlignmentType.CENTER,
-            spacing: BODY_SPACING,
-          }),
-        )
-      }
+    if (book.exportTitle) {
+      children.push(/* абзац с book.title, как было внутри старого блока */)
+    }
+    if (book.exportAnnotation && book.annotation.trim()) {
+      children.push(/* абзац с book.annotation */)
+    }
+    if (book.exportSynopsis && book.synopsis.trim()) {
+      children.push(/* абзац с book.synopsis */)
     }
     for (const b of blocks) {
       if (b.kind === 'act') {
