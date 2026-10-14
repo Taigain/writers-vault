@@ -6,6 +6,24 @@ export type ChangeEntry = {
 }
 
 export const CHANGELOG: ChangeEntry[] = [ 
+  {
+    version: '1.6.4',
+    date: '14.10.2026',
+    ru: [
+      'Раздел персонажей стал альбомом полароидных карточек: наклон и смещение как у фотографий на столе, поиск, дубликат и удаление прямо с карточки',
+      'Режим «Доска»: пробковая доска со снимками на кнопках-пинах, цветными нитями от кнопки к кнопке и легендой отношений; карточки перетаскиваются с запоминанием раскладки, доска растягивается за ручку, а режим «Связать персонажей» протягивает новую нить в два клика через диалог типа связи',
+      'Карточка персонажа открывается полноэкранным досье: липкая шапка с сохранением, вкладки, пунктирные поля демографии, деталей личности и внешности; портрет сбоку со стоковой заглушкой по полу, создание сразу приводит на страницу нового героя',
+      'Связи стали симметричными: одна запись видна обоим персонажам в списках и облаках отношений; односторонние связи помечены стрелками',
+      'Сюжет получил режим «Холст»: карточки битов с названием, описанием, участниками и главой перетаскиваются по пунктирному полотну, связи тянутся от точек на четырёх сторонах карточки, двойной клик создаёт бит, а биты без линии собираются в группу «Биты вне линий» в списке',
+    ],
+    en: [
+      'The characters section is now an album of polaroid cards: tilt and offset like photos on a desk, search, duplicate and delete right from the card',
+      'A "Board" view: a cork board with photos on push-pins, colored threads from pin to pin and a relationship legend; cards drag with a remembered layout, the board stretches by its handle, and a "Connect characters" mode draws a new thread in two clicks through a bond-type dialog',
+      'The character card opens as a fullscreen dossier: a sticky header with save, tabs, dotted fields for demographics, personality details and appearance; a side portrait with a gender-based stock placeholder, and creation lands straight on the new character page',
+      'Relationships are now symmetric: a single record is visible to both characters in lists and relation clouds; one-way bonds are marked with arrows',
+      'The plot gains a "Canvas" mode: beat cards with title, description, participants and chapter drag across a dotted canvas, links stretch from dots on four card sides, a double-click creates a beat, and line-less beats gather in a "Beats outside lines" group in the list view',
+    ],
+  },
     {
     version: '1.6.3',
     date: '13.10.2026',

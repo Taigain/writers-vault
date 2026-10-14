@@ -340,13 +340,37 @@ export async function setCharacterPortrait(id: string, fd: FormData) {
 }
 
 export async function getCharacters(bookId: string) {
-  return prisma.character.findMany({
+  await schemaReady
+  const rows = await prisma.character.findMany({
     where: { bookId },
     include: {
-      mentions: { include: { chapter: true } },
-      relations: { include: { related: true } },
+      relations: { include: { related: { select: { id: true, name: true } } } },
     },
   })
+  const relRows = await prisma.characterRelation.findMany({
+    where: { OR: [{ character: { bookId } }, { related: { bookId } }] },
+    include: {
+      character: { select: { id: true, name: true } },
+      related: { select: { id: true, name: true } },
+    },
+  })
+  return rows.map((r) => ({
+    ...r,
+    relationsAll: relRows
+      .filter((x) => x.characterId === r.id || x.relatedId === r.id)
+      .map((x) => {
+        const out = x.characterId === r.id
+        const other = out ? x.related : x.character
+        return {
+          id: x.id,
+          otherId: other.id,
+          otherName: other.name,
+          note: x.note,
+          kind: x.kind,
+          dir: out ? ('out' as const) : ('in' as const),
+        }
+      }),
+  }))
 }
 
 async function characterBookPath(id: string) {
@@ -371,9 +395,19 @@ export async function saveCharacter(id: string, data: CharacterInput) {
   revalidatePath(await characterBookPath(id))
 }
 
-export async function addCharacterRelation(characterId: string, relatedId: string, note: string) {
+export async function addCharacterRelation(
+  characterId: string,
+  relatedId: string,
+  note: string,
+  kind: 'mutual' | 'oneway' = 'mutual',
+) {
+  await schemaReady
   if (!relatedId || characterId === relatedId) return
-  await prisma.characterRelation.create({ data: { characterId, relatedId, note } })
+  const dup = await prisma.characterRelation.findFirst({
+    where: { OR: [{ characterId, relatedId }, { characterId: relatedId, relatedId: characterId }] },
+  })
+  if (dup) return
+  await prisma.characterRelation.create({ data: { characterId, relatedId, note, kind } })
   revalidatePath(await characterBookPath(characterId))
 }
 
@@ -1147,6 +1181,70 @@ export type StorylineRow = {
     characters: { id: string; name: string; roleLabel: string }[]
     lines: { id: string; name: string }[]
   }[]
+}
+
+export type CanvasBeat = {
+  id: string
+  title: string
+  summary: string
+  chapterId: string | null
+  chapterTitle: string | null
+  eventId: string | null
+  characters: { id: string; name: string }[]
+  lines: { id: string; name: string }[]
+  canvasX: number | null
+  canvasY: number | null
+}
+export async function getCanvasBeats(bookId: string): Promise<CanvasBeat[]> {
+  await schemaReady
+  const rows = await prisma.plotBeat.findMany({
+    where: { bookId },
+    include: {
+      chapter: { select: { title: true } },
+      characters: { include: { character: { select: { id: true, name: true } } } },
+      lines: { include: { line: { select: { id: true, name: true } } } },
+    },
+  })
+  return rows.map((r) => ({
+    id: r.id,
+    title: r.title,
+    summary: r.summary,
+    chapterId: r.chapterId,
+    chapterTitle: r.chapter?.title ?? null,
+    eventId: r.eventId,
+    characters: r.characters.map((c) => ({ id: c.character.id, name: c.character.name })),
+    lines: r.lines.map((l) => ({ id: l.line.id, name: l.line.name })),
+    canvasX: r.canvasX,
+    canvasY: r.canvasY,
+  }))
+}
+export async function getBeatLinks(bookId: string): Promise<{ id: string; aId: string; bId: string }[]> {
+  await schemaReady
+  const rows = await prisma.beatLink.findMany({ where: { a: { bookId } } })
+  return rows.map((r) => ({ id: r.id, aId: r.aId, bId: r.bId }))
+}
+export async function moveBeatOnCanvas(id: string, x: number, y: number) {
+  await schemaReady
+  await prisma.plotBeat.update({ where: { id }, data: { canvasX: Math.round(x), canvasY: Math.round(y) } })
+}
+export async function linkBeats(aId: string, bId: string) {
+  await schemaReady
+  if (!aId || !bId || aId === bId) return
+  const dup = await prisma.beatLink.findFirst({ where: { OR: [{ aId, bId }, { aId: bId, bId: aId }] } })
+  if (dup) return
+  await prisma.beatLink.create({ data: { aId, bId } })
+}
+export async function unlinkBeats(linkId: string) {
+  await schemaReady
+  await prisma.beatLink.delete({ where: { id: linkId } })
+}
+export async function createBeatAt(bookId: string, x: number, y: number) {
+  await schemaReady
+  const b = await prisma.plotBeat.create({
+    data: { bookId, title: '', summary: '', canvasX: Math.round(x), canvasY: Math.round(y) },
+  })
+  revalidatePath(`/book/${bookId}`)
+  return b.id
 }
 
 export async function getStorylines(bookId: string): Promise<StorylineRow[]> {

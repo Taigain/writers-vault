@@ -1,11 +1,14 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Users, LayoutGrid, Network, Search, Plus, X } from 'lucide-react'
 import { useLang } from '@/lib/useLang'
+import { addCharacterRelation } from '@/lib/actions'
 import CharacterTile from './CharacterTile'
 import CharacterBoard from './CharacterBoard'
 import CharacterModal from './CharacterModal'
+import RelateDialog from './RelateDialog'
 import type { CharRow, CharRelation } from './characterTypes'
 
 export default function CharactersRegistry({
@@ -20,13 +23,17 @@ export default function CharactersRegistry({
   boardHeight: number | null
 }) {
   const { t } = useLang()
+  const router = useRouter()
   const [view, setView] = useState<'grid' | 'board'>('grid')
   const [q, setQ] = useState('')
   const [openId, setOpenId] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
+  const [relatePair, setRelatePair] = useState<{ a: string; b: string } | null>(null)
   const s = q.trim().toLowerCase()
   const filtered = s
-    ? characters.filter((c) => (c.name + ' ' + c.role + ' ' + c.bio + ' ' + c.aliases).toLowerCase().includes(s))
+    ? characters.filter((c) =>
+        (c.name + ' ' + c.role + ' ' + c.bio + ' ' + c.aliases).toLowerCase().includes(s),
+      )
     : characters
   const openChar = characters.find((c) => c.id === openId) ?? null
   return (
@@ -84,6 +91,7 @@ export default function CharactersRegistry({
           boardHeight={boardHeight}
           onOpen={(id) => setOpenId(id)}
           onNew={() => setCreating(true)}
+          onRelate={(a, b) => setRelatePair({ a, b })}
         />
       )}
       {characters.length === 0 && (
@@ -107,6 +115,18 @@ export default function CharactersRegistry({
           onCreate={(nid) => {
             setCreating(false)
             setOpenId(nid)
+          }}
+        />
+      )}
+      {relatePair && (
+        <RelateDialog
+          aName={characters.find((c) => c.id === relatePair.a)?.name ?? ''}
+          bName={characters.find((c) => c.id === relatePair.b)?.name ?? ''}
+          onClose={() => setRelatePair(null)}
+          onSave={async (kind, note) => {
+            await addCharacterRelation(relatePair.a, relatePair.b, note, kind)
+            setRelatePair(null)
+            router.refresh()
           }}
         />
       )}

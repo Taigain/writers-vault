@@ -111,6 +111,7 @@ model CharacterRelation {
   note        String    @default("")
   character   Character @relation("CharacterRelations", fields: [characterId], references: [id], onDelete: Cascade)
   related     Character @relation("RelatedRelations", fields: [relatedId], references: [id], onDelete: Cascade)
+  kind String @default("mutual")
 }
 
 model EventCharacter {
@@ -222,6 +223,10 @@ model PlotBeat {
   event      TimelineEvent?  @relation(fields: [eventId], references: [id], onDelete: SetNull)
   characters BeatCharacter[]
   lines      BeatLine[]
+  canvasX    Int?
+  canvasY    Int?
+  linksA     BeatLink[] @relation("BeatLinkA")
+  linksB     BeatLink[] @relation("BeatLinkB")
 }
 
 model BeatLine {
@@ -252,6 +257,16 @@ model BeatCharacter {
   character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
 
   @@unique([beatId, characterId])
+}
+
+model BeatLink {
+  id   String   @id @default(cuid())
+  aId  String
+  bId  String
+  a    PlotBeat @relation("BeatLinkA", fields: [aId], references: [id], onDelete: Cascade)
+  b    PlotBeat @relation("BeatLinkB", fields: [bId], references: [id], onDelete: Cascade)
+
+  @@unique([aId, bId])
 }
 
 model DictEntry {

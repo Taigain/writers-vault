@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Plus, Edit3, Copy, Trash2, Pin, GripHorizontal } from 'lucide-react'
+import { Plus, Edit3, Copy, Trash2, Pin, GripHorizontal, Link2 } from 'lucide-react'
 import { useLang } from '@/lib/useLang'
 import { roleLabel } from '@/lib/roles'
 import { deleteCharacter, duplicateCharacter, moveCharacterOnBoard, setBookBoardHeight } from '@/lib/actions'
@@ -29,6 +29,7 @@ export default function CharacterBoard({
   boardHeight,
   onOpen,
   onNew,
+  onRelate,
 }: {
   bookId: string
   characters: CharRow[]
@@ -36,6 +37,7 @@ export default function CharacterBoard({
   boardHeight: number | null
   onOpen: (id: string) => void
   onNew: () => void
+  onRelate: (a: string, b: string) => void
 }) {
   const { t, lang } = useLang()
   const router = useRouter()
@@ -53,6 +55,8 @@ export default function CharacterBoard({
     moved: boolean
   } | null>(null)
   const justDragged = useRef(false)
+  const [connect, setConnect] = useState(false)
+  const [selA, setSelA] = useState<string | null>(null)
 
   useEffect(() => {
     const el = wrapRef.current
@@ -105,6 +109,23 @@ export default function CharacterBoard({
 
   return (
     <div className="cr-board-wrap" ref={wrapRef}>
+      <div className="cr-connect-bar">
+        <button
+          type="button"
+          className={`btn btn-sm ${connect ? 'btn-primary' : 'btn-ghost'}`}
+          onClick={() => {
+            setConnect((v) => !v)
+            setSelA(null)
+          }}
+        >
+          <Link2 size={13} /> {t('rlMode')}
+        </button>
+        {connect && (
+          <span className="text-xs" style={{ color: 'var(--soft)' }}>
+            {selA ? t('rlModeHint2') : t('rlModeHint1')}
+          </span>
+        )}
+      </div>
       <div className="cr-board" style={{ height: boardH }}>
         <svg className="cr-strings" width={width} height={boardH}>
           {lines.map((r) => {
@@ -132,9 +153,10 @@ export default function CharacterBoard({
         {placed.map((p) => (
           <div
             key={p.c.id}
-            className="cr-board-card"
+            className={`cr-board-card ${selA === p.c.id ? 'cr-board-card-sel' : ''}`}
             style={{ left: p.x, top: p.y, width: CARD_W, transform: `rotate(${p.rot}deg)` }}
             onPointerDown={(e) => {
+              if (connect) return
               justDragged.current = false
               if ((e.target as HTMLElement).closest('button')) return
               const cur = effPos(p.c, p.i)
@@ -180,6 +202,20 @@ export default function CharacterBoard({
               className="cr-board-photo"
               onClick={() => {
                 if (justDragged.current) return
+                if (connect) {
+                  if (!selA) {
+                    setSelA(p.c.id)
+                    return
+                  }
+                  if (selA === p.c.id) {
+                    setSelA(null)
+                    return
+                  }
+                  const a = selA
+                  setSelA(null)
+                  onRelate(a, p.c.id)
+                  return
+                }
                 onOpen(p.c.id)
               }}
             >

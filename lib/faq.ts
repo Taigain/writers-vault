@@ -26,7 +26,7 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     },
     {
       q: 'Персонажи: альбом, пробковая доска и полноэкранное досье',
-      a: 'В разделе персонажей два вида: «Альбом» — полароидные карточки с лёгким наклоном, поиском и действиями по наведению (редактировать, дублировать, удалить); «Доска» — пробковое полотно, где снимки держатся красными кнопками-пинами, а между связанными персонажами натянуты нити, цвет которых зависит от типа отношения (легенда под доской). Карточки на доске перетаскиваются мышью, раскладка запоминается; высоту доски можно растянуть за ручку внизу, двойной клик по ручке возвращает авто-высоту по числу рядов. Клик по фото или карточке открывает полноэкранное досье: липкая шапка с кнопкой сохранения, вкладки (Анкета, Связи, Упоминания, Сцены, Облако связей), пунктирные поля демографии, деталей личности и внешности. Справа — полароид портрета: если своего фото нет, подставляется стоковая заглушка по полу (мужская, женская или нейтральная). «Новый персонаж» создаёт героя и сразу открывает его досье для заполнения.',
+      a: ' Кнопка «Связать персонажей» на доске включает режим соединения: клик по первому снимку обводит его, клик по второму открывает диалог «Определить связь» с направленностью (взаимно / односторонне), восемью цветными пресетами типов (друг, враг, семья, любовь, наставник, ученик, соперник, союзник) и своим вариантом; цвет нити на доске и в облаках следует типу связи. Связь хранится одной записью и видна обоим персонажам: в списках «Связи», в облаках отношений и нитями на доске; односторонние помечены стрелками → / ←.',
     },
     {
       q: 'Команды форматирования текста',
@@ -138,7 +138,7 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     },
     {
       q: 'Как работает экспорт в DOCX?',
-      a: 'Кнопка «Экспорт в DOCX» в разделе «Главы» и на паспорте книги. Документ собирается по методике Word: каждый абзац автора (всё до нажатия Enter) становится отдельным абзацем документа с интервалом после 8 пт и межстрочным 1.08, пустых строк-прокладок нет; заголовки книги, актов и глав несут свои отступы и уровни оглавления. Формат по умолчанию — Times New Roman 11 pt. Жирный, курсив и выравнивание сохраняются; явный [size=NN] перебивает кегль. Служебные символы меток не попадают: [@имя] даёт имя, [#метка] — текст метки с пробелами вместо подчёркиваний, [~ключ] заменяется словом книги из словаря. Тумблер «Включать название, аннотацию и синопсис в экспорт DOCX» на паспорте управляет титульным блоком по каждой книге. Куда сохраняется: в папку из настроек (Chrome/Edge) или в «Загрузки».',
+      a: 'Кнопка «Экспорт в DOCX» в разделе «Главы» и на паспорте книги. Документ собирается по методике Word: каждый абзац автора (всё до нажатия Enter) становится отдельным абзацем документа с интервалом после 8 пт и межстрочным 1.08, пустых строк-прокладок нет; заголовки книги, актов и глав несут свои отступы и уровни оглавления. Формат по умолчанию — Times New Roman 11 pt. Жирный, курсив и выравнивание сохраняются; явный [size=NN] перебивает кегль. Служебные символы меток не попадают: [@имя] даёт имя, [#метка] — текст метки с пробелами вместо подчёркиваний, [~ключ] заменяется словом книги из словаря. Три независимые галочки на паспорте — «название», «аннотацию», «синопсис» — управляют титульным блоком по каждой книге; по умолчанию все выключены, пустые поля не попадают в документ даже при включённой галочке.',
     },
     {
       q: 'Как импортировать книгу из DOCX?',
@@ -150,7 +150,7 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     },
     {
       q: 'Что такое серии и циклы?',
-      a: 'Серия — общий заголовок для нескольких книг (например, «Трилогия огня»). Создаётся на главной странице в разделе «Серии и циклы». В паспорте книги привязываете её к серии — на главной книги автоматически группируются под заголовком серии со счётчиком. Группы серий и блок «Без серии» сворачиваются кликом по заголовку — удобно при большом количестве книг, состояние запоминается. Удаление серии не удаляет книги, а возвращает их в «Вне серии».',
+      a: 'Серия — общий заголовок для нескольких книг (например, «Трилогия огня»). Создаётся на главной странице в разделе «Серии и циклы».  Серию также можно создать прямо в паспорте книги: пункт «Новая серия…» в селекте серии открывает инлайн-поле, и созданная серия сразу назначается книге. В паспорте книги привязываете её к серии — на главной книги автоматически группируются под заголовком серии со счётчиком. Группы серий и блок «Без серии» сворачиваются кликом по заголовку — удобно при большом количестве книг, состояние запоминается. Удаление серии не удаляет книги, а возвращает их в «Вне серии».',
     },
     {
       q: 'Что такое акты внутри книги?',
@@ -170,7 +170,7 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     },
     {
       q: 'Сюжетные линии, биты и карта сюжета',
-      a: 'Раздел «Сюжет» держит движение линий произведения: создайте линии (основную и второстепенные) и разложите внутри каждой биты — сцены в нужном порядке. Бит связывается с главой, событием таймлайна и персонажами (чипы-переключатели в форме бита). Один бит может принадлежать нескольким линиям — так строятся пересечения: чип «также в: …» показывает соседние линии, привязать существующий бит можно селектом под списком битов, «Отцепить от линии» убирает связь (если линия была последней, бит удаляется). Сверху раздела — карта: цветные цепочки линий со стрелками порядка, узлы-биты, нити персонажей и события, входные и выходные стрелки с названиями линий. Колесо мыши — зум, перетаскивание за фон — панорама, кнопки — масштаб и полный экран; наведение открывает окошко с описанием, клик по узлу подсвечивает его связи и приглушает остальное.',
+    a: 'Раздел «Сюжет» держит движение линий произведения: создайте линии (основную и второстепенные) и разложите внутри каждой биты — сцены в нужном порядке. Бит связывается с главой, событием таймлайна и персонажами (чипы-переключатели в форме бита). Один бит может принадлежать нескольким линиям — так строятся пересечения: чип «также в: …» показывает соседние линии, привязать существующий бит можно селектом под списком битов, «Отцепить от линии» убирает связь (если линия была последней, бит удаляется). Сверху раздела — карта: цветные цепочки линий со стрелками порядка, узлы-биты, нити персонажей и события, входные и выходные стрелки с названиями линий. Колесо мыши — зум, перетаскивание за фон — панорама, кнопки — масштаб и полный экран; наведение открывает окошко с описанием, клик по узлу подсвечивает его связи и приглушает остальное. Переключатель «Список / Холст» открывает второй вид: холст — пунктирное полотно, на котором карточки битов (название, описание, участники, глава) перетаскиваются мышью с запоминанием раскладки; связи между битами тянутся от точек на четырёх сторонах карточки к точкам другой, клик по нити удаляет её с подтверждением; двойной клик по пустому полотну создаёт бит в точке клика и сразу открывает его редактор (название, описание, глава, участники, удаление). Биты без линии собираются в списке группой «Биты вне линий», откуда привязываются к линии или удаляются — холст и список видят одни и те же биты.',
     },
     {
       q: 'Чем календарное время отличается от книжного?',
@@ -205,6 +205,10 @@ export const FAQ: Record<Lang, FaqItem[]> = {
       a: 'Скопируйте файл dev.db (см. «Где хранятся мои данные?») и положите его по тому же пути на новом компьютере с установленным приложением — перенесутся все книги, персонажи, связи, заметки, словари и изображения. Пользовательские слова проверки орфографии и настройки интерфейса (тема, свёрнутые группы) хранятся вне базы книг и остаются на старой машине.',
     },
     {
+    q: 'Как перенести или скопировать одну книгу файлом .wvproj?',
+    a: 'Кнопка «Скачать .wvproj» на паспорте книги собирает всю книгу в один архив: главы и акты, персонажей со связями и портретами, локации, таймлайн с участниками, словарь, заметки, записи мира, сюжетные линии и биты, сцены и метки упоминаний. Кнопка «Импорт .wvproj» на главной принимает файл и создаёт книгу-копию с полностью новыми идентификаторами — импорт в ту же базу не конфликтует с оригиналом, серии подхватываются по имени без дублей. Формат служит резервной копией отдельной книги и переносом между компьютерами; он же станет основой будущей облачной синхронизации. Копию всей базы по-прежнему даёт файл dev.db (см. «Где хранятся мои данные?»).',
+    },
+    {
       q: 'Как поддержать автора?',
       a: 'В разделе «Настройки», блок «О программе», есть кнопки «Поблагодарить автора». Они открывают платёжные страницы во внешнем браузере.',
     },
@@ -232,7 +236,7 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     },
     {
       q: 'Characters: album, cork board and the fullscreen dossier',
-      a: 'The characters section has two views: "Album" — polaroid cards with a slight tilt, search and hover actions (edit, duplicate, delete); "Board" — a cork canvas where photos hang on red push-pins and colored threads stretch between related characters, the color following the relationship type (legend under the board). Cards drag with the mouse and the layout is remembered; the board stretches by its bottom handle, and a double-click on the handle resets to the auto height by row count. Clicking a photo or card opens the fullscreen dossier: a sticky header with the save button, tabs (Profile, Relations, Mentions, Scenes, Relations cloud) and dotted fields for demographics, personality details and appearance. On the right sits the portrait polaroid: without your own photo, a stock placeholder by gender is shown (male, female or neutral). "New character" creates the hero and immediately opens the dossier for filling in.',
+      a: 'The "Connect characters" button on the board turns on linking mode: clicking the first photo outlines it, clicking the second opens the "Define the bond" dialog with direction (mutual / one-way), eight colored type presets (friend, enemy, family, beloved, mentor, student, rival, ally) and a custom variant; the thread color on the board and in the clouds follows the bond type. A bond is stored as a single record and is visible to both characters: in the "Relations" lists, in the relation clouds and as threads on the board; one-way bonds are marked with → / ← arrows.',
     },
     {
       q: 'Text formatting commands',
@@ -344,7 +348,7 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     },
     {
       q: 'How does DOCX export work?',
-      a: 'The "Export to DOCX" button in the Chapters section and on the book passport. The document follows the Word methodology: every author paragraph (everything up to Enter) becomes its own document paragraph with 8 pt after and 1.08 line spacing, no empty spacer lines; book, act and chapter headings carry their own spacing and outline levels. Default format is Times New Roman 11 pt. Bold, italic and alignment are preserved; explicit [size=NN] overrides the size. Marker service symbols never leak: [@name] yields the name, [#mark] yields the mark text with spaces instead of underscores, [~key] is replaced with the book word from the dictionary. The "Include title, annotation and synopsis in DOCX export" toggle on the passport controls the title block per book. Saved to the folder from settings (Chrome/Edge) or to Downloads.',
+      a: 'The "Export to DOCX" button in the Chapters section and on the book passport. The document follows the Word methodology: every author paragraph (everything up to Enter) becomes its own document paragraph with 8 pt after and 1.08 line spacing, no empty spacer lines; book, act and chapter headings carry their own spacing and outline levels. Default format is Times New Roman 11 pt. Bold, italic and alignment are preserved; explicit [size=NN] overrides the size. Marker service symbols never leak: [@name] yields the name, [#mark] yields the mark text with spaces instead of underscores, [~key] is replaced with the book word from the dictionary. Three independent checkboxes on the passport — title, annotation, synopsis — control the title block per book; all are off by default, and empty fields never reach the document even when checked.',
     },
     {
       q: 'How do I import a book from DOCX?',
@@ -356,7 +360,7 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     },
     {
       q: 'What are series and cycles?',
-      a: 'A series is a shared title for several books (e.g. "Fire Trilogy"). Create one on the home page in "Series and cycles". Link a book to a series in its passport — books on the home page automatically group under the series heading with a count. Series groups and the "Standalone" block collapse by clicking their headings — handy with many books; the state is remembered. Deleting a series does not delete books, it returns them to "Standalone".',
+      a: 'A series is a shared title for several books (e.g. "Fire Trilogy"). Create one on the home page in "Series and cycles".  A series can also be created right in the book passport: the  "New series… " item in the series select opens an inline field, and the fresh series is assigned to the book at once. Link a book to a series in its passport — books on the home page automatically group under the series heading with a count. Series groups and the "Standalone" block collapse by clicking their headings — handy with many books; the state is remembered. Deleting a series does not delete books, it returns them to "Standalone".',
     },
     {
       q: 'What are acts inside a book?',
@@ -376,7 +380,7 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     },
     {
       q: 'Storylines, beats and the story map',
-      a: 'The "Plot" section tracks the movement of storylines: create lines (main and secondary) and lay out beats — scenes in the order you need — inside each. A beat links to a chapter, a timeline event and characters (toggle chips in the beat form). One beat can belong to several lines — that is how intersections are built: the "also in: …" chip shows the neighbouring lines, an existing beat is attached via the select under the beat list, and "Unlink from line" removes the link (if it was the last line, the beat is deleted). At the top of the section sits the map: colored line chains with order arrows, beat nodes, character and event threads, entry and exit arrows with line names. Mouse wheel — zoom, dragging the background — pan, buttons — scale and fullscreen; hovering opens a description window, clicking a node highlights its connections and dims the rest.',
+    a: 'The "Plot" section tracks the movement of storylines: create lines (main and secondary) and lay out beats — scenes in the order you need — inside each. A beat links to a chapter, a timeline event and characters (toggle chips in the beat form). One beat can belong to several lines — that is how intersections are built: the "also in: …" chip shows the neighbouring lines, an existing beat is attached via the select under the beat list, and "Unlink from line" removes the link (if it was the last line, the beat is deleted). At the top of the section sits the map: colored line chains with order arrows, beat nodes, character and event threads, entry and exit arrows with line names. Mouse wheel — zoom, dragging the background — pan, buttons — scale and fullscreen; hovering opens a description window, clicking a node highlights its connections and dims the rest. The "List / Canvas" toggle opens the second view: the canvas is a dotted field where beat cards (title, description, participants, chapter) drag with the mouse and remember their layout; links between beats stretch from dots on the four card sides to dots on another card, clicking a thread deletes it with confirmation; a double-click on the empty field creates a beat at the click point and immediately opens its editor (title, description, chapter, participants, delete). Line-less beats gather in the list under "Beats outside lines", where they attach to a line or get deleted — the canvas and the list see the same beats.',
     },
     {
       q: 'Calendar time vs book time?',
@@ -409,6 +413,10 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     {
       q: 'How do I move books to another PC?',
       a: 'Copy the dev.db file (see "Where is my data stored?") and place it at the same path on the new computer with the app installed — all books, characters, links, notes, dictionaries and images will transfer. Custom spell-check words and interface settings (theme, collapsed groups) live outside the book database and stay on the old machine.',
+    },
+    {
+    q: 'How do I move or copy a single book as a .wvproj file?',
+    a: 'The  "Download .wvproj " button on the book passport packs the whole book into a single archive: chapters and acts, characters with relations and portraits, locations, the timeline with participants, the dictionary, notes, world lore, storylines and beats, scenes and mention marks. The  "Import .wvproj " button on the home page accepts the file and creates a book copy with entirely new identifiers — importing into the same database never conflicts with the original, and series are picked up by name without duplicates. The format serves as a per-book backup and a transfer between computers; it will also power the future cloud sync. A full-database copy is still the dev.db file (see  "Where is my data stored? ").',
     },
     {
       q: 'How do I support the author?',

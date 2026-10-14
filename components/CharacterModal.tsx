@@ -77,7 +77,7 @@ export default function CharacterModal({
   useEffect(() => {
     setLocal(character)
     setGenderDraft(null)
-    setRelations((character as any)?.relations ?? [])
+    setRelations((character as any)?.relationsAll ?? (character as any)?.relations ?? [])
   }, [character])
 
   useEffect(() => {
@@ -264,8 +264,11 @@ export default function CharacterModal({
         <ul className="space-y-2">
           {relations.map((r: any) => (
             <li key={r.id} className="flex items-center gap-2 text-sm">
-              <span className="chip">{r.related?.name ?? '?'}</span>
+              <span className="chip">{r.otherName ?? r.related?.name ?? '?'}</span>
               <span style={{ color: 'var(--soft)' }}>{r.note}</span>
+              {r.kind === 'oneway' && (
+                <span className="text-xs" style={{ color: 'var(--soft)' }}>{r.dir === 'out' ? '→' : '←'}</span>
+              )}
               <span className="flex-1" />
               <button
                 type="button"
