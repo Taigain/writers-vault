@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Save, Image as ImageIcon, Trash2, Plus, Download, X } from 'lucide-react'
 import {
@@ -9,6 +9,8 @@ import {
   setBookStatus,
   setBookSeries,
   createSeriesNamed,
+  setBookAuthorName,
+  getAuthorProfile,
 } from '@/lib/actions'
 import { useLang } from '@/lib/useLang'
 import ExportMetaToggle from './ExportMetaToggle'
@@ -31,6 +33,8 @@ export default function BookPassport({
   exportTitle,
   exportAnnotation,
   exportSynopsis,
+  authorName,
+  exportAuthor,
 }: {
   id: string
   title: string
@@ -43,6 +47,8 @@ export default function BookPassport({
   exportTitle: boolean
   exportAnnotation: boolean
   exportSynopsis: boolean
+  authorName: string | null
+  exportAuthor: boolean
 }) {
   const { t } = useLang()
   const router = useRouter()
@@ -52,6 +58,35 @@ export default function BookPassport({
   const [seriesNewOpen, setSeriesNewOpen] = useState(false)
   const [seriesNewName, setSeriesNewName] = useState('')
   const fileRef = useRef<HTMLInputElement | null>(null)
+
+  const [profile, setProfile] = useState<{ name: string; penNames: string } | null>(null)
+  useEffect(() => {
+    getAuthorProfile().then((p) => setProfile({ name: p.name, penNames: p.penNames }))
+  }, [])
+
+  const [authorOptions, setAuthorOptions] = useState<{ value: string; label: string }[]>([])
+  useEffect(() => {
+    let alive = true
+    ;(async () => {
+      const p = await getAuthorProfile()
+      if (!alive) return
+      const opts: { value: string; label: string }[] = []
+      const real = (p.name ?? '').trim()
+      if (real) opts.push({ value: real, label: `${real} (${t('bpAuthorReal')})` })
+      ;(p.penNames ?? '')
+        .split(/[,;]/)
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .forEach((pn, i) => opts.push({ value: pn, label: `${pn} (${t('bpAuthorPen', { n: i + 1 })})` }))
+      if (authorName && !opts.some((o) => o.value === authorName)) {
+        opts.push({ value: authorName, label: authorName })
+      }
+      setAuthorOptions(opts)
+    })()
+    return () => {
+      alive = false
+    }
+  }, [id, authorName])
 
   const onCoverChange = (file: File | null) => {
     if (!file || file.size === 0) return
@@ -87,6 +122,10 @@ export default function BookPassport({
       }}
       className="card p-5 space-y-4"
     >
+      <div className="mb-4">
+        <div className="field-label">{t('bpAuthorSelect')}</div>
+        <div className="bp-author-display">{authorName || t('bpAuthorNone')}</div>
+      </div>
       <div>
         <div className="field-label">{t('bpStatus')}</div>
         <div className="flex flex-wrap gap-2">
@@ -192,10 +231,30 @@ export default function BookPassport({
         </div>
       </div>
       <div className="flex flex-wrap items-center gap-2 justify-end">
+      <div className="mb-4">
+        <div className="field-label">{t('bpAuthorName')}</div>
+        <select
+          className="input w-auto"
+          defaultValue={authorName ?? ''}
+          onChange={(e) => setBookAuthorName(id, e.target.value || null)}
+        >
+          <option value="">{t('bpAuthorNone')}</option>
+          {authorOptions.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      </div>
         <div className="mr-auto">
           <ExportMetaToggle
             bookId={id}
-            initial={{ title: exportTitle, annotation: exportAnnotation, synopsis: exportSynopsis }}
+            initial={{
+              title: exportTitle,
+              annotation: exportAnnotation,
+              synopsis: exportSynopsis,
+              author: exportAuthor,
+            }}
           />
         </div>
         <a

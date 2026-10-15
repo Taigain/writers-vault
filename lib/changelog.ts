@@ -7,6 +7,20 @@ export type ChangeEntry = {
 
 export const CHANGELOG: ChangeEntry[] = [ 
   {
+    version: '1.6.5',
+    date: '15.10.2026',
+    ru: [
+      'Профиль автора: страница «Профиль» с именем, псевдонимами и жанрами, планом подписки со статусом «В разработке» и панелью активности с чистыми счётчиками — слова, книги, серии, персонажи, события и сцены; вход из настроек и сайдбара',
+      'Имя автора на паспорте книги: крупная витрина выбранного имени сверху, выбор из настоящего имени и псевдонимов профиля внизу и четвёртая галочка экспорта DOCX — курсивная строка автора на титуле',
+      'Справка стала журналом: липкое оглавление слева с подсветкой читаемой статьи, серифные заголовки и волосяные разделители справа; все статьи обоих языков попадают в навигацию автоматически',
+    ],
+    en: [
+      'Author profile: a "Profile" page with name, pen names and genres, a subscription plan marked "In development" and an activity panel of pure counters — words, books, series, characters, events and scenes; entries from Settings and the sidebar',
+      'Author name on the book passport: a large showcase of the chosen name on top, a pick from the profile real name and pen names below, and a fourth DOCX export checkbox — an italic author line on the title page',
+      'The help is now a magazine: a sticky contents on the left highlights the article you are reading, serif headings and hairline dividers on the right; every article in both languages enters the navigation automatically',
+    ],
+  },
+  {
     version: '1.6.4',
     date: '14.10.2026',
     ru: [

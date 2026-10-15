@@ -35,6 +35,8 @@ model Book {
   spineStyle      String          @default("tome")
   dict DictEntry[]
   boardH Int?
+  authorName   String?
+  exportAuthor Boolean @default(false)
 }
 
 model IdeaNote {
@@ -308,4 +310,13 @@ model License {
   proUntil    DateTime?
   trialUsedAt DateTime?
   updatedAt   DateTime  @updatedAt
+}
+
+model AuthorProfile {
+  id        String   @id @default("local")
+  name      String   @default("")
+  penNames  String   @default("")
+  genres    String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

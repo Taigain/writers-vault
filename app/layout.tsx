@@ -9,6 +9,7 @@ import NavGuard from '@/components/NavGuard'
 import LanguageGate from '@/components/LanguageGate'
 import BookBar from '@/components/BookBar'
 import LicenseProvider from '@/components/LicenseProvider'
+import Script from 'next/script'
 
 export const metadata: Metadata = { title: "Writer's Vault" }
 
@@ -26,7 +27,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="ru" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: BOOTSTRAP }} />
+        <Script
+          id="wv-bootstrap"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{ __html: BOOTSTRAP }}
+        />
       </head>
       <body className="min-h-screen">
         <LicenseProvider>

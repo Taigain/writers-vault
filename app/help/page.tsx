@@ -1,32 +1,65 @@
-import { ChevronRight } from 'lucide-react'
-import { getLang } from '@/lib/lang-server'
-import { tr } from '@/lib/i18n'
+'use client'
+
+import { useEffect, useRef, useState } from 'react'
+import { useLang } from '@/lib/useLang'
 import { FAQ } from '@/lib/faq'
 
-export default async function HelpPage() {
-  const lang = await getLang()
+export default function HelpPage() {
+  const { t, lang } = useLang()
   const items = FAQ[lang]
+  const [active, setActive] = useState(0)
+  const refs = useRef<(HTMLElement | null)[]>([])
+
+  useEffect(() => {
+    const obs = new IntersectionObserver(
+      (entries) => {
+        for (const en of entries) {
+          if (en.isIntersecting) {
+            const idx = Number((en.target as HTMLElement).dataset.idx)
+            if (!Number.isNaN(idx)) setActive(idx)
+          }
+        }
+      },
+      { rootMargin: '-30% 0px -60% 0px' },
+    )
+    for (const el of refs.current) if (el) obs.observe(el)
+    return () => obs.disconnect()
+  }, [lang, items.length])
 
   return (
-    <div className="page-wrap mx-auto px-8 py-10 anim-fade">
-      <h1 className="text-3xl font-bold tracking-tight mb-2">{tr(lang, 'helpTitle')}</h1>
-      <p className="text-sm mb-8" style={{ color: 'var(--soft)' }}>{tr(lang, 'helpSub')}</p>
-
-      <div className="space-y-3">
+    <div className="help-wrap">
+      <nav className="help-toc">
+        <div className="help-toc-title">{t('helpToc')}</div>
+        <ul>
+          {items.map((it, i) => (
+            <li key={i}>
+              <a href={`#faq-${i}`} className={i === active ? 'help-toc-active' : ''} title={it.q}>
+                {it.q}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+      <main className="help-content">
+        <header className="help-head">
+          <h1>{t('helpTitle')}</h1>
+          <p>{t('helpSub')}</p>
+        </header>
         {items.map((it, i) => (
-          <details key={i} className="acc">
-            <summary className="acc-head">
-              <ChevronRight size={18} className="acc-chev" />
-              <span className="acc-title">{it.q}</span>
-            </summary>
-            <div className="acc-body">
-              <p className="text-sm pt-3 whitespace-pre-line" style={{ color: 'var(--soft)' }}>
-                {it.a}
-              </p>
-            </div>
-          </details>
+          <section
+            key={i}
+            id={`faq-${i}`}
+            data-idx={i}
+            ref={(el) => {
+              refs.current[i] = el
+            }}
+            className="help-section"
+          >
+            <h2>{it.q}</h2>
+            <p>{it.a}</p>
+          </section>
         ))}
-      </div>
+      </main>
     </div>
   )
 }

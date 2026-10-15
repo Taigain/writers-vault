@@ -23,6 +23,7 @@ import {
   Languages,
   Clapperboard,
   ChevronLeft,
+  UserRound,
 } from 'lucide-react'
 import { useLang } from '@/lib/useLang'
 import { APP_NAME, APP_VERSION } from '@/lib/appinfo'
@@ -350,6 +351,9 @@ export default function SidebarNav({ books }: { books: SidebarBook[] }) {
       </div>
 
       <div className="sb-bottom">
+        <Link href="/profile" className={`sb-link ${collapsed ? 'justify-center' : ''}`}>
+          <UserRound size={14} /> <span className="sb-hide">{t('navProfile')}</span>
+        </Link>
         <Link href="/settings" className={`sb-link ${collapsed ? 'justify-center' : ''}`}>
           <Settings size={14} /> <span className="sb-hide">{t('navSettings')}</span>
         </Link>

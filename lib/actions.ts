@@ -1,5 +1,6 @@
 'use server'
 
+import { useState, useEffect, Suspense } from 'react'
 import { prisma, schemaReady } from './prisma'
 import { revalidatePath } from 'next/cache'
 import { getLang } from './lang-server'
@@ -993,11 +994,17 @@ export async function setBookExportMeta(bookId: string, value: boolean) {
 
 export async function setBookExportFlag(
   bookId: string,
-  field: 'exportTitle' | 'exportAnnotation' | 'exportSynopsis',
+  field: 'exportTitle' | 'exportAnnotation' | 'exportSynopsis' | 'exportAuthor',
   value: boolean,
 ) {
   await schemaReady
   await prisma.book.update({ where: { id: bookId }, data: { [field]: value } })
+  revalidatePath(`/book/${bookId}`)
+}
+
+export async function setBookAuthorName(bookId: string, name: string | null) {
+  await schemaReady
+  await prisma.book.update({ where: { id: bookId }, data: { authorName: name } })
   revalidatePath(`/book/${bookId}`)
 }
 
@@ -1942,4 +1949,43 @@ export async function updateIdeaNote(
 export async function deleteIdeaNote(id: string) {
   await schemaReady
   await prisma.ideaNote.delete({ where: { id } })
+}
+
+// --- AUTHOR PROFILE ---
+export async function getAuthorProfile() {
+  await schemaReady
+  const r = await prisma.authorProfile.findUnique({ where: { id: 'local' } })
+  if (r) return r
+  return prisma.authorProfile.create({ data: { id: 'local' } })
+}
+export async function saveAuthorProfile(fd: FormData) {
+  await schemaReady
+  await prisma.authorProfile.update({
+    where: { id: 'local' },
+    data: {
+      name: ((fd.get('name') as string) ?? '').trim(),
+      penNames: ((fd.get('penNames') as string) ?? '').trim(),
+      genres: ((fd.get('genres') as string) ?? '').trim(),
+    },
+  })
+  revalidatePath('/profile')
+}
+export async function getProfileStats() {
+  await schemaReady
+  const [books, series, characters, events, scenes, chapterRows] = await Promise.all([
+    prisma.book.count(),
+    prisma.series.count(),
+    prisma.character.count(),
+    prisma.timelineEvent.count(),
+    prisma.scene.count(),
+    prisma.chapter.findMany({ select: { title: true, content: true } }),
+  ])
+  const words = chapterRows.reduce(
+    (s, c) =>
+      s +
+      (c.title.trim() ? c.title.trim().split(/\s+/).length : 0) +
+      (c.content.trim() ? c.content.trim().split(/\s+/).length : 0),
+    0,
+  )
+  return { words, books, series, characters, events, scenes }
 }

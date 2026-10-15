@@ -359,6 +359,8 @@ const charactersSection = (
             exportTitle={book.exportTitle}
             exportAnnotation={book.exportAnnotation}
             exportSynopsis={book.exportSynopsis}
+            authorName={book.authorName}
+            exportAuthor={book.exportAuthor}
           />
           <BookStats
             chapters={chapters.map((c) => ({ id: c.id, title: c.title, content: c.content }))}

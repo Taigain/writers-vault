@@ -47,6 +47,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ bookId:
       exportTitle: true,
       exportAnnotation: true,
       exportSynopsis: true,
+      authorName: true,
+      exportAuthor: true,
     }
   })
   if (!book) {
@@ -114,6 +116,14 @@ export async function GET(_req: Request, { params }: { params: Promise<{ bookId:
   if (chapterRow) {
     pushChapter(chapterRow, HeadingLevel.HEADING_1)
   } else {
+    if (book.exportAuthor && book.authorName) {
+      children.push(
+        new Paragraph({
+          children: [new TextRun({ text: book.authorName, italics: true, size: 24 })],
+          spacing: { after: 120 },
+        }),
+      )
+    }
     if (book.exportTitle) {
       children.push(/* абзац с book.title, как было внутри старого блока */)
     }

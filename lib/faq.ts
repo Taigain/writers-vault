@@ -138,7 +138,7 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     },
     {
       q: 'Как работает экспорт в DOCX?',
-      a: 'Кнопка «Экспорт в DOCX» в разделе «Главы» и на паспорте книги. Документ собирается по методике Word: каждый абзац автора (всё до нажатия Enter) становится отдельным абзацем документа с интервалом после 8 пт и межстрочным 1.08, пустых строк-прокладок нет; заголовки книги, актов и глав несут свои отступы и уровни оглавления. Формат по умолчанию — Times New Roman 11 pt. Жирный, курсив и выравнивание сохраняются; явный [size=NN] перебивает кегль. Служебные символы меток не попадают: [@имя] даёт имя, [#метка] — текст метки с пробелами вместо подчёркиваний, [~ключ] заменяется словом книги из словаря. Три независимые галочки на паспорте — «название», «аннотацию», «синопсис» — управляют титульным блоком по каждой книге; по умолчанию все выключены, пустые поля не попадают в документ даже при включённой галочке.',
+      a: 'Кнопка «Экспорт в DOCX» в разделе «Главы» и на паспорте книги. Документ собирается по методике Word: каждый абзац автора (всё до нажатия Enter) становится отдельным абзацем документа с интервалом после 8 пт и межстрочным 1.08, пустых строк-прокладок нет; заголовки книги, актов и глав несут свои отступы и уровни оглавления. Формат по умолчанию — Times New Roman 11 pt. Жирный, курсив и выравнивание сохраняются; явный [size=NN] перебивает кегль. Служебные символы меток не попадают: [@имя] даёт имя, [#метка] — текст метки с пробелами вместо подчёркиваний, [~ключ] заменяется словом книги из словаря. Четыре независимые галочки на паспорте — название, аннотация, синопсис и имя автора — управляют титульным блоком по каждой книге; по умолчанию все выключены, пустые поля не попадают в документ даже при включённых галочках. Имя автора выбирается на паспорте из настоящего имени и псевдонимов профиля (крупная витрина сверху показывает текущий выбор без пояснений) и печатается курсивной строкой над названием.',
     },
     {
       q: 'Как импортировать книгу из DOCX?',
@@ -211,6 +211,10 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     {
       q: 'Как поддержать автора?',
       a: 'В разделе «Настройки», блок «О программе», есть кнопки «Поблагодарить автора». Они открывают платёжные страницы во внешнем браузере.',
+    },
+    {
+      q: 'Профиль автора: имя, псевдонимы, жанры и статистика',
+      a: 'Страница «Профиль» (иконка человека в сайдбаре и карточка-ссылка в настройках) — кабинет автора: имя, псевдонимы и предпочитаемые жанры сохраняются кнопкой «Сохранить» и используются приложением — паспорт книги предлагает выбрать имя автора из настоящего имени и псевдонимов профиля. Карточка «План и подписка» пока честная заглушка: кнопки оплаты, триала и PRO появятся с запуском подписки. Панель «Активность» считает по всем книгам: написанные слова (сумма по главам), книги, серии, персонажи, события и сцены; полосы показывают прогресс до вех (10 000 слов, 5 книг, 3 серии, 25 персонажей, 50 событий, 50 сцен): выше вехи полоса полная, число растёт дальше. Дата «В системе с …» — дата создания профиля на этом компьютере.',
     },
   ],
   en: [
@@ -348,7 +352,7 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     },
     {
       q: 'How does DOCX export work?',
-      a: 'The "Export to DOCX" button in the Chapters section and on the book passport. The document follows the Word methodology: every author paragraph (everything up to Enter) becomes its own document paragraph with 8 pt after and 1.08 line spacing, no empty spacer lines; book, act and chapter headings carry their own spacing and outline levels. Default format is Times New Roman 11 pt. Bold, italic and alignment are preserved; explicit [size=NN] overrides the size. Marker service symbols never leak: [@name] yields the name, [#mark] yields the mark text with spaces instead of underscores, [~key] is replaced with the book word from the dictionary. Three independent checkboxes on the passport — title, annotation, synopsis — control the title block per book; all are off by default, and empty fields never reach the document even when checked.',
+      a: 'The "Export to DOCX" button in the Chapters section and on the book passport. The document follows the Word methodology: every author paragraph (everything up to Enter) becomes its own document paragraph with 8 pt after and 1.08 line spacing, no empty spacer lines; book, act and chapter headings carry their own spacing and outline levels. Default format is Times New Roman 11 pt. Bold, italic and alignment are preserved; explicit [size=NN] overrides the size. Marker service symbols never leak: [@name] yields the name, [#mark] yields the mark text with spaces instead of underscores, [~key] is replaced with the book word from the dictionary. Four independent checkboxes on the passport — title, annotation, synopsis and author name — control the title block per book; all are off by default and empty fields never reach the document even when checked. The author name is picked on the passport from the profile real name and pen names (the large showcase on top shows the current pick without labels) and prints as an italic line above the title.',
     },
     {
       q: 'How do I import a book from DOCX?',
@@ -421,6 +425,10 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     {
       q: 'How do I support the author?',
       a: 'In Settings → About there are "Thank the author" buttons. They open the payment pages in the external browser.',
+    },
+    {
+      q: 'Author profile: name, pen names, genres and statistics',
+      a: 'The "Profile" page (the person icon in the sidebar and the link card in Settings) is the author cabinet: name, pen names and preferred genres are saved by the "Save" button and used by the app — the book passport offers the author name pick from the profile real name and pen names. The "Plan & subscription" card is an honest placeholder for now: payment, trial and PRO buttons will appear when subscriptions launch. The "Activity" panel counts across all books: words written (summed over chapters), books, series, characters, events and scenes; the bars show progress toward milestones (10,000 words, 5 books, 3 series, 25 characters, 50 events, 50 scenes): above a milestone the bar stays full while the number keeps growing. The "With us since …" date is the profile creation date on this computer.',
     },
   ],
 }

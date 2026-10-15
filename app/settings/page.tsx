@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import {
   Sun,
   Type,
@@ -12,6 +13,7 @@ import {
   History,
   PanelLeftClose,
   Sparkles,
+  UserRound,
 } from 'lucide-react'
 import { saveDirHandle, getSavedDirName, clearSavedDir } from '@/lib/fsAccess'
 import { useLang, setLangEverywhere } from '@/lib/useLang'
@@ -117,6 +119,15 @@ export default function SettingsPage() {
         <h1 className="text-3xl font-bold tracking-tight">{t('setTitle')}</h1>
         <p className="text-sm mt-1" style={{ color: 'var(--soft)' }}>{t('setSub')}</p>
       </header>
+
+      <div className="card p-4 mb-6 flex flex-wrap items-center gap-3">
+        <UserRound size={16} style={{ color: 'var(--soft)' }} />
+        <div className="min-w-0 flex-1">
+          <div className="font-semibold text-sm">{t('navProfile')}</div>
+          <div className="text-xs" style={{ color: 'var(--soft)' }}>{t('pfHint')}</div>
+        </div>
+        <Link href="/profile" className="btn btn-ghost btn-sm">{t('pfOpen')}</Link>
+      </div>
 
       <div className="set-label">{t('setGroupLook')}</div>
       <div className="card set-card mb-6">

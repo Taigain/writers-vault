@@ -1,5 +1,5 @@
 export const APP_NAME = "Writer's Vault"
-export const APP_VERSION = '1.6.4'
+export const APP_VERSION = '1.6.5'
 export const APP_AUTHOR = 'Taiga Develop'
 export const APP_URL = 'https://taigadev.ru/'
 export const APP_SUPPORT_EMAIL = 'taigadevelop@ya.ru'
