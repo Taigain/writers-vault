@@ -670,6 +670,13 @@ export const STR = {
     emAuthor: 'имя автора',
     bpAuthorSelect: 'Выбор имени автора',
     helpToc: 'Оглавление',
+    dgTitle: 'Группы словарей (языки)',
+    dgName: 'Название языка',
+    dgCreate: 'Создать группу',
+    dgDeleteConfirm: 'Удалить группу «{name}»? Её записи вернутся в общий словарь.',
+    dgCommon: 'Общий словарь',
+    dgEntryGroup: 'Группа',
+    exMd: 'Экспорт в Markdown',
   },
   en: {
     tagline: "author's cabinet",
@@ -1338,6 +1345,13 @@ export const STR = {
     emAuthor: 'author name',
     bpAuthorSelect: 'Choose the author name',
     helpToc: 'Contents',
+    dgTitle: 'Dictionary groups (languages)',
+    dgName: 'Language name',
+    dgCreate: 'Create group',
+    dgDeleteConfirm: 'Delete group "{name}"? Its entries return to the common dictionary.',
+    dgCommon: 'Common dictionary',
+    dgEntryGroup: 'Group',
+    exMd: 'Export to Markdown',
   },
 } as const
 

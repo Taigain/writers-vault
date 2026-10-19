@@ -22,8 +22,10 @@ export function useLicense(): Ctx {
 
 export function usePremium(key: PremiumKey) {
   const { state, open } = useLicense()
-  const shown = premiumShown(key)
-  return { shown, unlocked: shown && state.isPro, open }
+  const dev = process.env.NODE_ENV === 'development'
+  const shown = dev || premiumShown(key)
+  const unlocked = shown && (dev || state.isPro)
+  return { shown, unlocked, open }
 }
 
 export default function LicenseProvider({ children }: { children: React.ReactNode }) {

@@ -33,10 +33,23 @@ model Book {
   genre           String          @default("")
   spineColor      String          @default("")
   spineStyle      String          @default("tome")
+  dictGroups DictGroup[]
   dict DictEntry[]
   boardH Int?
   authorName   String?
   exportAuthor Boolean @default(false)
+}
+
+model DictGroup {
+  id      String      @id @default(cuid())
+  bookId  String
+  book    Book        @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  name    String
+  slug    String
+  color   String      @default("")
+  entries DictEntry[]
+
+  @@unique([bookId, slug])
 }
 
 model IdeaNote {
@@ -279,6 +292,8 @@ model DictEntry {
   word    String
   meaning String @default("")
   forms   String @default("[]")
+  groupId  String?
+  group    DictGroup? @relation(fields: [groupId], references: [id], onDelete: SetNull)
 
   @@unique([bookId, key])
 }

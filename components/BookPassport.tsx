@@ -14,6 +14,7 @@ import {
 } from '@/lib/actions'
 import { useLang } from '@/lib/useLang'
 import ExportMetaToggle from './ExportMetaToggle'
+import ExportMdButton from './ExportMdButton'
 import DownloadImage from './DownloadImage'
 
 const ANN_LIMIT = 800
@@ -257,6 +258,7 @@ export default function BookPassport({
             }}
           />
         </div>
+        <ExportMdButton bookId={id} />
         <a
           className="btn btn-ghost btn-sm"
           href={`/api/project/export?bookId=${id}&name=${encodeURIComponent(title)}`}

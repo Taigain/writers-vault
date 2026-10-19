@@ -8,6 +8,7 @@ import BookPassport from '@/components/BookPassport'
 import ChapterEditor from '@/components/ChapterEditor'
 import DeleteButton from '@/components/DeleteButton'
 import ExportButton from '@/components/ExportButton'
+import ExportMdButton from '@/components/ExportMdButton'
 import ChapterSearch from '@/components/ChapterSearch'
 import ActBar from '@/components/ActBar'
 import ZoomImage from '@/components/ZoomImage'
@@ -115,6 +116,7 @@ export default async function BookPage({
         <div className="flex flex-wrap gap-2">
           <ReadMode bookId={id} bookTitle={book.title} dict={dictMap} />
           <ExportButton bookId={id} baseName={book.title} />
+          <ExportMdButton bookId={id} />
           <ImportDocxButton label={tr(lang, 'chImportDocx')} onFile={importChaptersAction} />
           <form
             action={async () => {

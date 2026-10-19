@@ -87,7 +87,13 @@ export default function RichPreview({
   return (
     <div className="prose-write">
       {blocks.map((b, i) => (
-        <p key={i} style={{ textAlign: b.align }}>
+        <p
+          key={i}
+          style={{
+            textAlign: b.align,
+            ...(b.sep ? { letterSpacing: 8, color: 'var(--soft)' } : null),
+          }}
+        >
           {b.lines.map((line, j) => (
             <span key={j}>
               {j > 0 && <br />}

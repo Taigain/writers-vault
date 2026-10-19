@@ -1,3 +1,5 @@
+import { isSeparatorLine } from './mask'
+
 export type Align = 'left' | 'center' | 'right'
 export type InlineRun = {
   text: string
@@ -10,6 +12,7 @@ export type InlineRun = {
 }
 export type RichBlock = {
   align: Align
+  sep?: boolean
   lines: InlineRun[][]
 }
 type Base = {
@@ -19,9 +22,10 @@ type Base = {
   hl: number | null
   hlStack: number[]
 }
+const BASE: Base = { bold: false, italic: false, size: null, hl: null, hlStack: [] }
 const ALIGN_RE = /^\[(left|center|right)\]\s*/i
 const TOKEN_RE =
-  /(\[@[^\]]*\])|(\[#[^\]]*\])|(\[sc:[^\]]*\])|(\[\/sc\])|(\[hl=\d+\])|(\[\/hl\])|(\*\*[\s\S]+?\*\*)|(\*[\s\S]+?\*)|(\[size=\d+\][\s\S]*?\[\/size\])|(\[lng\])|(\[\/lng\])/g
+  /(\[@[^\]]*\])|(\[#[^\]]*\])|(\[sc:[^\]]*\])|(\[\/sc\])|(\[hl=\d+\])|(\[\/hl\])|(\*\*[^*]+?\*\*)|(\*[^*\n]+?\*)|(\[size=\d+\][\s\S]*?\[\/size\])|(\[lng\])|(\[\/lng\])/g
 
 function parseInline(text: string, base: Base): InlineRun[] {
   const runs: InlineRun[] = []
@@ -72,9 +76,9 @@ function parseInline(text: string, base: Base): InlineRun[] {
         const size = parseInt(sm[1], 10)
         const inner = tok.slice(sm[0].length, tok.length - '[/size]'.length)
         runs.push(...parseInline(inner, { ...cur, size }))
+      }
     } else if (m[10] || m[11]) {
       /* границы языковых зон: видимого текста нет */
-      }
     }
     last = m.index + tok.length
   }
@@ -88,6 +92,26 @@ export function parseRichText(text: string): RichBlock[] {
   for (const raw of paragraphs) {
     const p = raw.trim()
     if (!p) continue
+    if (isSeparatorLine(p)) {
+      blocks.push({
+        align: 'center',
+        sep: true,
+        lines: [
+          [
+            {
+              text: '* * *',
+              bold: false,
+              italic: false,
+              size: null,
+              mention: false,
+              hl: null,
+              refKind: null,
+            },
+          ],
+        ],
+      })
+      continue
+    }
     let align: Align = 'left'
     let body = p
     const m = body.match(ALIGN_RE)
@@ -95,14 +119,7 @@ export function parseRichText(text: string): RichBlock[] {
       align = m[1].toLowerCase() as Align
       body = body.slice(m[0].length)
     }
-    blocks.push({
-      align,
-      lines: body
-        .split('\n')
-        .map((ln) =>
-          parseInline(ln, { bold: false, italic: false, size: null, hl: null, hlStack: [] }),
-        ),
-    })
+    blocks.push({ align, lines: body.split('\n').map((ln) => parseInline(ln, BASE)) })
   }
   return blocks
 }

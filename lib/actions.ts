@@ -1513,7 +1513,14 @@ export async function importChaptersFromDocx(
 }
 
 // --- DICT ---
-export type DictRow = { id: string; key: string; word: string; meaning: string; forms: { d: string; b: string }[] }
+export type DictRow = {
+  id: string
+  key: string
+  word: string
+  meaning: string
+  forms: { d: string; b: string }[]
+  groupId: string | null
+}
 
 function makeKey(word: string): string {
   return word.toLowerCase().replace(/\s+/g, '_').replace(/[^\p{L}\p{N}_-]/gu, '').slice(0, 40) || 'w'
@@ -1522,7 +1529,76 @@ function makeKey(word: string): string {
 export async function getDict(bookId: string): Promise<DictRow[]> {
   await schemaReady
   const rows = await prisma.dictEntry.findMany({ where: { bookId }, orderBy: { key: 'asc' } })
-  return rows.map((r) => ({ id: r.id, key: r.key, word: r.word, meaning: r.meaning, forms: parseForms(r.forms) }))
+  return rows.map((r) => ({
+    id: r.id,
+    key: r.key,
+    word: r.word,
+    meaning: r.meaning,
+    forms: parseForms(r.forms),
+    groupId: r.groupId,
+  }))
+}
+
+export type DictGroupRow = { id: string; name: string; slug: string; color: string }
+export async function getDictGroups(bookId: string): Promise<DictGroupRow[]> {
+  await schemaReady
+  const rows = await prisma.dictGroup.findMany({ where: { bookId }, orderBy: { name: 'asc' } })
+  return rows.map((r) => ({ id: r.id, name: r.name, slug: r.slug, color: r.color }))
+}
+export async function createDictGroup(bookId: string, name: string, color: string) {
+  await schemaReady
+  const n = name.trim()
+  if (!n) return
+  let slug = makeKey(n)
+  if (await prisma.dictGroup.findUnique({ where: { bookId_slug: { bookId, slug } } })) {
+    let k = 2
+    while (await prisma.dictGroup.findUnique({ where: { bookId_slug: { bookId, slug: slug + k } } })) k++
+    slug = slug + k
+  }
+  await prisma.dictGroup.create({ data: { bookId, name: n, slug, color } })
+  revalidatePath(`/book/${bookId}`)
+}
+export async function renameDictGroup(id: string, name: string) {
+  await schemaReady
+  const n = name.trim()
+  if (!n) return
+  const g = await prisma.dictGroup.findUnique({ where: { id }, select: { id: true, bookId: true, slug: true } })
+  if (!g) return
+  let slug = makeKey(n)
+  const clash = await prisma.dictGroup.findUnique({ where: { bookId_slug: { bookId: g.bookId, slug } } })
+  if (clash && clash.id !== g.id) {
+    let k = 2
+    while (await prisma.dictGroup.findUnique({ where: { bookId_slug: { bookId: g.bookId, slug: slug + k } } })) k++
+    slug = slug + k
+  }
+  await prisma.dictGroup.update({ where: { id }, data: { name: n, slug } })
+  if (slug !== g.slug) {
+    const esc = g.slug.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const re = new RegExp('\\[lang:' + esc + '\\]', 'gi')
+    const chapters = await prisma.chapter.findMany({ where: { bookId: g.bookId }, select: { id: true, content: true } })
+    for (const c of chapters) {
+      re.lastIndex = 0
+      if (!re.test(c.content)) continue
+      re.lastIndex = 0
+      await prisma.chapter.update({
+        where: { id: c.id },
+        data: { content: c.content.replace(re, '[lang:' + slug + ']') },
+      })
+    }
+  }
+  revalidatePath(`/book/${g.bookId}`)
+}
+export async function deleteDictGroup(id: string) {
+  await schemaReady
+  const g = await prisma.dictGroup.findUnique({ where: { id }, select: { bookId: true } })
+  await prisma.dictGroup.delete({ where: { id } })
+  if (g) revalidatePath(`/book/${g.bookId}`)
+}
+export async function setDictEntryGroup(entryId: string, groupId: string | null) {
+  await schemaReady
+  await prisma.dictEntry.update({ where: { id: entryId }, data: { groupId } })
+  const e = await prisma.dictEntry.findUnique({ where: { id: entryId }, select: { bookId: true } })
+  if (e) revalidatePath(`/book/${e.bookId}`)
 }
 
 export async function createDictEntry(

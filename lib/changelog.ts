@@ -7,6 +7,22 @@ export type ChangeEntry = {
 
 export const CHANGELOG: ChangeEntry[] = [ 
   {
+    version: '1.6.6',
+    date: '19.10.2026',
+    ru: [
+      'Мульти-словарь (премиум): группы словарей с именами и цветами в разделе Словарь, именованные языковые зоны [lang:slug]…[/lang] с подстановкой только по своей группе; десять цветов палитры выбираются образцами, переименование группы переписывает маркеры по главам, удаление возвращает записи в общий словарь',
+      'Лечение линтера и разделитель сцен: служебные маркеры маскируются пробелами той же длины — пунктуация и грамматика больше не видят швов [sc:] и внутренностей меток, офсеты ошибок остаются точными; курсив ужесточён и больше не ест разделитель `***`, который теперь превращается в центрированный `* * *` в предпросмотре, чтении и DOCX',
+      'Экспорт в Markdown: третья точка выгрузки рукописи — файл .md с YAML front matter по галочкам паспорта, актами `#`, главами `##`, живым форматированием и подстановкой словаря; кнопка на паспорте книги и в разделе Глав рядом с DOCX',
+      'Оглавление справки разложено по девяти тематическим группам с капительными заголовками и волосяными разделителями; групповые заголовки стоят и внутри потока статей, а статьи о мульти-словаре, экспорте в Markdown и чистых счётчиках профиля приведены к текущему поведению',
+    ],
+    en: [
+      'Multi-dictionary (premium): dictionary groups with names and colors in the Dictionary section, named language zones [lang:slug]…[/lang] substituting only from their own group; ten palette colors picked by swatches, renaming a group rewrites the markers across chapters, deleting returns entries to the common dictionary',
+      'Linter fix and scene separator: service markers are masked with spaces of the same length — punctuation and grammar no longer see [sc:] seams or marker internals, error offsets stay exact; italics tightened so they no longer consume `***`, which now renders as a centered `* * *` in preview, reading mode and DOCX',
+      'Markdown export: a third manuscript output — a .md file with YAML front matter following the passport checkboxes, acts as `#`, chapters as `##`, live formatting and dictionary substitution; a button on the book passport and in the Chapters section next to DOCX',
+      'The help contents is divided into nine thematic groups with caps headings and hairline dividers; group headings also stand inside the article flow, and the multi-dictionary, Markdown export and profile articles are updated to current behavior',
+    ],
+  },
+  {
     version: '1.6.5',
     date: '15.10.2026',
     ru: [
