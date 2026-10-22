@@ -7,6 +7,22 @@ export type ChangeEntry = {
 
 export const CHANGELOG: ChangeEntry[] = [ 
   {
+    version: '1.6.7',
+    date: '22.10.2026',
+    ru: [
+      'Состав серии (премиум): души персонажей на уровне цикла — кнопка «Из состава серии…» в разделе персонажей вводит героя в книгу серии одним кликом с копией досье и портрета; чип «также в: …» на карточках альбома и доски; блок «В серии» в досье с воплощениями по книгам, звездой канона и отвязкой; правки дубля в одной книге не затрагивают остальные',
+      'Панель зон языка: кнопка словарной зоны с иконкой языков ставит и снимает общую зону [lng]…[/lng] одним нажатием, премиальная кнопка с земным шаром открывает меню выбора словаря для выделенной зоны или зоны под курсором, чип слева показывает текущий язык реплики; кнопка одиночного слова ушла из панели — маркер [~ключ] по-прежнему работает в тексте и копируется чипом с карточки словаря',
+      'Паспорт книги: указатель серии держит выбранное значение сразу после выбора и больше не прыгает в «вне серии», пока сохранение догоняет интерфейс',
+      'Рейка сайдбара стала минимальной: логотип, кнопка «Домой» и нижние профиль/настройки/помощь вместо аватарок книг с буквами; на главной строка сортировки собрана в компактный блок справа, текст селекта виден целиком',
+    ],
+    en: [
+      'Series cast (premium): character souls at the cycle level — the "From the series cast…" button in the characters section brings a hero into a series book in one click with a copy of the dossier and portrait; "also in: …" chips on album and board cards; an "In the series" block in the dossier lists the incarnations across cycle books with the canon star and unlink; editing a double in one book never touches the others',
+      'Language zone toolbar: the dictionary-zone button with the languages icon sets and removes the common zone [lng]…[/lng] in one press, the premium globe button opens a dictionary-pick menu for the selected zone or the zone under the cursor, and a chip on the left shows the current language of the line; the single-word button left the toolbar — the [~key] marker still works in text and copies from the dictionary card chip',
+      'Book passport: the series picker keeps the chosen value immediately after selection and no longer jumps to "no series" while the save round-trip catches up with the interface',
+      'The sidebar rail is minimal now: logo, the Home button and the bottom profile/settings/help instead of letter avatars of books; on the home page the sort row is a compact block on the right with the select text fully visible',
+    ],
+  },
+  {
     version: '1.6.6',
     date: '19.10.2026',
     ru: [

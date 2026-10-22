@@ -20,6 +20,8 @@ import ImageAttach from './ImageAttach'
 import type { CharRow } from './characterTypes'
 import type { StrKey } from '@/lib/i18n'
 import { createPortal } from 'react-dom'
+import { usePremium } from './LicenseProvider'
+import SoulBlock from './SoulBlock'
 
 const DEMO: { key: string; label: StrKey }[] = [
   { key: 'birth', label: 'cdBirth' },
@@ -61,6 +63,7 @@ export default function CharacterModal({
   onCreate?: (id: string) => void
 }) {
   const { t, lang } = useLang()
+  const { unlocked: soulUnlocked } = usePremium('seriesRelations')
   const router = useRouter()
   const [local, setLocal] = useState<CharRow | null>(character)
   const [genderDraft, setGenderDraft] = useState<string | null>(null)
@@ -162,6 +165,13 @@ export default function CharacterModal({
         router.refresh()
       }}
     >
+    <SoulBlock
+      charId={local.id}
+      bookId={bookId}
+      charName={local.name}
+      seriesCharId={local.seriesCharId ?? null}
+      unlocked={soulUnlocked}
+    />
       <section className="charpage-section">
         <div className="charpage-section-title">{t('cdMain')}</div>
         <div className="flex flex-wrap items-center gap-3 mb-4">

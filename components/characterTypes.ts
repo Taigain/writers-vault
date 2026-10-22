@@ -33,6 +33,8 @@ export type CharRow = {
   voice: string
   boardX: number | null
   boardY: number | null
+  soul: { id: string; name: string; books: string[] } | null
+  seriesCharId: string | null
 }
 
 export type CharRelation = {

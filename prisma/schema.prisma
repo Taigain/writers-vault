@@ -116,7 +116,9 @@ model Character {
   posture     String @default("")
   voice       String @default("")
   boardX Int?
-  boardY Int?
+  boardY Int?  
+  seriesCharId String?
+  seriesChar   SeriesChar? @relation(fields: [seriesCharId], references: [id], onDelete: SetNull)
 }
 
 model CharacterRelation {
@@ -222,6 +224,7 @@ model Series {
   name      String   @unique
   createdAt DateTime @default(now())
   books     Book[]
+  cast SeriesChar[]
 }
 
 model PlotBeat {
@@ -334,4 +337,30 @@ model AuthorProfile {
   genres    String   @default("")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model SeriesChar {
+  id        String           @id @default(cuid())
+  seriesId  String
+  series    Series           @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  name      String
+  canonId   String?
+  doubles   Character[]
+  relsA     SeriesRelation[] @relation("SeriesRelA")
+  relsB     SeriesRelation[] @relation("SeriesRelB")
+  createdAt DateTime         @default(now())
+
+  @@unique([seriesId, name])
+}
+
+model SeriesRelation {
+  id   String     @id @default(cuid())
+  aId  String
+  bId  String
+  note String     @default("")
+  kind String     @default("mutual")
+  a    SeriesChar @relation("SeriesRelA", fields: [aId], references: [id], onDelete: Cascade)
+  b    SeriesChar @relation("SeriesRelB", fields: [bId], references: [id], onDelete: Cascade)
+
+  @@unique([aId, bId])
 }

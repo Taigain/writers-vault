@@ -1758,6 +1758,13 @@ body.has-book-bar main {
   color: var(--fg);
 }
 
+.cr-polaroid-soul {
+  font-size: 10px;
+  letter-spacing: 0.4px;
+  color: var(--gold);
+  margin-top: 2px;
+}
+
 /* Пробковая доска */
 .cr-polaroid-photo {
   position: relative;
@@ -2533,4 +2540,58 @@ html {
 }
 [data-theme='dark'] .dg-swatch {
   border-color: rgba(32, 28, 23, 0.85);
+}
+
+.zm-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.zm-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 60;
+  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.zm-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--fg);
+}
+.zm-item:hover {
+  background: var(--soft-bg);
+}
+.zm-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.zm-sep {
+  height: 1px;
+  background: var(--line);
+  margin: 4px 0;
+}
+.zm-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  border: 1px solid var(--line);
+  cursor: pointer;
+  background: var(--soft-bg);
+  color: var(--fg);
 }

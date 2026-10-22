@@ -44,6 +44,11 @@ export default function CharacterTile({ character, onOpen }: { character: CharRo
       <div className="cr-polaroid-body">
         <div className="cr-polaroid-name">{character.name}</div>
         <div className="cr-polaroid-role">{roleLabel(character.role, lang)}</div>
+        {character.soul && character.soul.books.length > 0 && (
+          <div className="cr-polaroid-soul" title={character.soul.name}>
+            {t('scAlsoIn', { books: character.soul.books.join(', ') })}
+          </div>
+        )}
         {snippet && <div className="cr-polaroid-snippet">{snippet}</div>}
       </div>
       <div className="cr-polaroid-actions" onClick={(e) => e.stopPropagation()}>

@@ -58,6 +58,10 @@ export default function BookPassport({
   const [preview, setPreview] = useState<string | null>(coverBase64)
   const [seriesNewOpen, setSeriesNewOpen] = useState(false)
   const [seriesNewName, setSeriesNewName] = useState('')
+  const [seriesSel, setSeriesSel] = useState<string>(seriesId ?? '')
+  useEffect(() => {
+    setSeriesSel(seriesId ?? '')
+  }, [seriesId])
   const fileRef = useRef<HTMLInputElement | null>(null)
 
   const [profile, setProfile] = useState<{ name: string; penNames: string } | null>(null)
@@ -97,11 +101,6 @@ export default function BookPassport({
   }
 
   const applySeries = async (v: string) => {
-    if (v === '__new') {
-      setSeriesNewOpen(true)
-      return
-    }
-    setSeriesNewOpen(false)
     await setBookSeries(id, v || null)
     router.refresh()
   }
@@ -110,8 +109,9 @@ export default function BookPassport({
     const newId = await createSeriesNamed(seriesNewName)
     if (newId) {
       await setBookSeries(id, newId)
-      setSeriesNewName('')
+      setSeriesSel(newId)
       setSeriesNewOpen(false)
+      setSeriesNewName('')
       router.refresh()
     }
   }
@@ -157,43 +157,54 @@ export default function BookPassport({
           </div>
           <div>
             <label className="field-label">{t('cbSeries')}</label>
-            <select
-              className="input"
-              value={seriesNewOpen ? '__new' : seriesId ?? ''}
-              onChange={(e) => applySeries(e.target.value)}
-            >
-              <option value="">{t('cbSeriesNone')}</option>
-              {series.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-              <option value="__new">{t('cbSeriesNew')}</option>
-            </select>
-            {seriesNewOpen && (
-              <div className="flex gap-2 mt-2">
-                <input
-                  className="input flex-1"
-                  value={seriesNewName}
-                  onChange={(e) => setSeriesNewName(e.target.value)}
-                  placeholder={t('cbSeriesNewPh')}
-                  autoFocus
-                />
-                <button type="button" className="btn btn-primary btn-sm" onClick={() => void createSeriesInline()}>
-                  <Plus size={13} /> {t('homeCreate')}
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-ghost btn-sm"
-                  onClick={() => {
-                    setSeriesNewOpen(false)
-                    setSeriesNewName('')
-                  }}
-                >
-                  <X size={13} />
-                </button>
-              </div>
-            )}
+          <select
+            className="input"
+            value={seriesNewOpen ? '__new' : seriesSel}
+            onChange={(e) => {
+              const v = e.target.value
+              if (v === '__new') {
+                setSeriesSel(v)
+                setSeriesNewOpen(true)
+                return
+              }
+              setSeriesSel(v)
+              setSeriesNewOpen(false)
+              void applySeries(v)
+            }}
+          >
+            <option value="">{t('cbSeriesNone')}</option>
+            {series.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+            <option value="__new">{t('cbSeriesNew')}</option>
+          </select>
+          {seriesNewOpen && (
+            <div className="flex gap-2 mt-2">
+              <input
+                className="input flex-1"
+                value={seriesNewName}
+                onChange={(e) => setSeriesNewName(e.target.value)}
+                placeholder={t('cbSeriesNewPh')}
+                autoFocus
+              />
+              <button type="button" className="btn btn-primary btn-sm" onClick={() => void createSeriesInline()}>
+                <Plus size={13} /> {t('homeCreate')}
+              </button>
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                onClick={() => {
+                  setSeriesNewOpen(false)
+                  setSeriesNewName('')
+                  setSeriesSel(seriesId ?? '')
+                }}
+              >
+                <X size={13} />
+              </button>
+            </div>
+          )}
           </div>
           <div>
             <div className="flex items-center justify-between">

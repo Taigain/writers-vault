@@ -1,14 +1,17 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Users, LayoutGrid, Network, Search, Plus, X } from 'lucide-react'
 import { useLang } from '@/lib/useLang'
-import { addCharacterRelation } from '@/lib/actions'
+import { addCharacterRelation, getSeriesCast } from '@/lib/actions'
+import type { SeriesCast } from '@/lib/actions'
+import { usePremium } from './LicenseProvider'
 import CharacterTile from './CharacterTile'
 import CharacterBoard from './CharacterBoard'
 import CharacterModal from './CharacterModal'
 import RelateDialog from './RelateDialog'
+import SeriesCastDialog from './SeriesCastDialog'
 import type { CharRow, CharRelation } from './characterTypes'
 
 export default function CharactersRegistry({
@@ -29,6 +32,12 @@ export default function CharactersRegistry({
   const [openId, setOpenId] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
   const [relatePair, setRelatePair] = useState<{ a: string; b: string } | null>(null)
+  const { unlocked: castUnlocked } = usePremium('seriesRelations')
+  const [cast, setCast] = useState<SeriesCast | null>(null)
+  const [castOpen, setCastOpen] = useState(false)
+  useEffect(() => {
+    if (castUnlocked) void getSeriesCast(bookId).then(setCast)
+  }, [bookId, castUnlocked])
   const s = q.trim().toLowerCase()
   const filtered = s
     ? characters.filter((c) =>
@@ -69,6 +78,11 @@ export default function CharactersRegistry({
             <Network size={13} /> {t('crViewBoard')}
           </button>
         </div>
+        {castUnlocked && cast && cast.souls.length > 0 && (
+          <button type="button" className="btn btn-ghost btn-sm" onClick={() => setCastOpen(true)}>
+            <Users size={13} /> {t('scCastTitle')}
+          </button>
+        )}
       </div>
       {view === 'grid' ? (
         <div className="cr-grid">
@@ -126,6 +140,18 @@ export default function CharactersRegistry({
           onSave={async (kind, note) => {
             await addCharacterRelation(relatePair.a, relatePair.b, note, kind)
             setRelatePair(null)
+            router.refresh()
+          }}
+        />
+      )}
+      {castOpen && cast && (
+        <SeriesCastDialog
+          bookId={bookId}
+          souls={cast.souls}
+          onClose={() => setCastOpen(false)}
+          onDone={async () => {
+            setCastOpen(false)
+            setCast(await getSeriesCast(bookId))
             router.refresh()
           }}
         />

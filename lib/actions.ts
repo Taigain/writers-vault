@@ -1,6 +1,5 @@
 'use server'
 
-import { useState, useEffect, Suspense } from 'react'
 import { prisma, schemaReady } from './prisma'
 import { revalidatePath } from 'next/cache'
 import { getLang } from './lang-server'
@@ -9,6 +8,7 @@ import { importDocx } from './importDocx'
 import { parseForms } from './dict'
 import { parseScenes } from './scenes'
 import type { CharRelation } from '@/components/characterTypes'
+import { getLicenseState } from './licenseActions'
 
 const validRole = (role: string): string =>
   ROLES.some((r) => r.key === role) ? role : 'secondary'
@@ -346,6 +346,9 @@ export async function getCharacters(bookId: string) {
     where: { bookId },
     include: {
       relations: { include: { related: { select: { id: true, name: true } } } },
+      seriesChar: {
+        include: { doubles: { select: { bookId: true, book: { select: { title: true } } } } },
+      },
     },
   })
   const relRows = await prisma.characterRelation.findMany({
@@ -357,6 +360,14 @@ export async function getCharacters(bookId: string) {
   })
   return rows.map((r) => ({
     ...r,
+    seriesCharId: r.seriesCharId,
+    soul: r.seriesChar
+      ? {
+          id: r.seriesChar.id,
+          name: r.seriesChar.name,
+          books: r.seriesChar.doubles.filter((d) => d.bookId !== bookId).map((d) => d.book.title),
+        }
+      : null,
     relationsAll: relRows
       .filter((x) => x.characterId === r.id || x.relatedId === r.id)
       .map((x) => {
@@ -835,6 +846,152 @@ export async function setBookSeries(bookId: string, seriesId: string | null) {
   await prisma.book.update({ where: { id: bookId }, data: { seriesId } })
   revalidatePath('/')
   revalidatePath(`/book/${bookId}`)
+}
+
+export type SeriesCharRow = {
+  id: string
+  name: string
+  canonId: string | null
+  doubles: { id: string; bookId: string; bookTitle: string; name: string }[]
+}
+export type SeriesCast = { series: { id: string; name: string } | null; souls: SeriesCharRow[] }
+export async function getSeriesCast(bookId: string): Promise<SeriesCast> {
+  await schemaReady
+  const book = await prisma.book.findUnique({
+    where: { id: bookId },
+    select: { seriesId: true, series: { select: { id: true, name: true } } },
+  })
+  if (!book?.seriesId) return { series: null, souls: [] }
+  const rows = await prisma.seriesChar.findMany({
+    where: { seriesId: book.seriesId },
+    orderBy: { name: 'asc' },
+    include: { doubles: { include: { book: { select: { title: true } } } } },
+  })
+  return {
+    series: book.series,
+    souls: rows.map((r) => ({
+      id: r.id,
+      name: r.name,
+      canonId: r.canonId,
+      doubles: r.doubles.map((d) => ({ id: d.id, bookId: d.bookId, bookTitle: d.book.title, name: d.name })),
+    })),
+  }
+}
+async function seriesPremiumOk(bookId: string): Promise<boolean> {
+  if (process.env.NODE_ENV === 'development') return true
+  const ls = await getLicenseState()
+  if (ls.isPro) return true
+  return false
+}
+export async function createSoulFromCharacter(charId: string) {
+  await schemaReady
+  const c = await prisma.character.findUnique({
+    where: { id: charId },
+    include: { book: { select: { seriesId: true } } },
+  })
+  if (!c?.book.seriesId) return null
+  if (!(await seriesPremiumOk(c.bookId))) return null
+  const base = c.name.trim()
+  let name = base
+  let k = 2
+  while (await prisma.seriesChar.findUnique({ where: { seriesId_name: { seriesId: c.book.seriesId, name } } })) {
+    name = base + ' ' + k++
+  }
+  const soul = await prisma.seriesChar.create({ data: { seriesId: c.book.seriesId, name, canonId: c.id } })
+  await prisma.character.update({ where: { id: c.id }, data: { seriesCharId: soul.id } })
+  revalidatePath(`/book/${c.bookId}`)
+  return soul.id
+}
+export async function linkCharacterToSoul(charId: string, soulId: string) {
+  await schemaReady
+  const c = await prisma.character.findUnique({
+    where: { id: charId },
+    include: { book: { select: { seriesId: true } } },
+  })
+  const s = await prisma.seriesChar.findUnique({ where: { id: soulId }, select: { seriesId: true, canonId: true } })
+  if (!c?.book.seriesId || !s || s.seriesId !== c.book.seriesId) return
+  if (!(await seriesPremiumOk(c.bookId))) return
+  await prisma.character.update({ where: { id: charId }, data: { seriesCharId: soulId } })
+  if (!s.canonId) await prisma.seriesChar.update({ where: { id: soulId }, data: { canonId: charId } })
+  revalidatePath(`/book/${c.bookId}`)
+}
+export async function unlinkCharacterFromSoul(charId: string) {
+  await schemaReady
+  const c = await prisma.character.findUnique({
+    where: { id: charId },
+    select: { bookId: true, seriesCharId: true },
+  })
+  if (!c?.seriesCharId) return
+  const soulId = c.seriesCharId
+  await prisma.character.update({ where: { id: charId }, data: { seriesCharId: null } })
+  const rest = await prisma.character.findMany({
+    where: { seriesCharId: soulId },
+    orderBy: { id: 'asc' },
+    select: { id: true },
+  })
+  if (rest.length === 0) await prisma.seriesChar.delete({ where: { id: soulId } })
+  else await prisma.seriesChar.update({ where: { id: soulId }, data: { canonId: rest[0].id } })
+  revalidatePath(`/book/${c.bookId}`)
+}
+export async function setSoulCanon(charId: string) {
+  await schemaReady
+  const c = await prisma.character.findUnique({
+    where: { id: charId },
+    select: { id: true, bookId: true, seriesCharId: true },
+  })
+  if (!c?.seriesCharId) return
+  await prisma.seriesChar.update({ where: { id: c.seriesCharId }, data: { canonId: c.id } })
+  revalidatePath(`/book/${c.bookId}`)
+}
+export async function bringSoulIntoBook(bookId: string, soulId: string) {
+  await schemaReady
+  if (!(await seriesPremiumOk(bookId))) return null
+  const book = await prisma.book.findUnique({ where: { id: bookId }, select: { seriesId: true } })
+  const soul = await prisma.seriesChar.findUnique({ where: { id: soulId }, include: { doubles: true } })
+  if (!book?.seriesId || !soul || soul.seriesId !== book.seriesId) return null
+  if (soul.doubles.some((d) => d.bookId === bookId)) return null
+  const canon = soul.doubles.find((d) => d.id === soul.canonId) ?? soul.doubles[0]
+  if (!canon) return null
+  const src = await prisma.character.findUnique({ where: { id: canon.id } })
+  if (!src) return null
+  const copy = await prisma.character.create({
+    data: {
+      bookId,
+      seriesCharId: soul.id,
+      name: src.name,
+      role: src.role,
+      bio: src.bio,
+      appearance: src.appearance,
+      personality: src.personality,
+      decisions: src.decisions,
+      arc: src.arc,
+      aliases: src.aliases,
+      portraitBase64: src.portraitBase64,
+      age: src.age,
+      gender: src.gender,
+      birth: src.birth,
+      race: src.race,
+      country: src.country,
+      language: src.language,
+      archetype: src.archetype,
+      goal: src.goal,
+      conflict: src.conflict,
+      trauma: src.trauma,
+      obsession: src.obsession,
+      strengths: src.strengths,
+      weaknesses: src.weaknesses,
+      height: src.height,
+      weight: src.weight,
+      build: src.build,
+      eyes: src.eyes,
+      hair: src.hair,
+      clothing: src.clothing,
+      posture: src.posture,
+      voice: src.voice,
+    },
+  })
+  revalidatePath(`/book/${bookId}`)
+  return copy.id
 }
 
 // --- CHAPTERS / ACTS / STRUCTURE ---

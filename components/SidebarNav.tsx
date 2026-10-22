@@ -270,17 +270,6 @@ export default function SidebarNav({ books }: { books: SidebarBook[] }) {
           >
             <Home size={16} />
           </Link>
-          {books.map((b) => (
-            <Link
-              key={b.id}
-              href={`/book/${b.id}`}
-              title={b.title}
-              className="avatar"
-              style={{ width: 34, height: 34, fontSize: 13 }}
-            >
-              {b.title.charAt(0).toUpperCase()}
-            </Link>
-          ))}
         </div>
       )}
 

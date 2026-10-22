@@ -12,6 +12,7 @@ export default function CollapsibleSection({
   actions,
   defaultOpen = true,
   children,
+  forceOpen,
 }: {
   id: string
   title: string
@@ -20,8 +21,18 @@ export default function CollapsibleSection({
   actions?: ReactNode
   defaultOpen?: boolean
   children: ReactNode
+  forceOpen?: boolean
 }) {
   const [open, setOpen] = useState(defaultOpen)
+
+  useEffect(() => {
+    if (!forceOpen) return
+    setOpen(true)
+    const t = setTimeout(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 80)
+    return () => clearTimeout(t)
+  }, [forceOpen, id])
 
   useEffect(() => {
     const v = localStorage.getItem('wv-fold-' + id)

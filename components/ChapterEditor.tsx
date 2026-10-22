@@ -27,6 +27,8 @@ import {
   X,
   Clapperboard,
   Globe2,
+  Earth,
+  ChevronDown,
 } from 'lucide-react'
 import RichPreview from './RichPreview'
 import ExportButton from './ExportButton'
@@ -43,12 +45,18 @@ import {
   setChapterAct,
   checkChapterExists,
   createEventFromMark,
+  getDictGroups,
+  type DictGroupRow,
 } from '@/lib/actions'
 import { registerEditor, setEditorDirty, unregisterEditor } from '@/lib/autosave'
 import { applyDict, type DictMap } from '@/lib/dict'
 import { HL_COLORS, scenesWouldNest } from '@/lib/scenes'
 import WarnDialog from './WarnDialog'
 import RefDock, { type RefKey } from './RefDock'
+import ZoneMenu from './ZoneMenu'
+import { usePremium } from './LicenseProvider'
+import { useRouter } from 'next/navigation'
+import { findZoneAt, zoneSpan, rezoneText, zoneOpenMarker, zoneCloseMarker, type ZoneKind } from '@/lib/zones'
 
 const wordsOf = (s: string) => (s.trim() ? s.trim().split(/\s+/).length : 0)
 const SIZES = [14, 16, 18, 20, 24, 32]
@@ -109,19 +117,84 @@ export default function ChapterEditor({
   const savingRef = useRef(false)
   const findRef = useRef<HTMLInputElement | null>(null)
 
-  const [selInfo, setSelInfo] = useState<{ w: number; c: number } | null>(null)
+  const { unlocked: zonesUnlocked } = usePremium('dictGroups')
+  const [zoneGroups, setZoneGroups] = useState<DictGroupRow[]>([])
+  const [zoneMenu, setZoneMenu] = useState(false)
+  useEffect(() => {
+    if (zonesUnlocked) void getDictGroups(bookId).then(setZoneGroups)
+  }, [bookId, zonesUnlocked])
 
-  const updateSel = () => {
+  const router = useRouter()
+  const applyZonePick = (p: ZoneKind) => {
+    setZoneMenu(false)
     const ta = taRef.current
     if (!ta) return
-    const s = ta.selectionStart ?? 0
-    const e = ta.selectionEnd ?? 0
-    if (e <= s) {
-      setSelInfo(null)
+    const from = ta.selectionStart ?? c.length
+    const to = ta.selectionEnd ?? c.length
+    const span = zoneSpan(c, from) ?? (to > from ? zoneSpan(c, to) : null)
+    let next: string
+    let selFrom: number
+    let selTo: number
+    if (span) {
+      next = rezoneText(c, span, p)
+      const d = zoneOpenMarker(p).length - span.openLen
+      selFrom = from + d
+      selTo = to + d
+    } else if (to > from) {
+      next = c.slice(0, from) + zoneOpenMarker(p) + c.slice(from, to) + zoneCloseMarker(p) + c.slice(to)
+      selFrom = from + zoneOpenMarker(p).length
+      selTo = to + zoneOpenMarker(p).length
+    } else {
+      next = c.slice(0, from) + zoneOpenMarker(p) + zoneCloseMarker(p) + c.slice(from)
+      selFrom = from + zoneOpenMarker(p).length
+      selTo = selFrom
+    }
+    setC(next)
+    requestAnimationFrame(() => {
+      ta.focus()
+      ta.setSelectionRange(selFrom, selTo)
+    })
+  }
+
+  const commonZoneToggle = () => {
+    const ta = taRef.current
+    if (!ta) return
+    const s = ta.selectionStart ?? c.length
+    const e = ta.selectionEnd ?? c.length
+    const span = zoneSpan(c, s) ?? (e > s ? zoneSpan(c, e) : null)
+    if (span && span.kind.type === 'common') {
+      const next =
+        c.slice(0, span.openAt) + c.slice(span.openAt + span.openLen, span.closeAt) + c.slice(span.closeAt + span.closeLen)
+      setC(next)
+      const d = span.openLen
+      requestAnimationFrame(() => {
+        ta.focus()
+        ta.setSelectionRange(Math.max(0, s - d), Math.max(0, e - d))
+      })
       return
     }
-    const piece = ta.value.slice(s, e)
-    setSelInfo({ w: wordsOf(piece), c: piece.length })
+    if (span && span.kind.type === 'named') {
+      applyZonePick({ type: 'common' })
+      return
+    }
+    wrapPair('[lng]', '[/lng]')
+  }
+
+  const [selInfo, setSelInfo] = useState<{ w: number; c: number } | null>(null)
+
+  const [caret, setCaret] = useState(0)
+  const updateSel = () => {
+  const ta = taRef.current
+  if (!ta) return
+  const s = ta.selectionStart ?? 0
+  const e = ta.selectionEnd ?? 0
+  setCaret(s)
+  if (e <= s) {
+  setSelInfo(null)
+  return
+  }
+  const piece = ta.value.slice(s, e)
+  setSelInfo({ w: wordsOf(piece), c: piece.length })
   }
 
   const saveNow = async () => {
@@ -505,7 +578,9 @@ export default function ChapterEditor({
 
   const words = wordsOf(chTitle) + wordsOf(c)
   const chars = chTitle.length + c.length
-
+  const zoneAt = findZoneAt(c, caret)
+  const zoneSlug = zoneAt && zoneAt.kind.type === 'named' ? zoneAt.kind.slug : null
+  const zoneGroup = zoneSlug ? (zoneGroups.find((x) => x.slug === zoneSlug) ?? null) : null
   const [punctOpen, setPunctOpen] = useState(false)
   const [warnText, setWarnText] = useState<string | null>(null)
   const [unknownEvents, setUnknownEvents] = useState<string[]>([])
@@ -790,12 +865,49 @@ export default function ChapterEditor({
                   <button type="button" title={t('chTbEvent')} onClick={wrapEvent}>
                     <Hash size={15} />
                   </button>
-                  <button type="button" title={t('chTbDict')} onClick={() => toggleWrap('[~', ']')}>
-                    <Languages size={15} />
-                  </button>
-                  <button type="button" title={t('chTbLang')} onClick={() => wrapPair('[lng]', '[/lng]')}>
-                    <Globe2 size={15} />
-                  </button>
+                    <span className="zm-wrap">
+                      {zoneAt && (
+                        <button
+                          type="button"
+                          className="zm-chip"
+                          title={zonesUnlocked ? t('zmChange') : zoneGroup?.name ?? t('zmCommon')}
+                          style={zonesUnlocked ? undefined : { cursor: 'default' }}
+                          onClick={() => {
+                            if (zonesUnlocked) setZoneMenu((v) => !v)
+                          }}
+                        >
+                          <span className="zm-dot" style={{ background: zoneGroup?.color || 'var(--soft)' }} />
+                          {zoneGroup?.name ?? t('zmCommon')}
+                        </button>
+                      )}
+                      <button type="button" title={t('chTbZoneCommon')} onClick={commonZoneToggle}>
+                        <Languages size={15} />
+                      </button>
+                      {zonesUnlocked && (
+                        <button
+                          type="button"
+                          title={t('chTbZonePick')}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}
+                          onClick={() => setZoneMenu((v) => !v)}
+                        >
+                          <Earth size={15} />
+                          <ChevronDown size={11} />
+                        </button>
+                      )}
+                      {zoneMenu && (
+                        <ZoneMenu
+                          groups={zoneGroups}
+                          unlocked={zonesUnlocked}
+                          current={zoneAt ? zoneAt.kind : null}
+                          onPick={applyZonePick}
+                          onManage={() => {
+                            setZoneMenu(false)
+                            router.push(`/book/${bookId}?tab=dict`)
+                          }}
+                          onClose={() => setZoneMenu(false)}
+                        />
+                      )}
+                    </span>
                   <button type="button" title={t('chTbPunct')} onClick={() => setPunctOpen(!punctOpen)}>
                     <SpellCheck size={15} />
                   </button>

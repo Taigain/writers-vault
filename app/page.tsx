@@ -44,7 +44,9 @@ function BookCard({ b, lang }: { b: BookRow; lang: 'ru' | 'en' }) {
   )
 }
 
-export default async function Home() {
+export default async function Home({ searchParams }: { searchParams: Promise<{ g?: string }> }) {
+  const sp = await searchParams
+  const forceGroup = sp.g === 'idea' || sp.g === 'active' || sp.g === 'archive' ? sp.g : null
   const books = await getBooksWithSeries()
   const allSeries = await getSeriesList()
   const lang = await getLang()
@@ -102,6 +104,7 @@ export default async function Home() {
         title={tr(lang, titleKey)}
         count={inStatus.length}
         icon={icon}
+        forceOpen={forceGroup === status}
       >
         <div className="space-y-8">
           {groups.map((g) => (
@@ -139,27 +142,27 @@ export default async function Home() {
       <div className="mb-3 flex justify-end">
         <ImportProjectButton />
       </div>
-      <HomeView
-        books={shelfBooks}
-        createAction={createBook}
-        onImport={importBookFromDocx}
-        series={allSeries.map((s) => ({ id: s.id, name: s.name }))}
-        tiles={
-          books.length === 0 ? (
-            <div className="card p-14 text-center">
-              <BookOpenText size={40} className="mx-auto mb-4" style={{ color: 'var(--gold)' }} />
-              <div className="font-semibold text-lg mb-1">{tr(lang, 'homeEmptyTitle')}</div>
-              <p className="text-sm" style={{ color: 'var(--soft)' }}>{tr(lang, 'homeEmptySub')}</p>
-            </div>
-          ) : (
-            <div className="space-y-10">
-              {renderGroup('idea', 'homeGroupIdeas', <Lightbulb size={17} style={{ color: 'var(--gold)' }} />)}
-              {renderGroup('active', 'homeGroupActive', <PenLine size={17} style={{ color: 'var(--gold)' }} />)}
-              {renderGroup('archive', 'homeGroupArchive', <Archive size={17} style={{ color: 'var(--soft)' }} />)}
-            </div>
-          )
-        }
-      />
+        <HomeView
+          books={shelfBooks}
+          createAction={createBook}
+          onImport={importBookFromDocx}
+          series={allSeries.map((s) => ({ id: s.id, name: s.name }))}
+          tiles={
+            books.length === 0 ? (
+              <div className="card p-14 text-center">
+                <BookOpenText size={40} className="mx-auto mb-4" style={{ color: 'var(--gold)' }} />
+                <div className="font-semibold text-lg mb-1">{tr(lang, 'homeEmptyTitle')}</div>
+                <p className="text-sm" style={{ color: 'var(--soft)' }}>{tr(lang, 'homeEmptySub')}</p>
+              </div>
+            ) : (
+              <div className="space-y-10">
+                {renderGroup('idea', 'homeGroupIdeas', <Lightbulb size={17} style={{ color: 'var(--gold)' }} />)}
+                {renderGroup('active', 'homeGroupActive', <PenLine size={17} style={{ color: 'var(--gold)' }} />)}
+                {renderGroup('archive', 'homeGroupArchive', <Archive size={17} style={{ color: 'var(--soft)' }} />)}
+              </div>
+            )
+          }
+        />
       <div className="mt-10">
         <CollapsibleSection
           id="idea-board"

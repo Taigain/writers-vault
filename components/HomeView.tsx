@@ -180,13 +180,13 @@ export default function HomeView({
   return (
     <div className="space-y-4">
       <div className="flex justify-end items-center gap-2">
-        <select
-          className="input w-auto"
-          style={{ height: 28, fontSize: 12 }}
-          value={sort}
-          title={t('cbSort')}
-          onChange={(e) => setSort(e.target.value as 'status' | 'genre' | 'series' | 'date')}
-        >
+          <select
+            className="input"
+            style={{ width: 260, height: 34, fontSize: 13, padding: '0 10px', boxSizing: 'border-box' }}
+            value={sort}
+            title={t('cbSort')}
+            onChange={(e) => setSort(e.target.value as 'status' | 'genre' | 'series' | 'date')}
+          >
           <option value="status">{t('cbSortStatus')}</option>
           <option value="genre">{t('cbSortGenre')}</option>
           <option value="series">{t('cbSortSeries')}</option>
