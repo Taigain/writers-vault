@@ -6,7 +6,9 @@ import { BookOpen, ChevronLeft, ChevronRight, X, List } from 'lucide-react'
 import RichPreview from './RichPreview'
 import { useLang } from '@/lib/useLang'
 import { getBookReadData } from '@/lib/actions'
-import { applyDict, type DictMap } from '@/lib/dict'
+import type { DictMap } from '@/lib/dict'
+import { applyDictFull } from '@/lib/dictzones'
+import { getDict, getDictGroups, type DictRow, type DictGroupRow } from '@/lib/actions'
 
 export type ReadChapter = { id: string; title: string; content: string; act: string | null }
 
@@ -26,6 +28,8 @@ export default function ReadMode({
   const [loaded, setLoaded] = useState<ReadChapter[] | null>(null)
   const [idx, setIdx] = useState(0)
   const [listOpen, setListOpen] = useState(false)
+  const [dictRows, setDictRows] = useState<DictRow[]>([])
+  const [zoneGroups, setZoneGroups] = useState<DictGroupRow[]>([])
   const boxRef = useRef<HTMLDivElement | null>(null)
   const scrollRef = useRef<HTMLDivElement | null>(null)
 
@@ -33,7 +37,12 @@ export default function ReadMode({
 
   const openReader = async () => {
     setOpen(true)
-    if (!chapters && bookId) setLoaded(await getBookReadData(bookId))
+    if (bookId) {
+      if (!chapters) setLoaded(await getBookReadData(bookId))
+      const [r, g] = await Promise.all([getDict(bookId), getDictGroups(bookId)])
+      setDictRows(r)
+      setZoneGroups(g)
+    }
   }
 
   const closeReader = async () => {
@@ -148,7 +157,7 @@ export default function ReadMode({
                       </div>
                     )}
                     <h2 className="text-xl font-bold mb-4">{cur.title}</h2>
-                    <RichPreview text={applyDict(cur.content, dict ?? {})} />
+                    <RichPreview text={applyDictFull(cur.content, dictRows, zoneGroups)} />
                   </>
                 )}
                 <div className="flex items-center justify-between gap-2 mt-8 pb-8">

@@ -47,9 +47,12 @@ import {
   createEventFromMark,
   getDictGroups,
   type DictGroupRow,
+  getDict,
+  type DictRow,
 } from '@/lib/actions'
 import { registerEditor, setEditorDirty, unregisterEditor } from '@/lib/autosave'
-import { applyDict, type DictMap } from '@/lib/dict'
+import type { DictMap } from '@/lib/dict'
+import { applyDictFull } from '@/lib/dictzones'
 import { HL_COLORS, scenesWouldNest } from '@/lib/scenes'
 import WarnDialog from './WarnDialog'
 import RefDock, { type RefKey } from './RefDock'
@@ -121,8 +124,13 @@ export default function ChapterEditor({
   const [zoneGroups, setZoneGroups] = useState<DictGroupRow[]>([])
   const [zoneMenu, setZoneMenu] = useState(false)
   useEffect(() => {
-    if (zonesUnlocked) void getDictGroups(bookId).then(setZoneGroups)
-  }, [bookId, zonesUnlocked])
+    void getDictGroups(bookId).then(setZoneGroups)
+  }, [bookId])
+
+  const [dictRows, setDictRows] = useState<DictRow[]>([])
+  useEffect(() => {
+    void getDict(bookId).then(setDictRows)
+  }, [bookId])
 
   const router = useRouter()
   const applyZonePick = (p: ZoneKind) => {
@@ -420,13 +428,12 @@ export default function ChapterEditor({
 
   const starsBack = (pos: number) => {
     let k = 0
-    while (pos - k - 1 >= 0 && c[pos - k - 1] === ' ') k++
+    while (pos - k - 1 >= 0 && c[pos - k - 1] === '*') k++
     return k
   }
-
   const starsFwd = (pos: number) => {
     let k = 0
-    while (pos + k < c.length && c[pos + k] === ' ') k++
+    while (pos + k < c.length && c[pos + k] === '*') k++
     return k
   }
 
@@ -557,21 +564,39 @@ export default function ChapterEditor({
   const setAlign = (align: 'left' | 'center' | 'right') => {
     const ta = taRef.current
     const scroll = ta ? ta.scrollTop : 0
-    const pos = ta ? ta.selectionStart : 0
-    const before = c.slice(0, pos)
-    const pIdx = before.lastIndexOf('\n\n')
-    const start = pIdx === -1 ? 0 : pIdx + 2
-    const rest = c.slice(start)
-    const stripped = rest.replace(/^\[(left|center|right)\]\s*/i, '')
+    const s = ta?.selectionStart ?? 0
+    const e = ta?.selectionEnd ?? s
+    const MARK = /^\[(left|center|right)\]\s*/i
     const prefix = align === 'left' ? '' : `[${align}]`
-    setC(c.slice(0, start) + prefix + stripped)
-    const delta = prefix.length - (rest.length - stripped.length)
+    const lines: { start: number; end: number }[] = []
+    let pos = 0
+    for (const ln of c.split('\n')) {
+      lines.push({ start: pos, end: pos + ln.length })
+      pos += ln.length + 1
+    }
+    let newS = s
+    let newE = e
+    const nextLines = lines.map((L) => {
+      const raw = c.slice(L.start, L.end)
+      const touched = (e > L.start && s < L.end) || (s === e && s >= L.start && s <= L.end)
+      if (!touched) return raw
+      const stripped = raw.replace(MARK, '')
+      const next = prefix + stripped
+      const d = next.length - raw.length
+      if (d !== 0) {
+        if (L.start < s) newS += d
+        if (L.start < e) newE += d
+      }
+      return next
+    })
+    const nextText = nextLines.join('\n')
+    if (nextText === c) return
+    setC(nextText)
     requestAnimationFrame(() => {
       if (!ta) return
       ta.focus()
-      const np = Math.max(start, pos + delta)
-      ta.selectionStart = np
-      ta.selectionEnd = np
+      ta.selectionStart = Math.max(0, Math.min(newS, nextText.length))
+      ta.selectionEnd = Math.max(0, Math.min(newE, nextText.length))
       ta.scrollTop = scroll
     })
   }
@@ -1160,7 +1185,7 @@ export default function ChapterEditor({
                     <EyeOff size={14} />
                   </button>
                 </div>
-                <RichPreview text={applyDict(c, dict ?? {})} highlight={highlight} onRef={openRef} />
+                <RichPreview text={applyDictFull(c, dictRows, zoneGroups)} highlight={highlight} onRef={openRef} />
               </div>
             )}
             <div className="flex flex-wrap items-center justify-between gap-2">

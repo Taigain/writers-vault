@@ -114,6 +114,7 @@ export async function saveChapter(
   chapterId: string,
   title: string,
   content: string,
+  noSnap?: boolean,
 ): Promise<{ unknownEvents: string[] }> {
   await prisma.chapter.update({ where: { id: chapterId }, data: { title, content } })
   const chapter = await prisma.chapter.findUnique({
@@ -249,7 +250,7 @@ export async function saveChapter(
     await prisma.sceneCharacter.deleteMany({ where: { sceneId: { in: dead } } })
     await prisma.scene.deleteMany({ where: { id: { in: dead } } })
   }
-
+  if (!noSnap) await takeSnapshot(bookId, title)
   revalidatePath(`/book/${bookId}`)
   return { unknownEvents: unknown }
 }
@@ -727,9 +728,14 @@ export async function checkChapterExists(id: string): Promise<boolean> {
 export async function deleteChapter(id: string) {
   const chapter = await prisma.chapter.findUnique({
     where: { id },
-    select: { bookId: true },
+    select: { bookId: true, title: true },
   })
   if (!chapter) return
+  await takeSnapshot(
+    chapter.bookId,
+    ((await getLang()) === 'ru' ? 'Перед удалением: ' : 'Before delete: ') + chapter.title,
+    true,
+  )
   await prisma.$transaction([
     prisma.chapterMention.deleteMany({ where: { chapterId: id } }),
     prisma.eventMention.deleteMany({ where: { chapterId: id } }),
@@ -1232,6 +1238,88 @@ export async function getBookBlocks(bookId: string) {
     }
   }
   return blocks
+}
+
+// --- SNAPSHOTS ---
+const SNAPSHOT_KEEP = 10
+const SNAPSHOT_MIN_MS = 10 * 60 * 1000
+async function takeSnapshot(bookId: string, label: string, force = false) {
+  if (!force) {
+    const last = await prisma.bookSnapshot.findFirst({
+      where: { bookId },
+      orderBy: { createdAt: 'desc' },
+      select: { createdAt: true },
+    })
+    if (last && Date.now() - last.createdAt.getTime() < SNAPSHOT_MIN_MS) return
+  }
+  const chapters = await prisma.chapter.findMany({
+    where: { bookId },
+    orderBy: { order: 'asc' },
+    select: { id: true, title: true, content: true, order: true, actName: true },
+  })
+  const book = await prisma.book.findUnique({ where: { id: bookId }, select: { structure: true } })
+  const payload = JSON.stringify({ v: 1, structure: book?.structure ?? null, chapters })
+  await prisma.bookSnapshot.create({ data: { bookId, label: label.slice(0, 120), payload } })
+  const keep = await prisma.bookSnapshot.findMany({
+    where: { bookId },
+    orderBy: { createdAt: 'desc' },
+    take: SNAPSHOT_KEEP,
+    select: { id: true },
+  })
+  await prisma.bookSnapshot.deleteMany({ where: { bookId, id: { notIn: keep.map((k) => k.id) } } })
+}
+export type SnapshotRow = { id: string; createdAt: string; label: string }
+export async function getBookSnapshots(bookId: string): Promise<SnapshotRow[]> {
+  await schemaReady
+  const rows = await prisma.bookSnapshot.findMany({
+    where: { bookId },
+    orderBy: { createdAt: 'desc' },
+    take: SNAPSHOT_KEEP,
+    select: { id: true, createdAt: true, label: true },
+  })
+  return rows.map((r) => ({ id: r.id, createdAt: r.createdAt.toISOString(), label: r.label }))
+}
+export async function createManualSnapshot(bookId: string) {
+  await schemaReady
+  await takeSnapshot(bookId, (await getLang()) === 'ru' ? 'Ручной снимок' : 'Manual snapshot', true)
+  revalidatePath(`/book/${bookId}`)
+}
+export async function deleteSnapshot(id: string) {
+  await schemaReady
+  const s = await prisma.bookSnapshot.findUnique({ where: { id }, select: { bookId: true } })
+  await prisma.bookSnapshot.delete({ where: { id } })
+  if (s) revalidatePath(`/book/${s.bookId}`)
+}
+export async function restoreSnapshot(snapshotId: string) {
+  await schemaReady
+  const snap = await prisma.bookSnapshot.findUnique({ where: { id: snapshotId } })
+  if (!snap) return
+  const data = JSON.parse(snap.payload) as {
+    v: number
+    structure: string | null
+    chapters: { id: string; title: string; content: string; order: number; actName: string | null }[]
+  }
+  const bookId = snap.bookId
+  const payloadIds = new Set(data.chapters.map((c) => c.id))
+  const current = await prisma.chapter.findMany({ where: { bookId }, select: { id: true } })
+  const deadIds = current.filter((c) => !payloadIds.has(c.id)).map((c) => c.id)
+  await prisma.$transaction([
+    ...(deadIds.length > 0
+      ? [prisma.chapter.deleteMany({ where: { id: { in: deadIds } } })]
+      : []),
+    ...data.chapters.map((c) =>
+      prisma.chapter.upsert({
+        where: { id: c.id },
+        update: { title: c.title, content: c.content, order: c.order, actName: c.actName },
+        create: { id: c.id, bookId, title: c.title, content: c.content, order: c.order, actName: c.actName },
+      }),
+    ),
+    prisma.book.update({ where: { id: bookId }, data: { structure: data.structure } }),
+  ])
+  for (const c of data.chapters) {
+    await saveChapter(c.id, c.title, c.content, true)
+  }
+  revalidatePath(`/book/${bookId}`)
 }
 
 // --- NOTES ---

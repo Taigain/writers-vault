@@ -52,6 +52,7 @@ import {
 } from '@/lib/actions'
 import CharactersRegistry from '@/components/CharactersRegistry'
 import { getCharacterRelations } from '@/lib/actions'
+import SnapshotsButton from '@/components/SnapshotsButton'
 
 const words = (t: string) => (t.trim() ? t.trim().split(/\s+/).length : 0)
 const VIEWS = ['chapters', 'characters', 'world', 'locations', 'timeline', 'graph', 'notes', 'plot', 'dict', 'scenes']
@@ -117,6 +118,7 @@ export default async function BookPage({
           <ReadMode bookId={id} bookTitle={book.title} dict={dictMap} />
           <ExportButton bookId={id} baseName={book.title} />
           <ExportMdButton bookId={id} />
+          <SnapshotsButton bookId={id} />
           <ImportDocxButton label={tr(lang, 'chImportDocx')} onFile={importChaptersAction} />
           <form
             action={async () => {

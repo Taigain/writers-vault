@@ -1,5 +1,5 @@
 # Writer's Vault — операционное состояние
-Обновлено: 22.10.2026 (фиксация №16). Точка правды перед релизом 1.6.7.
+Обновлено: 23.10.2026 (фиксация №18). Точка правды перед релизом 1.6.8.
 
 ## Выпущено
 - ≤ 1.5.5: ядро (док справок, рейка, полотно, masonry, грамматика, вкладки персонажа, облако связей).
@@ -17,36 +17,41 @@
 - 1.6.6: мульти-словарь за премиум-гейтом (группы, [lang:slug], палитра образцов, dev-разблокировка),
   линтер с маскировкой маркеров и разделитель `***` → `* * *`, экспорт в Markdown (front matter,
   RFC 5987), групповое оглавление справки.
+- 1.6.7: состав серии за премиум-гейтом (души, дубли, ввод в книгу, канон, чипы «также в: …»),
+  финальная панель зон (Languages-тумблер общей зоны, премиальная Earth-кнопка с меню, чип языка),
+  оптимистичный указатель серии в паспорте, минимальная рейка без аватарок, компактная сортировка главной.
 
-## Рабочий набор 1.6.7 (реализовано, ждёт релиза)
-1. Состав серии (премиум seriesRelations, в dev открыт): model SeriesChar (@@unique[seriesId,name],
-   canonId) + SeriesRelation (@@unique[aId,bId]) + Character.seriesCharId (SetNull) + Series.cast;
-   MIGRATIONS = 53; экшены getSeriesCast/createSoulFromCharacter/linkCharacterToSoul/
-   unlinkCharacterFromSoul (канон на раннего выжившего, orderBy id asc — у Character НЕТ createdAt)/
-   setSoulCanon/bringSoulIntoBook (копия всех полей досье + портрет с канона) с серверным гейтом
-   seriesPremiumOk в каждом пишущем; SoulBlock первой карточкой вкладки «Анкета»; SeriesCastDialog +
-   кнопка «Из состава серии…» в тулбаре реестра; чип .cr-polaroid-soul «также в: …» на полароидах.
-2. Панель зон языка (финальная модель): lib/zones.ts (findZoneAt/zoneSpan/rezoneText/маркеры);
-   components/ZoneMenu.tsx (общий словарь + группы с цветами + замки без премиума + «Управление
-   группами…»); ChapterEditor: ОДИН span.zm-wrap = чип текущей зоны (caret из updateSel) + свободная
-   кнопка (иконка Languages, commonZoneToggle: курсор в общей зоне → снять, в именованной → в общую,
-   иначе wrapPair-тумблер) + премиальная кнопка (Earth + ChevronDown, открывает ZoneMenu) + один
-   ZoneMenu; applyZonePick для выбора из меню (перезаворачивание/оборачивание/пара на курсор);
-   кнопка одиночного слова ([~ключ]) из панели УБРАНА решением автора — движок, чип копирования и
-   ручной ввод сохранены; i18n zm* + chTbZoneCommon/chTbZonePick.
-3. BookPassport: оптимистичный seriesSel (useState + useEffect-синхронизация с пропом seriesId);
-   onChange селекта пишет локально и уходит в setBookSeries; createSeriesInline фиксирует newId;
-   крестик отмены сбрасывает seriesSel к пропу.
-4. Рейка сайдбара минимальная: эксперимент с групповыми иконками ЗАКРЫТ решением автора; в рейке
-   только логотип, «Домой» и нижние профиль/настройки/помощь; аватарок книг и иконок групп нет;
-   развёрнутый сайдбар и навигация главной не изменились.
-5. Главная: строка сортировки — селект с инлайн-геометрией (width 260, height 34, padding 0 10px,
-   boxSizing border-box) в существующей обёртке flex justify-end; обрезка текста закрытого селекта
-   устранена; globals.css не тронут.
-6. Dormant-цепочка ?g=: page.tsx считает forceGroup и передаёт в HomeView, CollapsibleSection имеет
-   forceOpen-эффект; входов из интерфейса нет (ссылок /?g= больше нет) — поведение нейтрально,
-   удаление опционально двумя правками после релиза.
-7. Премиум-реестр: ключи dictGroups и seriesRelations со visible 'hidden'; usePremium с
+## Рабочий набор 1.6.8 (реализовано, ждёт релиза)
+1. Резервные снимки книги:
+   - schema: model BookSnapshot (id, bookId, createdAt, label, payload JSON, @@index[bookId,createdAt])
+     + Book.snapshots; MIGRATIONS = 55 операторов всего.
+   - lib/actions.ts: takeSnapshot(bookId, label, force) с троттлингом SNAPSHOT_MIN_MS = 10 минут для
+     автоснимков (force=true минует троттлинг) и обрезкой по SNAPSHOT_KEEP = 10; вызовы: saveChapter
+     (после синков, если !noSnap), deleteChapter (ДО удаления, метка «Перед удалением: …», force),
+     createManualSnapshot (force, метка по языку); getBookSnapshots/deleteSnapshot/restoreSnapshot;
+     восстановление = транзакция (deleteMany глав вне payload, upsert глав payload с order/actName,
+     update structure) + тихий прогон saveChapter(id, title, content, true) по каждой главе —
+     упоминания, события и сцены пересинхронизируются тем же кодом, бэклог не тратится;
+     saveChapter получил четвёртый параметр noSnap?: boolean.
+   - components/SnapshotsButton.tsx: кнопка «Снимки книги» (History) + диалог: список до 10 снимков
+     (дата toLocaleString по языку, метка), «Восстановить» с window.confirm по дате, удалить снимок,
+     «Снимок сейчас»; встроена в шапку раздела «Главы» рядом с экспортом DOCX.
+   - i18n: snTitle/snHint/snEmpty/snTake/snRestore/snRestoreConfirm; snHint честно описывает троттлинг
+     и принудительные снимки.
+   - Объём снимка: главы (id, title, content, order, actName) + structure книги; персонажи, словарь,
+     изображения вне бэклога сознательно; удаление книги каскадно уносит снимки.
+2. Парсер меток — посимвольный сканер (лечение регресса после ручных правок richtext):
+   - lib/richtext.ts: parseInline БЕЗ регулярных выражений по токенам: сканер по символам, тип токена
+     по startsWith; ветки в порядке: [@ / [# → mention-пробеги (события с подчёркивания→пробелы),
+     [sc: / [/sc] → невидимы, [hl= / [/hl] → стек подсветок, [lng] [/lng] [lang: [/lang] → невидимы,
+     '**' → рекурсия жирного СТРОГО раньше одиночной '*', '[size=' → рекурсия размера, '*' → рекурсия
+     курсива; TOKEN_RE удалён полностью, остались ALIGN_RE и isSeparatorLine + sep-блок '* * *'.
+   - Контракт наружу прежний: InlineRun/RichLine/RichBlock, mention/refKind для кликабельных имён и
+     дока справок, sep для разделителя — RichPreview, ReadMode, маршрут DOCX и markdown-экспорт
+     работают без правок и снова чисто снимают все метки.
+   - Диагностические зонды (console.log RICHTEXT…) удалены после проверки; класс регресса (битые
+     экранирования, съехавшие группы, перемешанные ветки, залипший lastIndex) закрыт структурно.
+3. Премиум-реестр без изменений: dictGroups и seriesRelations со visible 'hidden'; usePremium с
    dev-разблокировкой (NODE_ENV === 'development').
 
 ## Правила проекта
@@ -68,83 +73,78 @@
 - Next 15+ route handlers: params — Promise, всегда `const { bookId } = await ctx.params`.
 - Content-Disposition с не-ASCII — только RFC 5987 (filename*=UTF-8''…).
 - Статистика профиля без вех до решения о наградах.
-- Массивы FAQ обоих языков держат одинаковый порядок статей (и group, если живёт группированная версия).
+- Массивы FAQ обоих языков держат одинаковый порядок статей.
 - Премиум-срезы guarded на СЕРВЕРЕ в каждом пишущем экшене (seriesPremiumOk-паттерн); клиентский
   usePremium отвечает только за видимость UI.
 - У Character нет createdAt — сортировки «ранний» по id asc (cuid начинается с метки времени).
 - Модель панели зон: свободная кнопка (Languages) = общая зона с тумблером; премиальная (Earth+стрелка)
   = меню выбора словаря; чип = индикатор языка; кнопка одиночного слова НЕ возвращается.
-- НОВОЕ: рейка минимальна по решению автора — без аватарок книг и без групповых иконок; каталог книг
-  живёт только в развёрнутом сайдбаре и на главной; новые эксперименты с рейкой начинать с её макета.
+- Рейка минимальна по решению автора: логотип, «Домой», низ профиль/настройки/помощь.
+- Снимки — событийная модель без настроек периодичности: автоснимок с троттлингом 10 минут,
+  принудительные снимки минуют троттлинг; глубина 10 — константа безопасности.
+- Восстановление идёт через тихий saveChapter(noSnap=true) — единый код синков; параллельных
+  реализаций синхронизации не добавлять.
+- НОВОЕ: парсер меток — посимвольный сканер; новые типы токенов добавлять веткой startsWith в
+  parseInline и (для линтера) в MARKER_RE маски; регулярки для поиска токенов не возвращать.
+- НОВОЕ: диагностические зонды (console.log с меткой версии) живут только на время расследования и
+  удаляются до фиксации; в зафиксированном дереве console.log в lib/richtext.ts отсутствует.
 
 ## Не проверено после последних правок
-- Релизный цикл 1.6.7: 53 миграции на старой базе при автообновлении; окно «Что нового» с четырьмя
+- Релизный цикл 1.6.8: 55 миграций на старой базе при автообновлении; окно «Что нового» с тремя
   пунктами на обоих языках.
-- Прод-невидимость: без PRO и вне dev премиальная Earth-кнопка, блок «В серии», кнопка «Из состава
-  серии…» и группы словаря скрыты; серверный гейт отклоняет прямые вызовы экшенов состава.
-- Живое дерево линтера: punct.ts/grammar.ts импортируют maskMarkers и гоняют правила по src (в
-  прикреплениях встречались черновики без импорта и с правилами по text — сверять grep'ом).
-- Живой richtext: ужесточённый курсив и ветка isSeparatorLine (черновики встречались старые).
-- Живой DictSection: без мусорных импортов, с ColorSwatches и setDictEntryGroup (черновики встречались
-  сломанные).
-- SeriesRelation в схеме есть, но UI связей серии (стадия E2) НЕ построен: строки серийных связей
-  создать нечем — это задел, не функция.
+- Боевой прогон снимков: 12 быстрых сохранений дают 1–2 автоснимка (троттлинг); «Снимок сейчас» и
+  снимок перед удалением создаются мгновенно; восстановление возвращает текст/порядок/акты и
+  пересинхронизирует вкладки сцен и упоминаний; удаление книги уносит снимки.
+- Чистота меток на контрольной главе со всеми типами: предпросмотр, режим чтения, DOCX, Markdown —
+  ни одной служебной скобки; `***` даёт центрированный разделитель; жирный/курсив/размер на месте.
+- Прод-невидимость премиума 1.6.7 повторно на сборке 1.6.8 (без PRO: группы словаря, Earth-меню,
+  блок «В серии», кнопка состава скрыты).
 
 ## Хрупкие места (grep перед КАЖДЫМ релизом; прикрепления к чату могут содержать старые черновики!)
-- lib/prisma.ts: MIGRATIONS = 53; runMigrations ровно один раз в finally ensureSchema.
-- prisma/schema.prisma: SeriesChar + SeriesRelation + Character.seriesCharId + Series.cast; клиент
-  перегенерирован.
-- lib/actions.ts: серийные экшены с seriesPremiumOk; unlink orderBy id asc; setSoulCanon select
-  { id, bookId, seriesCharId }; getCharacters include seriesChar с doubles и полями soul/seriesCharId
-  в map; react-импортов в шапке НЕТ.
+- lib/richtext.ts: сканер с порядком веток ('**' раньше '*', '[size=' раньше '*'); mention-пробеги
+  bold:true + refKind char/event; НЕТ TOKEN_RE; НЕТ console.log; ALIGN_RE + isSeparatorLine + sep-блок.
+- lib/mask.ts: MARKER_RE синхронен с набором токенов сканера (новые метки добавлять в оба места).
+- lib/actions.ts: SNAPSHOT_KEEP/SNAPSHOT_MIN_MS/takeSnapshot(force)/noSnap в saveChapter/снимок ДО
+  удаления в deleteChapter/restoreSnapshot с тихим прогоном; серийные экшены с seriesPremiumOk;
+  unlink orderBy id asc; getCharacters include seriesChar с soul/seriesCharId; react-импортов НЕТ.
+- components/SnapshotsButton.tsx существует; в app/book/[id]/page.tsx вставлен <SnapshotsButton
+  bookId={id} /> рядом с экспортом DOCX + импорт компонента.
 - components/ChapterEditor.tsx: ОДИН span.zm-wrap (чип + Languages-кнопка commonZoneToggle + Earth-кнопка
-  + один ZoneMenu); НЕТ хвоста-дубля (кнопка zmPick с marginLeft -2, второй ZoneMenu, лишний </span>);
-  Earth в lucide-импорте; caret в updateSel; zoneAt/zoneSlug/zoneGroup после счётчиков; applyZonePick +
-  commonZoneToggle + useRouter; usePremium ИМЕНОВАННЫМ импортом; type DictGroupRow; кнопки chTbDict НЕТ.
-- components/SidebarNav.tsx: рейка = логотип + Home + низ (профиль/настройки/помощь); НЕТ books.map
-  аватарок и НЕТ групповых иконок; Lightbulb/PenLine/Archive используются только в развёрнутом списке.
-- components/HomeView.tsx: селект сортировки с инлайн-геометрией (width 260, height 34, padding 0 10px,
-  boxSizing border-box), обёртка flex justify-end items-center gap-2; проп forceGroup принимается.
-- app/page.tsx: forceGroup считается из searchParams и передаётся в HomeView; renderGroup без forceOpen
-  ИЛИ с ним — цепочка dormant, на поведение не влияет.
-- components/CollapsibleSection.tsx: forceOpen-эффект (если вставлен) раскрытие + scrollIntoView по id;
-  корневой элемент несёт id={id}.
-- lib/zones.ts и components/ZoneMenu.tsx существуют; стили .zm-* в globals.css.
-- lib/punct.ts и lib/grammar.ts: import maskMarkers из './mask'; ВСЕ matchAll по src; в punct.ts НЕТ
-  грамматического блока после сборки res.
-- lib/richtext.ts: курсив /\*([^*\n]+)\*/g; жирный раньше; ветка isSeparatorLine с sep:true; RichBlock.sep.
-- components/DictSection.tsx: импорты без мусора (DictGroupRow — тип из actions); группы и loadGroups на
-  уровне секции; EntryCard получает unlocked/groups пропсами; ColorSwatches; setDictEntryGroup.
-- components/LicenseProvider.tsx: usePremium с dev-флагом NODE_ENV.
-- components/BookPassport.tsx: seriesSel + useEffect-синхронизация; крестик отмены сбрасывает к пропу.
-- components/CharacterModal.tsx: SoulBlock первой карточкой перед секцией t('cdMain'); usePremium и
-  SoulBlock импортированы.
-- components/CharactersRegistry.tsx: castUnlocked + cast + castOpen; кнопка «Из состава серии…»;
-  SeriesCastDialog в конце; RelateDialog рендерится.
-- components/CharacterTile.tsx: чип soul.books + .cr-polaroid-soul.
-- components/characterTypes.ts: CharRow с seriesCharId и soul.
-- lib/faq.ts: семь правок фиксации №16 (рейка минимальная, состав серии, зоны с двумя кнопками, маркер
-  слова без кнопки, мульти-словарь с Earth-меню, профиль без полос, альбом восстановлен); порядок RU/EN
-  идентичен.
-- lib/changelog.ts: запись 1.6.7 первая, четыре пункта на обоих языках.
-- Прежний список: mask.ts MARKER_RE/isSeparatorLine; dictzones applyDictFull; markdown.ts + export-md
-  маршрут (await ctx.params, filename*=UTF-8''); settings import Link; StorylineSection тумблер
-  list/canvas + PlotCanvas; help page групповые заголовки; ExportMdButton на паспорте и в Главах;
-  WhatsNewModal LS+cookie; projectPack + маршруты; LICENSE_PUB_B64 не плейсхолдер.
+  + один ZoneMenu); НЕТ хвоста-дубля (кнопка zmPick, второй ZoneMenu, лишний </span>); предпросмотр
+  через applyDictFull(c, dictRows, zoneGroups) + эффект загрузки dictRows; usePremium ИМЕНОВАННЫМ
+  импортом; caret в updateSel; zoneAt/zoneSlug/zoneGroup после счётчиков.
+- components/ReadMode.tsx: RichPreview через applyDictFull(cur.content, dictRows, zoneGroups).
+- app/api/export/[bookId]/route.ts: prepMarkers снимает [sc:]/[hl] до parseRichText; cleanPlain для
+  заголовков; applyDictFull для содержимого; титульные параграфы по галочкам без плейсхолдеров.
+- lib/markdown.ts: richToMarkdown = applyDictFull первой, затем собственная зачистка (повтор безопасен).
+- lib/prisma.ts: MIGRATIONS = 55; runMigrations ровно один раз в finally ensureSchema.
+- prisma/schema.prisma: BookSnapshot + Book.snapshots + SeriesChar/SeriesRelation/Character.seriesCharId;
+  клиент перегенерирован.
+- lib/faq.ts: статьи 1.6.8 (резервные снимки после автосохранения, дополнение в «Где хранятся мои
+  данные?», гарантийное предложение в «Командах форматирования») в обоих языках на одинаковых позициях.
+- lib/changelog.ts: запись 1.6.8 первая, три пункта на обоих языках.
+- Прежний список: punct/grammar импорт maskMarkers + правила по src; dictzones applyDictFull;
+  export-md маршрут (await ctx.params, filename*=UTF-8''); DictSection без мусорных импортов;
+  LicenseProvider dev-флаг; SidebarNav рейка без аватарок и групповых иконок; HomeView селект с
+  инлайн-геометрией + проп forceGroup; page.tsx forceGroup из searchParams; BookPassport seriesSel;
+  CharacterModal SoulBlock перед cdMain; CharactersRegistry кнопка состава + SeriesCastDialog +
+  RelateDialog; CharacterTile чип soul.books; WhatsNewModal LS+cookie; projectPack + маршруты;
+  LICENSE_PUB_B64 не плейсхолдер.
 
-## Бэклог (после 1.6.7)
+## Бэклог (после 1.6.8)
 - Стадия E2: связи серии между душами (SeriesRelation UI): тумблер «Книга / Серия» во вкладке связей,
   серийное облако с узлами-душами, серверный гейт на создание/удаление.
 - Удаление dormant-цепочки ?g= (forceGroup в page.tsx/HomeView, forceOpen в CollapsibleSection).
 - Награды профиля: вернуть «/ N» и полосы + чипы наград (решение автора).
 - Кнопки оплаты/триала/PRO в карточке плана при запуске подписки (PREMIUM_LAUNCH = true).
 - Счётчики использований словаря: расширить на зонные подстановки, а не только [~ключ].
-- Расширение .wvproj: boardX/boardY/canvasX/canvasY, BeatLink, DictGroup и seriesCharId-связки.
+- Расширение .wvproj: boardX/boardY/canvasX/canvasY, BeatLink, DictGroup, seriesCharId-связки и
+  (опционально) включение списка снимков в пакет.
 - Облачная синхронизация срезы 2–4; мудборд заметок; онбординг; управление сериями (архив/удаление);
   стили корешков «С полосами»/«Гримуар»; счётчики BookBar; накопление премиума; эстетический проход;
   Yandex Speller opt-in.
 
 ## Процедура релиза
-Grep-чек-лист выше → changelog → FAQ → bump package.json + appinfo до 1.6.7 → db push --skip-generate
+Grep-чек-лист выше → changelog → FAQ → bump package.json + appinfo до 1.6.8 → db push --skip-generate
 + generate → dist:win → коммит, тег, push → GH (setup + blockmap + latest.yml) → контроль
-автообновления и премиум-невидимости в проде.
+автообновления, премиум-невидимости и чистоты меток в прод-сборке.

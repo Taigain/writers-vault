@@ -58,6 +58,8 @@ const MIGRATIONS: string[] = [
   "CREATE TABLE IF NOT EXISTS SeriesRelation (id TEXT NOT NULL PRIMARY KEY, aId TEXT NOT NULL, bId TEXT NOT NULL, note TEXT NOT NULL DEFAULT '', kind TEXT NOT NULL DEFAULT 'mutual', CONSTRAINT SeriesRelation_aId_fkey FOREIGN KEY (aId) REFERENCES SeriesChar (id) ON DELETE CASCADE ON UPDATE CASCADE, CONSTRAINT SeriesRelation_bId_fkey FOREIGN KEY (bId) REFERENCES SeriesChar (id) ON DELETE CASCADE ON UPDATE CASCADE)",
   "CREATE UNIQUE INDEX IF NOT EXISTS SeriesRelation_aId_bId_key ON SeriesRelation (aId, bId)",
   "ALTER TABLE Character ADD COLUMN seriesCharId TEXT",
+  "CREATE TABLE IF NOT EXISTS BookSnapshot (id TEXT NOT NULL PRIMARY KEY, bookId TEXT NOT NULL, createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, label TEXT NOT NULL DEFAULT '', payload TEXT NOT NULL, CONSTRAINT BookSnapshot_bookId_fkey FOREIGN KEY (bookId) REFERENCES Book (id) ON DELETE CASCADE ON UPDATE CASCADE)",
+  "CREATE INDEX IF NOT EXISTS BookSnapshot_bookId_createdAt_idx ON BookSnapshot (bookId, createdAt)",
 ]
 
 async function runMigrations() {

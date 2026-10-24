@@ -695,6 +695,12 @@ export const STR = {
     zmChange: 'Сменить язык зоны',
     chTbZoneCommon: 'Словарная зона: общий словарь',
     chTbZonePick: 'Зона с выбором словаря (премиум)',
+    snTitle: 'Снимки книги',
+    snHint: 'Хранятся последние 10 снимков книги: автоснимок при сохранении главы не чаще раза в 10 минут, всегда — перед удалением главы и по кнопке «Снимок сейчас»',
+    snEmpty: 'Снимков пока нет',
+    snTake: 'Снимок сейчас',
+    snRestore: 'Восстановить',
+    snRestoreConfirm: 'Вернуть книгу к состоянию «{when}»? Текущие главы и структура будут заменены.',
   },
   en: {
     tagline: "author's cabinet",
@@ -1388,6 +1394,12 @@ export const STR = {
     zmChange: 'Change the zone language',
     chTbZoneCommon: 'Dictionary zone: common dictionary',
     chTbZonePick: 'Zone with dictionary pick (premium)',
+    snTitle: 'Book snapshots',
+    snHint: 'The last 10 snapshots of the book are kept: an auto snapshot on chapter save at most once per 10 minutes, always before a chapter delete and via "Snapshot now"',
+    snEmpty: 'No snapshots yet',
+    snTake: 'Snapshot now',
+    snRestore: 'Restore',
+    snRestoreConfirm: 'Restore the book to the state of "{when}"? Current chapters and structure will be replaced.',
   },
 } as const
 

@@ -72,7 +72,7 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     {
       group: 'Редактор и текст',
       q: 'Команды форматирования текста',
-      a: '**жирный** — полужирный, *курсив* — курсив, [size=24]текст[/size] — размер шрифта, [center], [right], [left] в начале абзаца — выравнивание. Кнопки панели инструментов сами ставят и снимают эти метки с выделенного текста.',
+      a: '**жирный** — полужирный, *курсив* — курсив, [size=24]текст[/size] — размер шрифта, [center], [right], [left] в начале абзаца — выравнивание. Кнопки панели инструментов сами ставят и снимают эти метки с выделенного текста. Служебные метки всех типов невидимы в предпросмотре, режиме чтения и экспортах: их снимает единый парсер-сканер, поэтому рукопись и готовый текст всегда совпадают.',
     },
     {
       group: 'Редактор и текст',
@@ -349,7 +349,7 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     {
       group: 'Editor & text',
       q: 'Text formatting commands',
-      a: '**bold** — bold, *italic* — italic, [size=24]text[/size] — font size, [center], [right], [left] at paragraph start — alignment. Toolbar buttons add and remove these markers on selected text automatically.',
+      a: '**bold** — bold, *italic* — italic, [size=24]text[/size] — font size, [center], [right], [left] at paragraph start — alignment. Toolbar buttons add and remove these markers on selected text automatically.  Service markers of every kind stay invisible in preview, reading mode and exports: a single scanner parser strips them, so the manuscript and the finished text always match.',
     },
     {
       group: 'Editor & text',

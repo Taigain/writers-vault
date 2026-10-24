@@ -38,6 +38,7 @@ model Book {
   boardH Int?
   authorName   String?
   exportAuthor Boolean @default(false)
+  snapshots BookSnapshot[]
 }
 
 model DictGroup {
@@ -363,4 +364,15 @@ model SeriesRelation {
   b    SeriesChar @relation("SeriesRelB", fields: [bId], references: [id], onDelete: Cascade)
 
   @@unique([aId, bId])
+}
+
+model BookSnapshot {
+  id        String   @id @default(cuid())
+  bookId    String
+  book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  label     String   @default("")
+  payload   String
+
+  @@index([bookId, createdAt])
 }

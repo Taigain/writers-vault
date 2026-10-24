@@ -3,7 +3,8 @@ import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, Line
 import { prisma, schemaReady } from '@/lib/prisma'
 import { parseRichText } from '@/lib/richtext'
 import { getBookBlocks } from '@/lib/actions'
-import { applyDict, buildDictMap, parseForms } from '@/lib/dict'
+import { parseForms } from '@/lib/dict'
+import { applyDictFull } from '@/lib/dictzones'
 import { replaceDashes, type DashStyle } from '@/lib/dashes'
 
 const ALIGN_MAP = {
@@ -69,11 +70,19 @@ export async function GET(_req: Request, { params }: { params: Promise<{ bookId:
 
   const dictRows = await prisma.dictEntry.findMany({
     where: { bookId },
-    select: { key: true, word: true, forms: true },
+    select: { key: true, word: true, meaning: true, forms: true, groupId: true },
   })
-  const dictMap = buildDictMap(
-    dictRows.map((r) => ({ key: r.key, word: r.word, forms: parseForms(r.forms) })),
-  )
+  const dictEntries = dictRows.map((r) => ({
+    key: r.key,
+    word: r.word,
+    meaning: r.meaning,
+    forms: parseForms(r.forms),
+    groupId: r.groupId,
+  }))
+  const zoneGroups = await prisma.dictGroup.findMany({
+    where: { bookId },
+    select: { id: true, name: true, slug: true, color: true },
+  })
 
   const blocks = chapterRow ? [] : await getBookBlocks(bookId)
   const children: Paragraph[] = []
@@ -89,10 +98,10 @@ export async function GET(_req: Request, { params }: { params: Promise<{ bookId:
         spacing: BODY_SPACING,
       }),
     )
-    for (const block of parseRichText(D(prepMarkers(applyDict(ch.content, dictMap))))) {
+    for (const block of parseRichText(D(prepMarkers(applyDictFull(ch.content, dictEntries, zoneGroups))))) {
       for (const line of block.lines) {
-        if (line.every((r) => !r.text.trim())) continue
-        const runs: TextRun[] = line.map(
+        if (line.runs.every((r) => !r.text.trim())) continue
+        const runs: TextRun[] = line.runs.map(
           (r) =>
             new TextRun({
               text: r.text,
@@ -104,7 +113,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ bookId:
         if (runs.length === 0) runs.push(new TextRun({ text: '' }))
         children.push(
           new Paragraph({
-            alignment: ALIGN_MAP[block.align],
+            alignment: ALIGN_MAP[line.align],
             children: runs,
             spacing: BODY_SPACING,
           }),
@@ -125,13 +134,28 @@ export async function GET(_req: Request, { params }: { params: Promise<{ bookId:
       )
     }
     if (book.exportTitle) {
-      children.push(/* абзац с book.title, как было внутри старого блока */)
+      children.push(
+        new Paragraph({
+          text: cleanPlain(book.title),
+          style: 'Title',
+        }),
+      )
     }
     if (book.exportAnnotation && book.annotation.trim()) {
-      children.push(/* абзац с book.annotation */)
+      children.push(
+        new Paragraph({
+          children: [new TextRun({ text: D(book.annotation.trim()), italics: true, size: 24 })],
+          spacing: { after: 120 },
+        }),
+      )
     }
     if (book.exportSynopsis && book.synopsis.trim()) {
-      children.push(/* абзац с book.synopsis */)
+      children.push(
+        new Paragraph({
+          children: [new TextRun({ text: D(book.synopsis.trim()), size: 24 })],
+          spacing: { after: 240 },
+        }),
+      )
     }
     for (const b of blocks) {
       if (b.kind === 'act') {

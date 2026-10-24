@@ -26,7 +26,7 @@ export function richToMarkdown(
   s = s.replace(/\[size=\d+\]/g, '').replace(/\[\/size\]/g, '')
   s = s.replace(/\[lng\]/g, '').replace(/\[\/lng\]/g, '')
   s = s.replace(/\[lang:[^\]]*\]/g, '').replace(/\[\/lang\]/g, '')
-  s = s.replace(/^\[(left|center|right)\][ \t]*$/gim, '')
+  s = s.replace(/^\[(left|center|right)\][ \t]*/gim, '')
   s = s.replace(/\[@([^\]]*)\]/g, '$1')
   s = s.replace(/\[#([^\]]*)\]/g, (_m, x: string) => x.replace(/_/g, ' '))
   s = s.replace(/--/g, dash)

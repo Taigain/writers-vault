@@ -86,24 +86,17 @@ export default function RichPreview({
   if (blocks.length === 0) return null
   return (
     <div className="prose-write">
-      {blocks.map((b, i) => (
-        <p
-          key={i}
-          style={{
-            textAlign: b.align,
-            ...(b.sep ? { letterSpacing: 8, color: 'var(--soft)' } : null),
-          }}
-        >
-          {b.lines.map((line, j) => (
-            <span key={j}>
-              {j > 0 && <br />}
-              {line.map((r, k) => (
-                <RunView key={k} r={r} highlight={highlight} onRef={onRef} />
-              ))}
-            </span>
-          ))}
-        </p>
-      ))}
+        {blocks.map((b, i) => (
+          <p key={i} style={b.sep ? { letterSpacing: 8, color: 'var(--soft)' } : undefined}>
+            {b.lines.map((line, j) => (
+              <span key={j} style={{ display: 'block', textAlign: line.align }}>
+                {line.runs.map((r, k) => (
+                  <RunView key={k} r={r} highlight={highlight} onRef={onRef} />
+                ))}
+              </span>
+            ))}
+          </p>
+        ))}
     </div>
   )
 }
