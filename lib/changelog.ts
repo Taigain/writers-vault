@@ -7,6 +7,18 @@ export type ChangeEntry = {
 
 export const CHANGELOG: ChangeEntry[] = [ 
   {
+    version: '1.6.9',
+    date: '25.10.2026',
+    ru: [
+      'Главная: кнопка «Новая книга» теперь есть и в виде «Плитки» — в строке сортировки и видов рядом с переключателями; плюс-слот полки и окно создания с предпросмотром корешка и обложки сохранены',
+      'Экспорт DOCX: восстановлены параграфы титульного блока (название стилем Title, аннотация и синопсис), потерявшиеся за комментариями-плейсхолдерами, — четыре галочки паспорта снова работают',
+    ],
+    en: [
+      'Home page: the "New book" button now works in the tiles view too — it sits in the sort/view row next to the toggles; the shelf plus slot and the creation window with spine/cover preview stay as they were',
+      'DOCX export: the title-block paragraphs (Title-styled book title, annotation and synopsis) lost behind placeholder comments are restored — the four passport checkboxes work again',
+    ],
+  },
+  {
     version: '1.6.7',
     date: '22.10.2026',
     ru: [
@@ -14,7 +26,7 @@ export const CHANGELOG: ChangeEntry[] = [
       'Панель зон языка: кнопка словарной зоны с иконкой языков ставит и снимает общую зону [lng]…[/lng] одним нажатием, премиальная кнопка с земным шаром открывает меню выбора словаря для выделенной зоны или зоны под курсором, чип слева показывает текущий язык реплики; кнопка одиночного слова ушла из панели — маркер [~ключ] по-прежнему работает в тексте и копируется чипом с карточки словаря',
       'Паспорт книги: указатель серии держит выбранное значение сразу после выбора и больше не прыгает в «вне серии», пока сохранение догоняет интерфейс',
       'Рейка сайдбара стала минимальной: логотип, кнопка «Домой» и нижние профиль/настройки/помощь вместо аватарок книг с буквами; на главной строка сортировки собрана в компактный блок справа, текст селекта виден целиком',
-        'Предпросмотр, режим чтения и все экспорты снова чисто снимают служебные метки: парсер меток переписан на посимвольный сканер без регулярных выражений, нечувствительный к повреждениям шаблонов, групп захвата и перемешанным веткам',
+      'Предпросмотр, режим чтения и все экспорты снова чисто снимают служебные метки: парсер меток переписан на посимвольный сканер без регулярных выражений, нечувствительный к повреждениям шаблонов, групп захвата и перемешанным веткам',
     ],
     en: [
       'Series cast (premium): character souls at the cycle level — the "From the series cast…" button in the characters section brings a hero into a series book in one click with a copy of the dossier and portrait; "also in: …" chips on album and board cards; an "In the series" block in the dossier lists the incarnations across cycle books with the canon star and unlink; editing a double in one book never touches the others',

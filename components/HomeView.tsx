@@ -208,7 +208,10 @@ export default function HomeView({
         >
           <LayoutGrid size={15} />
         </button>
-      </div>
+        <button type="button" className="btn btn-primary btn-sm" onClick={() => setAddOpen(true)}>
+          <Plus size={14} /> {t('hvAdd')}
+        </button>
+        </div>
 
       {view === 'tiles' ? (
         tiles
