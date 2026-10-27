@@ -8,7 +8,9 @@ import { useLang } from '@/lib/useLang'
 import { getBookReadData } from '@/lib/actions'
 import type { DictMap } from '@/lib/dict'
 import { applyDictFull } from '@/lib/dictzones'
-import { getDict, getDictGroups, type DictRow, type DictGroupRow } from '@/lib/actions'
+import { getDict, getDictGroups, getSceneImages, type DictRow, type DictGroupRow } from '@/lib/actions'
+import type { PreviewImage } from './RichPreview'
+import { usePremium } from './LicenseProvider'
 
 export type ReadChapter = { id: string; title: string; content: string; act: string | null }
 
@@ -30,6 +32,8 @@ export default function ReadMode({
   const [listOpen, setListOpen] = useState(false)
   const [dictRows, setDictRows] = useState<DictRow[]>([])
   const [zoneGroups, setZoneGroups] = useState<DictGroupRow[]>([])
+ const [imgMap, setImgMap] = useState<Record<string, PreviewImage>>({})
+  const { unlocked: imgsUnlocked } = usePremium('inlineImages')
   const boxRef = useRef<HTMLDivElement | null>(null)
   const scrollRef = useRef<HTMLDivElement | null>(null)
 
@@ -39,9 +43,16 @@ export default function ReadMode({
     setOpen(true)
     if (bookId) {
       if (!chapters) setLoaded(await getBookReadData(bookId))
-      const [r, g] = await Promise.all([getDict(bookId), getDictGroups(bookId)])
+      const [r, g, imgs] = await Promise.all([
+        getDict(bookId),
+        getDictGroups(bookId),
+        imgsUnlocked ? getSceneImages(bookId) : Promise.resolve([]),
+      ])
       setDictRows(r)
       setZoneGroups(g)
+      const m: Record<string, PreviewImage> = {}
+      for (const im of imgs) m[im.id] = im
+      setImgMap(m)
     }
   }
 
@@ -157,7 +168,7 @@ export default function ReadMode({
                       </div>
                     )}
                     <h2 className="text-xl font-bold mb-4">{cur.title}</h2>
-                    <RichPreview text={applyDictFull(cur.content, dictRows, zoneGroups)} />
+                    <RichPreview text={applyDictFull(cur.content, dictRows, zoneGroups)} images={imgsUnlocked ? imgMap : undefined} />
                   </>
                 )}
                 <div className="flex items-center justify-between gap-2 mt-8 pb-8">

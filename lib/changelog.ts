@@ -7,6 +7,20 @@ export type ChangeEntry = {
 
 export const CHANGELOG: ChangeEntry[] = [ 
   {
+    version: '1.6.10',
+    date: '27.10.2026',
+    ru: [
+      'Облачный резерв : секция «Облачный резерв» в настройках одной кнопкой находит установленные клиенты — Яндекс Диск, Dropbox, OneDrive, Google Drive — по стандартным папкам и маркерным файлам; выгрузка пакует книгу в .wvproj и кладёт в папку клиента (latest.wvproj плюс последние пять версионных копий); нестандартные папки добавляются вручную; на паспорте книги — галочка включения в резерв и кнопка «Выгрузить сейчас» со статусом',
+      'Иллюстрации сцен : блок «Иллюстрации сцены» в карточке сцены — загрузка с подписью, выравниванием и шириной; премиум-кнопка панели редактора вставляет метку [img:…] в курсор через диалог с миниатюрами сцен главы; предпросмотр и режим чтения рисуют иллюстрацию с подписью и выравниванием',
+      'Безопасность иллюстраций: удаление изображения вычищает его метки из текста глав, удаление сцены каскадно уносит её изображения; картинки ресайзятся на клиенте до сохранения, чтобы база не раздувалась',
+    ],
+    en: [
+      'Cloud backup : the "Cloud backup" section in settings detects installed sync clients — Yandex Disk, Dropbox, OneDrive, Google Drive — with one button by their default folders and marker files; an upload packs the book into .wvproj and places it into the client folder (latest.wvproj plus the last five versioned copies); custom folders are added manually; the passport carries an include-checkbox and an "Upload now" button with status',
+      'Scene illustrations : the "Scene illustrations" block in the scene card — upload with caption, alignment and width; the premium toolbar button inserts an [img:…] marker at the cursor via a dialog with scene thumbnails; preview and reading mode render the illustration with its caption and alignment',
+      'Illustration safety: deleting an image sweeps its markers from chapter texts, deleting a scene cascades its images; pictures are resized client-side before storage so the database stays lean',
+    ],
+  },
+  {
     version: '1.6.9',
     date: '25.10.2026',
     ru: [
@@ -19,6 +33,20 @@ export const CHANGELOG: ChangeEntry[] = [
     ],
   },
   {
+    version: '1.6.8',
+    date: '23.10.2026',
+    ru: [
+      'Резервные снимки книги: каждая книга держит бэклог последних 10 состояний — снимок создаётся при сохранении главы (не чаще раза в 10 минут), перед удалением главы и вручную кнопкой «Снимок сейчас»',
+      'Восстановление из снимка: кнопка «Снимки книги» в шапке раздела «Главы» открывает список с датами и метками; восстановление возвращает главы, их порядок, акты и структуру книги, пересинхронизируя сцены, упоминания и события; восстановление не расходует текущий бэклог',
+      'Предпросмотр, режим чтения и все экспорты снова чисто снимают служебные метки: парсер меток переписан на посимвольный сканер без регулярных выражений, нечувствительный к повреждениям шаблонов, групп захвата и перемешанным веткам',
+    ],
+    en: [
+      'Book backup snapshots: every book keeps its own backlog of the last 10 states — a snapshot is created on chapter save (at most once per 10 minutes), before a chapter delete and manually via "Snapshot now"',
+      'Snapshot restore: the "Book snapshots" button in the chapters header opens the list with dates and labels; restoring brings back chapters, their order, acts and the book structure with scenes, mentions and events re-synced; restoring never spends the current backlog',
+      'Preview, reading mode and all exports strip service markers cleanly again: the marker parser is rewritten as a character-by-character scanner without regular expressions, immune to pattern damage, capture-group drift and shuffled branches',  
+    ],
+  },
+  {
     version: '1.6.7',
     date: '22.10.2026',
     ru: [
@@ -26,14 +54,12 @@ export const CHANGELOG: ChangeEntry[] = [
       'Панель зон языка: кнопка словарной зоны с иконкой языков ставит и снимает общую зону [lng]…[/lng] одним нажатием, премиальная кнопка с земным шаром открывает меню выбора словаря для выделенной зоны или зоны под курсором, чип слева показывает текущий язык реплики; кнопка одиночного слова ушла из панели — маркер [~ключ] по-прежнему работает в тексте и копируется чипом с карточки словаря',
       'Паспорт книги: указатель серии держит выбранное значение сразу после выбора и больше не прыгает в «вне серии», пока сохранение догоняет интерфейс',
       'Рейка сайдбара стала минимальной: логотип, кнопка «Домой» и нижние профиль/настройки/помощь вместо аватарок книг с буквами; на главной строка сортировки собрана в компактный блок справа, текст селекта виден целиком',
-      'Предпросмотр, режим чтения и все экспорты снова чисто снимают служебные метки: парсер меток переписан на посимвольный сканер без регулярных выражений, нечувствительный к повреждениям шаблонов, групп захвата и перемешанным веткам',
     ],
     en: [
       'Series cast (premium): character souls at the cycle level — the "From the series cast…" button in the characters section brings a hero into a series book in one click with a copy of the dossier and portrait; "also in: …" chips on album and board cards; an "In the series" block in the dossier lists the incarnations across cycle books with the canon star and unlink; editing a double in one book never touches the others',
       'Language zone toolbar: the dictionary-zone button with the languages icon sets and removes the common zone [lng]…[/lng] in one press, the premium globe button opens a dictionary-pick menu for the selected zone or the zone under the cursor, and a chip on the left shows the current language of the line; the single-word button left the toolbar — the [~key] marker still works in text and copies from the dictionary card chip',
       'Book passport: the series picker keeps the chosen value immediately after selection and no longer jumps to "no series" while the save round-trip catches up with the interface',
       'The sidebar rail is minimal now: logo, the Home button and the bottom profile/settings/help instead of letter avatars of books; on the home page the sort row is a compact block on the right with the select text fully visible',
-      'Preview, reading mode and all exports strip service markers cleanly again: the marker parser is rewritten as a character-by-character scanner without regular expressions, immune to pattern damage, capture-group drift and shuffled branches',  
     ],
   },
   {

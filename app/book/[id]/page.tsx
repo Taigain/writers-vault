@@ -53,6 +53,7 @@ import {
 import CharactersRegistry from '@/components/CharactersRegistry'
 import { getCharacterRelations } from '@/lib/actions'
 import SnapshotsButton from '@/components/SnapshotsButton'
+import CloudUploadButton from '@/components/CloudUploadButton'
 
 const words = (t: string) => (t.trim() ? t.trim().split(/\s+/).length : 0)
 const VIEWS = ['chapters', 'characters', 'world', 'locations', 'timeline', 'graph', 'notes', 'plot', 'dict', 'scenes']
@@ -384,7 +385,10 @@ const charactersSection = (
               confirmText={tr(lang, 'pgDeleteBookConfirm')}
               thenGo="/"
             />
-            <ExportButton bookId={id} baseName={book.title} primary />
+            <div className="flex flex-wrap items-center gap-2">
+              <CloudUploadButton bookId={id} cloudBackup={!!book.cloudBackup} />
+              <ExportButton bookId={id} baseName={book.title} primary />
+            </div>
           </div>
         </>
       ) : (

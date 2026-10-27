@@ -1,13 +1,21 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Clapperboard, Save, ArrowRight } from 'lucide-react'
 import { useLang } from '@/lib/useLang'
 import { HL_COLORS } from '@/lib/scenes'
-import { updateSceneText, setSceneCharacters, type SceneRow } from '@/lib/actions'
+import {
+  updateSceneText,
+  setSceneCharacters,
+  getSceneImages,
+  type SceneRow,
+  type SceneImageRow,
+} from '@/lib/actions'
 import RichPreview from './RichPreview'
 import { applyDict, type DictMap } from '@/lib/dict'
+import { usePremium } from './LicenseProvider'
+import SceneImagesBlock from './SceneImagesBlock'
 
 function SceneCard({
   scene,
@@ -16,6 +24,7 @@ function SceneCard({
   defaultOpen,
   bookId,
   dict,
+  images,
 }: {
   scene: SceneRow
   characters: { id: string; name: string }[]
@@ -23,6 +32,7 @@ function SceneCard({
   defaultOpen: boolean
   bookId: string
   dict?: DictMap
+  images?: Record<string, SceneImageRow>
 }) {
   const { t } = useLang()
   const router = useRouter()
@@ -107,37 +117,38 @@ function SceneCard({
             name="text"
             value={text}
             onChange={(e) => setText(e.target.value)}
-          rows={Math.min(18, Math.max(6, text.split('\n').length + 1))}
-          className="textarea textarea-write"
-        />
-        <div>
-          <div className="field-label">{t('scChars')}</div>
-          <div className="flex flex-wrap gap-1.5 pt-1">
-            {characters.map((ch) => (
-              <button
-                key={ch.id}
-                type="button"
-                className={`chip-btn ${on[ch.id] ? 'chip-btn-active' : ''}`}
-                onClick={async () => {
-                  const next = { ...on, [ch.id]: !on[ch.id] }
-                  setOn(next)
-                  await setSceneCharacters(
-                    scene.id,
-                    characters.filter((c) => next[c.id]).map((c) => c.id),
-                  )
-                }}
-              >
-                {ch.name}
-              </button>
-            ))}
+            rows={Math.min(18, Math.max(6, text.split('\n').length + 1))}
+            className="textarea textarea-write"
+          />
+          <div>
+            <div className="field-label">{t('scChars')}</div>
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {characters.map((ch) => (
+                <button
+                  key={ch.id}
+                  type="button"
+                  className={`chip-btn ${on[ch.id] ? 'chip-btn-active' : ''}`}
+                  onClick={async () => {
+                    const next = { ...on, [ch.id]: !on[ch.id] }
+                    setOn(next)
+                    await setSceneCharacters(
+                      scene.id,
+                      characters.filter((c) => next[c.id]).map((c) => c.id),
+                    )
+                  }}
+                >
+                  {ch.name}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-        <div className="pt-3 border-t" style={{ borderColor: 'var(--line)' }}>
-          <div className="text-xs font-semibold mb-2" style={{ color: 'var(--soft)' }}>
-            {t('chPreviewTitle')}
+          <SceneImagesBlock sceneId={scene.id} />
+          <div className="pt-3 border-t" style={{ borderColor: 'var(--line)' }}>
+            <div className="text-xs font-semibold mb-2" style={{ color: 'var(--soft)' }}>
+              {t('chPreviewTitle')}
+            </div>
+            <RichPreview text={applyDict(text, dict ?? {})} images={images} />
           </div>
-          <RichPreview text={applyDict(text, dict ?? {})} />
-        </div>
           <div className="flex justify-end pt-3">
             <button type="submit" className="btn btn-primary btn-sm">
               <Save size={13} /> {t('scSave')}
@@ -163,6 +174,19 @@ export default function SceneSection({
   dict?: DictMap
 }) {
   const { t } = useLang()
+  const { unlocked: imgsUnlocked } = usePremium('inlineImages')
+  const [imgMap, setImgMap] = useState<Record<string, SceneImageRow>>({})
+  useEffect(() => {
+    if (!imgsUnlocked) {
+      setImgMap({})
+      return
+    }
+    void getSceneImages(bookId).then((rows) => {
+      const m: Record<string, SceneImageRow> = {}
+      for (const r of rows) m[r.id] = r
+      setImgMap(m)
+    })
+  }, [bookId, imgsUnlocked])
   const byChapter = new Map<string, SceneRow[]>()
   for (const s of scenes) {
     const arr = byChapter.get(s.chapterId) ?? []
@@ -192,6 +216,7 @@ export default function SceneSection({
                   defaultOpen={focusScene === s.id}
                   bookId={bookId}
                   dict={dict}
+                  images={imgMap}
                 />
               ))}
             </div>

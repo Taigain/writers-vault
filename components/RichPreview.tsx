@@ -30,11 +30,40 @@ function RunView({
   r,
   highlight,
   onRef,
+  images,
 }: {
   r: InlineRun
   highlight?: string
   onRef?: (kind: 'char' | 'event', key: string) => void
+  images?: Record<string, PreviewImage>
 }) {
+  if (r.imgId && images && images[r.imgId]) {
+    const im = images[r.imgId]
+    return (
+      <span
+        className="rv-figure"
+        style={{
+          display: 'block',
+          textAlign: (im.align === 'left' || im.align === 'right' ? im.align : 'center') as
+            | 'left'
+            | 'center'
+            | 'right',
+          margin: '10px 0',
+        }}
+      >
+        <img
+          src={im.base64}
+          alt={im.caption}
+          style={{ width: im.widthPct + '%', maxWidth: '100%', borderRadius: 6, border: '1px solid var(--line)' }}
+        />
+        {im.caption && (
+          <span style={{ display: 'block', fontSize: 12, marginTop: 4, color: 'var(--soft)' }}>
+            {im.caption}
+          </span>
+        )}
+      </span>
+    )
+  }
   let node: React.ReactNode = r.mention ? (
     onRef && r.refKind ? (
       <button
@@ -69,14 +98,18 @@ function RunView({
   return <>{node}</>
 }
 
+export type PreviewImage = { base64: string; caption: string; align: string; widthPct: number }
+
 export default function RichPreview({
   text,
   highlight,
   onRef,
+  images,
 }: {
   text: string
   highlight?: string
   onRef?: (kind: 'char' | 'event', key: string) => void
+  images?: Record<string, PreviewImage>
 }) {
   const [dash, setDash] = useState<DashStyle>('en')
   useEffect(() => {
@@ -91,7 +124,7 @@ export default function RichPreview({
             {b.lines.map((line, j) => (
               <span key={j} style={{ display: 'block', textAlign: line.align }}>
                 {line.runs.map((r, k) => (
-                  <RunView key={k} r={r} highlight={highlight} onRef={onRef} />
+                  <RunView key={k} r={r} highlight={highlight} onRef={onRef} images={images} />
                 ))}
               </span>
             ))}

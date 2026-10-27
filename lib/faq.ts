@@ -7,7 +7,7 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     {
       group: 'Начало работы',
       q: 'Где хранятся мои данные?',
-      a: 'В локальной базе на вашем компьютере. Установленная версия: %APPDATA%\\writer-app\\dev.db (вставьте путь в адресную строку проводника). Dev-версия: prisma\\dev.db в папке проекта. В интернет не отправляется ничего. Резервная копия = скопировать файл dev.db на внешний диск.',
+      a: 'В локальной базе на вашем компьютере. Установленная версия: %APPDATA%\\writer-app\\dev.db (вставьте путь в адресную строку проводника). Dev-версия: prisma\\dev.db в папке проекта. В интернет не отправляется ничего. Резервная копия = скопировать файл dev.db на внешний диск.  Резервные снимки книг (бэклог последних 10 состояний на книгу) живут в той же базе и входят в копию dev.db.',
     },
     {
       group: 'Начало работы',
@@ -82,7 +82,12 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     {
       group: 'Редактор и текст',
       q: 'Сцены: начало, конец и синхронность с текстом',
-      a: 'Сцена ограничивается в тексте главы парным маркером [sc:]…[/sc]: выделите фрагмент и нажмите кнопку сцены на панели — выделение обернётся маркерами; без выделения пара встанет на курсор. Сцены могут идти вплотную, без пустых строк: граница — маркер, а не разрыв абзаца. Вкладка «Сцены» собирает все сцены книги по главам: в карточке полный текст сцены (редактируется — правка синхронно уходит в главу), чипы персонажей сцены, цветовые метки и предпросмотр. Кнопка «Открыть в тексте» ведёт к месту сцены в главе. Границы и текст сцены живут только в главе: вкладка показывает живой срез, поэтому рассинхрона не бывает. В экспорте DOCX маркеры сцен снимаются без следа, текст течёт непрерывно.',
+      a: 'Сцена ограничивается в тексте главы парным маркером [sc:]…[/sc]: выделите фрагмент и нажмите кнопку сцены на панели — выделение обернётся маркерами; без выделения пара встанет на курсор. Сцены могут идти вплотную, без пустых строк: граница — маркер, а не разрыв абзаца. Вкладка «Сцены» собирает все сцены книги по главам: в карточке полный текст сцены (редактируется — правка синхронно уходит в главу), чипы персонажей сцены, цветовые метки и предпросмотр. Кнопка «Открыть в тексте» ведёт к месту сцены в главе. Границы и текст сцены живут только в главе: вкладка показывает живой срез, поэтому рассинхрона не бывает. В экспорте DOCX маркеры сцен снимаются без следа, текст течёт непрерывно.  Сцены держат коллекции иллюстраций: блок «Иллюстрации сцены» в карточке и постановка в текст меткой [img:…] через диалог редактора (см. «Иллюстрации сцен»).',
+    },
+    {
+      group: 'Редактор и текст',
+      q: 'Иллюстрации сцен',
+      a: 'Коллекция изображений сцены — базовая функция: блок «Иллюстрации сцены» в карточке сцены раздела «Сцены» принимает картинки с подписью, выравниванием (влево/по центру/вправо) и шириной (30–100 %), каждую картинку можно скачать как обычный файл. Премиумной является только постановка иллюстрации в текст главы: кнопка с иконкой картинки на панели редактора вставляет метку [img:…] в курсор через диалог с миниатюрами сцен главы, и предпросмотр с режимом чтения рисуют фигуру с подписью и выравниванием. Без премиума метки в тексте невидимы, а экспорт в DOCX и Markdown пока пропускает иллюстрации — встраивание картинок в экспорт придёт следующим обновлением. Удаление изображения вычищает его метки из всех глав, удаление сцены каскадно уносит её изображения. Картинки ресайзятся на клиенте перед сохранением (до 1600 px), поэтому база не раздувается.',
     },
     {
       group: 'Редактор и текст',
@@ -113,6 +118,16 @@ export const FAQ: Record<Lang, FaqItem[]> = {
       group: 'Редактор и текст',
       q: 'Автосохранение и защита от потерь',
       a: 'Редактор сохраняет изменения сам: частота настраивается в «Настройки → Редактор» (по умолчанию 1 минута, можно выключить). Кнопка Save на панели главы сохраняет мгновенно и подсвечивается золотым, пока есть несохранённые изменения. При закрытии приложения с несохранённым текстом появится диалог: сохранить и выйти, выйти без сохранения или отмена. Статус внизу редактора: «сохранено в ЧЧ:ММ» или «есть несохранённые изменения».',
+    },
+    {
+      group: 'Редактор и текст',      
+      q: 'Резервные снимки книги',
+      a: 'Каждая книга держит собственный бэклог последних 10 снимков. Снимок создаётся автоматически при сохранении главы (но не чаще раза в 10 минут, чтобы автосохранение не выжигало бэклог), всегда перед удалением главы и вручную кнопкой «Снимок сейчас». Кнопка «Снимки книги» в шапке раздела «Главы» открывает список: дата, метка (сохранённая глава или «Перед удалением: …»), кнопки «Восстановить» и удалить. Восстановление возвращает главы, их порядок, акты и структуру книги к состоянию снимка и пересинхронизирует сцены, упоминания и события; текущие снимки при этом не расходуются. Снимки хранят только текст и структуру: персонажи, словарь и изображения живут вне бэклога. Удаление книги уносит её снимки вместе с ней.',
+    },
+    {
+      group: 'Редактор и текст',        
+      q: 'Облачный резерв: выгрузка в папки клиентов',
+      a: 'В «Настройках» секция «Облачный резерв» кнопкой «Найти облачные клиенты» обнаруживает установленные клиенты синхронизации — Яндекс Диск, Dropbox, OneDrive, Google Drive — по их стандартным папкам и маркерным файлам (у Dropbox путь читается из info.json, у OneDrive из переменных окружения). Найденный клиент добавляется целью одной кнопкой; нестандартное расположение добавляется вручную полем пути. Кнопка «Выгрузить сейчас» на паспорте книги пакует книгу в .wvproj и кладёт в папку WriterVault/<книга> внутри цели: latest.wvproj плюс версионные копии с меткой времени, хранятся последние пять. Дальше облако синхронизирует файлы само — приложению не нужны токены и доступ в интернет. Галочка «Включать книгу в облачный резерв» помечает книгу для будущих автоматических выгрузок. Строка статуса у каждой цели показывает время и результат последней выгрузки; битый путь даёт красную пометку, остальные цели продолжают работать. Расписание выгрузок и прямое подключение к облакам без клиента-папки придут следующими обновлениями.',
     },
     {
       group: 'Редактор и текст',
@@ -284,7 +299,7 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     {
       group: 'Getting started',
       q: 'Where is my data stored?',
-      a: 'In a local database on your computer. Installed version: %APPDATA%\\writer-app\\dev.db (paste the path into Explorer). Dev version: prisma\\dev.db in the project folder. Nothing is ever sent online. Backup = copy the dev.db file to an external drive.',
+      a: 'In a local database on your computer. Installed version: %APPDATA%\\writer-app\\dev.db (paste the path into Explorer). Dev version: prisma\\dev.db in the project folder. Nothing is ever sent online. Backup = copy the dev.db file to an external drive.  Per-book backup snapshots (the backlog of the last 10 states per book) live in the same database and travel with the dev.db copy.',
     },
     {
       group: 'Getting started',
@@ -359,7 +374,12 @@ export const FAQ: Record<Lang, FaqItem[]> = {
     {
       group: 'Editor & text',
       q: 'Scenes: start, end and sync with the text',
-      a: 'A scene is bounded in chapter text by the pair marker [sc:]…[/sc]: select a passage and press the scene button on the toolbar — the selection is wrapped in markers; with no selection the pair is placed at the cursor. Scenes may sit back-to-back without blank lines: the boundary is the marker, not a paragraph break. The "Scenes" tab gathers all scenes of the book grouped by chapter: the card holds the full scene text (editable — changes sync back into the chapter), character chips, color highlights and a preview. The "Open in text" button jumps to the scene\'s place in the chapter. Scene bounds and text live only in the chapter: the tab shows a live slice, so nothing drifts. In DOCX export scene markers are removed without trace and the text flows continuously.',
+      a: 'A scene is bounded in chapter text by the pair marker [sc:]…[/sc]: select a passage and press the scene button on the toolbar — the selection is wrapped in markers; with no selection the pair is placed at the cursor. Scenes may sit back-to-back without blank lines: the boundary is the marker, not a paragraph break. The "Scenes" tab gathers all scenes of the book grouped by chapter: the card holds the full scene text (editable — changes sync back into the chapter), character chips, color highlights and a preview. The "Open in text" button jumps to the scene\'s place in the chapter. Scene bounds and text live only in the chapter: the tab shows a live slice, so nothing drifts. In DOCX export scene markers are removed without trace and the text flows continuously.  Scenes carry illustration collections: the "Scene illustrations" block in the scene card and placement into the text via the [img:…] marker from the editor dialog (see "Scene illustrations").',
+    },
+    {
+      group: 'Editor & text',      
+      q: 'Scene illustrations',
+      a: 'The scene image collection is a base feature: the "Scene illustrations" block in the scene card of the "Scenes" section accepts pictures with a caption, an alignment (left/center/right) and a width (30–100%), and every picture can be downloaded as a regular file. Premium is only placing an illustration into the chapter text: the picture-icon button in the editor toolbar inserts the [img:…] marker at the cursor via a dialog with the chapter scene thumbnails, and preview plus reading mode render the figure with its caption and alignment. Without premium the markers stay invisible in the text, and DOCX and Markdown exports skip illustrations for now — embedded pictures in exports arrive with the next update. Deleting an image sweeps its markers from all chapters, deleting a scene cascades its images. Pictures are resized client-side before storage (up to 1600 px), so the database stays lean.',
     },
     {
       group: 'Editor & text',
@@ -390,6 +410,16 @@ export const FAQ: Record<Lang, FaqItem[]> = {
       group: 'Editor & text',
       q: 'Auto-save and loss protection',
       a: 'The editor saves changes by itself: frequency is set in Settings → Editor (1 minute by default, can be turned off). The Save button on the chapter toolbar saves instantly and glows gold while there are unsaved changes. Closing the app with unsaved text shows a dialog: save and exit, exit without saving, or cancel. Status at the editor footer: "saved at HH:MM" or "unsaved changes".',
+    },
+    {
+      group: 'Editor & text',      
+      q: 'Book backup snapshots',
+      a: 'Every book keeps its own backlog of the last 10 snapshots. A snapshot is created automatically on chapter save (but at most once per 10 minutes so auto-save bursts cannot burn the backlog), always before a chapter delete, and manually via the "Snapshot now" button. The "Book snapshots" button in the chapters header opens the list: date, label (the saved chapter or "Before delete: …"), Restore and delete buttons. Restoring brings chapters, their order, acts and the book structure back to the snapshot state and re-syncs scenes, mentions and events; the current backlog is never spent. Snapshots store text and structure only: characters, dictionary and images live outside the backlog. Deleting a book removes its snapshots with it.',
+    },
+    {
+      group: 'Editor & text',  
+      q: 'Cloud backup: uploading to client folders',
+      a: 'In Settings, the "Cloud backup" section with the "Detect cloud clients" button finds installed sync clients — Yandex Disk, Dropbox, OneDrive, Google Drive — by their default folders and marker files (Dropbox path is read from info.json, OneDrive from environment variables). A detected client becomes a target with one click; a non-standard location is added manually via the path field. The "Upload now" button on the book passport packs the book into .wvproj and places it into the WriterVault/<book> folder inside the target: latest.wvproj plus versioned copies with timestamps, the last five are kept. The cloud client then syncs the files on its own — the app needs no tokens and no internet access. The "Include this book in cloud backup" checkbox marks the book for future automatic uploads. The status line of each target shows the time and result of the last upload; a broken path turns red while the other targets keep working. Upload scheduling and direct cloud connections without a client folder arrive in later updates.',
     },
     {
       group: 'Editor & text',

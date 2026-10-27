@@ -39,6 +39,7 @@ model Book {
   authorName   String?
   exportAuthor Boolean @default(false)
   snapshots BookSnapshot[]
+  cloudBackup Boolean @default(true)
 }
 
 model DictGroup {
@@ -311,6 +312,7 @@ model Scene {
   start      Int              @default(0)
   end        Int              @default(0)
   characters SceneCharacter[]
+  images    SceneImage[]
 }
 
 model SceneCharacter {
@@ -375,4 +377,30 @@ model BookSnapshot {
   payload   String
 
   @@index([bookId, createdAt])
+}
+
+model CloudTarget {
+  id        String    @id @default(cuid())
+  provider  String
+  name      String
+  rootPath  String
+  enabled   Boolean   @default(true)
+  lastRunAt DateTime?
+  lastStatus String   @default("")
+  createdAt DateTime  @default(now())
+}
+
+model SceneImage {
+  id        String   @id @default(cuid())
+  sceneId   String
+  scene     Scene    @relation(fields: [sceneId], references: [id], onDelete: Cascade)
+  bookId    String
+  caption   String   @default("")
+  align     String   @default("center")
+  widthPct  Int      @default(80)
+  base64    String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([sceneId])
 }

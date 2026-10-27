@@ -9,6 +9,7 @@ export type InlineRun = {
   mention: boolean
   hl: number | null
   refKind: 'char' | 'event' | null
+  imgId?: string
 }
 export type RichLine = { align: Align; runs: InlineRun[] }
 export type RichBlock = { sep?: boolean; lines: RichLine[] }
@@ -91,6 +92,21 @@ function parseInline(text: string, base: Base): InlineRun[] {
           i = close + 1
           continue
         }
+        if (tok.startsWith('[img:')) {
+          flush()
+          runs.push({
+            text: '',
+            bold: cur.bold,
+            italic: cur.italic,
+            size: cur.size,
+            mention: false,
+            hl: cur.hl,
+            refKind: null,
+            imgId: tok.slice(5, -1),
+          })
+          i = close + 1
+          continue
+        }
         if (tok.startsWith('[size=')) {
           const END = '[/size]'
           const endIdx = text.indexOf(END, close + 1)
@@ -138,7 +154,6 @@ function parseInline(text: string, base: Base): InlineRun[] {
 }
 
 export function parseRichText(text: string): RichBlock[] {
-  console.log('RICHTEXT V3 scanner')
   const blocks: RichBlock[] = []
   const paragraphs = text.replace(/\r/g, '').split(/\n{2,}/)
   for (const raw of paragraphs) {

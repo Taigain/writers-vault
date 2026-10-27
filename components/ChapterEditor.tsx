@@ -29,6 +29,7 @@ import {
   Globe2,
   Earth,
   ChevronDown,
+  Image as ImageIcon,
 } from 'lucide-react'
 import RichPreview from './RichPreview'
 import ExportButton from './ExportButton'
@@ -49,6 +50,8 @@ import {
   type DictGroupRow,
   getDict,
   type DictRow,
+  getSceneImages,
+  type SceneImageRow,
 } from '@/lib/actions'
 import { registerEditor, setEditorDirty, unregisterEditor } from '@/lib/autosave'
 import type { DictMap } from '@/lib/dict'
@@ -60,6 +63,7 @@ import ZoneMenu from './ZoneMenu'
 import { usePremium } from './LicenseProvider'
 import { useRouter } from 'next/navigation'
 import { findZoneAt, zoneSpan, rezoneText, zoneOpenMarker, zoneCloseMarker, type ZoneKind } from '@/lib/zones'
+import InsertImageDialog from './InsertImageDialog'
 
 const wordsOf = (s: string) => (s.trim() ? s.trim().split(/\s+/).length : 0)
 const SIZES = [14, 16, 18, 20, 24, 32]
@@ -126,6 +130,18 @@ export default function ChapterEditor({
   useEffect(() => {
     void getDictGroups(bookId).then(setZoneGroups)
   }, [bookId])
+
+  const { unlocked: imgsUnlocked } = usePremium('inlineImages')
+  const [imgMap, setImgMap] = useState<Record<string, SceneImageRow>>({})
+  const [imgOpen, setImgOpen] = useState(false)
+  useEffect(() => {
+    if (!imgsUnlocked) return
+    void getSceneImages(bookId).then((rows) => {
+      const m: Record<string, SceneImageRow> = {}
+      for (const r of rows) m[r.id] = r
+      setImgMap(m)
+    })
+  }, [bookId, imgsUnlocked])
 
   const [dictRows, setDictRows] = useState<DictRow[]>([])
   useEffect(() => {
@@ -942,6 +958,11 @@ export default function ChapterEditor({
                   <button type="button" title={t('chTbScene')} onClick={() => wrapPair('[sc:]', '[/sc]')}>
                     <Clapperboard size={15} />
                   </button>
+                  {imgsUnlocked && (
+                    <button type="button" title={t('siTb')} onClick={() => setImgOpen(true)}>
+                      <ImageIcon size={15} />
+                    </button>
+                  )}
                   <span className="flex items-center gap-1">
                     {HL_COLORS.map((hc, hi) => (
                       <button
@@ -1185,7 +1206,7 @@ export default function ChapterEditor({
                     <EyeOff size={14} />
                   </button>
                 </div>
-                <RichPreview text={applyDictFull(c, dictRows, zoneGroups)} highlight={highlight} onRef={openRef} />
+                <RichPreview text={applyDictFull(c, dictRows, zoneGroups)} highlight={highlight} onRef={openRef} images={imgMap} />
               </div>
             )}
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1224,6 +1245,20 @@ export default function ChapterEditor({
         </div>
       )}
         <WarnDialog text={warnText} onClose={() => setWarnText(null)} />
+        {imgOpen && (
+          <InsertImageDialog
+            chapterId={id}
+            onClose={() => setImgOpen(false)}
+            onInsert={(marker) => {
+              const ta = taRef.current
+              const s = ta?.selectionStart ?? c.length
+              const next = c.slice(0, s) + marker + c.slice(s)
+              setC(next)
+              if (ta) restore(ta, s + marker.length, s + marker.length, ta.scrollTop)
+              setImgOpen(false)
+            }}
+          />
+        )}
       </div>
       {refs.length > 0 && !zen && (
         <RefDock

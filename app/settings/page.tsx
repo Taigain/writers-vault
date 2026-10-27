@@ -27,6 +27,7 @@ import QuoteStyleSetting from '@/components/QuoteStyleSetting'
 import PaletteSetting from '@/components/PaletteSetting'
 import DashSetting from '@/components/DashSetting'
 import FontPicker from '@/components/FontPicker'
+import CloudBackupSection from '@/components/CloudBackupSection'
 import { useLicense } from '@/components/LicenseProvider'
 import { PREMIUM_LAUNCH } from '@/lib/premium'
 
@@ -266,7 +267,9 @@ export default function SettingsPage() {
         <div className="set-block"><DashSetting /></div>
         <div className="set-block"><PaletteSetting /></div>
       </div>
-
+      <div className="mb-6">
+        <CloudBackupSection />
+      </div>
   {PREMIUM_LAUNCH && (
    <section className="card p-5 mb-6">
      <h2 className="text-lg font-bold mb-4 flex items-center gap-2">

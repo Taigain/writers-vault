@@ -9,6 +9,9 @@ import { parseForms } from './dict'
 import { parseScenes } from './scenes'
 import type { CharRelation } from '@/components/characterTypes'
 import { getLicenseState } from './licenseActions'
+import { scanCloudClients, type DetectedClient } from './cloudScan'
+import { packBook } from './projectPack'
+import { mdSlug } from './markdown'
 
 const validRole = (role: string): string =>
   ROLES.some((r) => r.key === role) ? role : 'secondary'
@@ -2309,4 +2312,218 @@ export async function getProfileStats() {
     0,
   )
   return { words, books, series, characters, events, scenes }
+}
+
+// --- CLOUD BACKUP ---
+export async function detectCloudClients(): Promise<DetectedClient[]> {
+  await schemaReady
+  return scanCloudClients()
+}
+export type CloudTargetRow = {
+  id: string
+  provider: string
+  name: string
+  rootPath: string
+  enabled: boolean
+  lastRunAt: string | null
+  lastStatus: string
+}
+export async function getCloudTargets(): Promise<CloudTargetRow[]> {
+  await schemaReady
+  const rows = await prisma.cloudTarget.findMany({ orderBy: { createdAt: 'asc' } })
+  return rows.map((r) => ({
+    id: r.id,
+    provider: r.provider,
+    name: r.name,
+    rootPath: r.rootPath,
+    enabled: r.enabled,
+    lastRunAt: r.lastRunAt ? r.lastRunAt.toISOString() : null,
+    lastStatus: r.lastStatus,
+  }))
+}
+export async function addCloudTarget(provider: string, name: string, rootPath: string) {
+  await schemaReady
+  const p = rootPath.trim()
+  if (!p) return
+  await prisma.cloudTarget.create({ data: { provider, name: name.trim() || provider, rootPath: p } })
+  revalidatePath('/settings')
+}
+export async function removeCloudTarget(id: string) {
+  await schemaReady
+  await prisma.cloudTarget.delete({ where: { id } })
+  revalidatePath('/settings')
+}
+export async function setBookCloudBackup(bookId: string, on: boolean) {
+  await schemaReady
+  await prisma.book.update({ where: { id: bookId }, data: { cloudBackup: on } })
+  revalidatePath(`/book/${bookId}`)
+}
+const CLOUD_KEEP = 5
+export async function cloudBackupBook(
+  bookId: string,
+  targetId?: string,
+): Promise<{ ok: boolean; error?: string; count?: number }> {
+  await schemaReady
+  const book = await prisma.book.findUnique({ where: { id: bookId }, select: { title: true } })
+  if (!book) return { ok: false, error: 'book' }
+  const targets = await prisma.cloudTarget.findMany({
+    where: targetId ? { id: targetId } : { enabled: true },
+  })
+  if (targets.length === 0) return { ok: false, error: 'notargets' }
+  const packed = await packBook(bookId)
+  const bytes: Buffer = Buffer.isBuffer(packed)
+    ? packed
+    : Buffer.from((packed as unknown as { buffer: number[] }).buffer)
+  const slug = mdSlug(book.title)
+  const stamp = new Date().toISOString().replace(/[:T]/g, '-').slice(0, 16)
+  let done = 0
+  let lastErr = ''
+  for (const tg of targets) {
+    try {
+      const fs = await import('fs')
+      const path = await import('path')
+      const dir = path.join(tg.rootPath, 'WriterVault', slug)
+      fs.mkdirSync(dir, { recursive: true })
+      const tmp = path.join(dir, stamp + '.tmp')
+      const final = path.join(dir, stamp + '.wvproj')
+      fs.writeFileSync(tmp, bytes)
+      fs.renameSync(tmp, final)
+      fs.writeFileSync(path.join(dir, 'latest.wvproj'), bytes)
+      const olds = fs
+        .readdirSync(dir)
+        .filter((f) => /^\d{4}-\d{2}-\d{2}-\d{2}-\d{2}\.wvproj$/.test(f))
+        .sort()
+        .reverse()
+      for (const f of olds.slice(CLOUD_KEEP)) fs.unlinkSync(path.join(dir, f))
+      await prisma.cloudTarget.update({
+        where: { id: tg.id },
+        data: { lastRunAt: new Date(), lastStatus: 'ok' },
+      })
+      done++
+    } catch (e) {
+      lastErr = e instanceof Error ? e.message : String(e)
+      await prisma.cloudTarget.update({
+        where: { id: tg.id },
+        data: { lastRunAt: new Date(), lastStatus: lastErr.slice(0, 200) },
+      })
+    }
+  }
+  revalidatePath(`/book/${bookId}`)
+  if (done === 0) return { ok: false, error: lastErr || 'notargets' }
+  return { ok: true, count: done }
+}
+
+// --- SCENE IMAGES ---
+export type SceneImageRow = {
+  id: string
+  sceneId: string
+  caption: string
+  align: string
+  widthPct: number
+  base64: string
+  order: number
+}
+export async function getSceneImages(bookId: string): Promise<SceneImageRow[]> {
+  await schemaReady
+  const rows = await prisma.sceneImage.findMany({
+    where: { bookId },
+    orderBy: [{ sceneId: 'asc' }, { order: 'asc' }],
+  })
+  return rows.map((r) => ({
+    id: r.id,
+    sceneId: r.sceneId,
+    caption: r.caption,
+    align: r.align,
+    widthPct: r.widthPct,
+    base64: r.base64,
+    order: r.order,
+  }))
+}
+export async function getChapterSceneImages(
+  chapterId: string,
+): Promise<{ sceneId: string; sceneTitle: string; images: SceneImageRow[] }[]> {
+  await schemaReady
+  const scenes = await prisma.scene.findMany({
+    where: { chapterId },
+    orderBy: { order: 'asc' },
+    include: { images: { orderBy: { order: 'asc' } } },
+  })
+  return scenes.map((s) => ({
+    sceneId: s.id,
+    sceneTitle: s.title,
+    images: s.images.map((r) => ({
+      id: r.id,
+      sceneId: r.sceneId,
+      caption: r.caption,
+      align: r.align,
+      widthPct: r.widthPct,
+      base64: r.base64,
+      order: r.order,
+    })),
+  }))
+}
+export async function createSceneImage(sceneId: string, fd: FormData) {
+  await schemaReady
+  const img = await readImageField(fd, 'image')
+  if (!img.value) return
+  const sc = await prisma.scene.findUnique({
+    where: { id: sceneId },
+    select: { chapter: { select: { bookId: true } } },
+  })
+  if (!sc) return
+  const count = await prisma.sceneImage.count({ where: { sceneId } })
+  await prisma.sceneImage.create({
+    data: {
+      sceneId,
+      bookId: sc.chapter.bookId,
+      base64: img.value,
+      caption: String(fd.get('caption') ?? '').trim(),
+      order: count + 1,
+    },
+  })
+  revalidatePath(`/book/${sc.chapter.bookId}`)
+}
+export async function updateSceneImage(
+  id: string,
+  patch: { caption?: string; align?: string; widthPct?: number },
+) {
+  await schemaReady
+  const data: Record<string, unknown> = {}
+  if (patch.caption !== undefined) data.caption = patch.caption
+  if (patch.align !== undefined) data.align = patch.align
+  if (patch.widthPct !== undefined) data.widthPct = Math.max(30, Math.min(100, Math.round(patch.widthPct)))
+  await prisma.sceneImage.update({ where: { id }, data })
+  const row = await prisma.sceneImage.findUnique({ where: { id }, select: { bookId: true } })
+  if (row) revalidatePath(`/book/${row.bookId}`)
+}
+export async function deleteSceneImage(id: string) {
+  await schemaReady
+  const row = await prisma.sceneImage.findUnique({ where: { id }, select: { bookId: true } })
+  await prisma.sceneImage.delete({ where: { id } })
+  if (!row) return
+  const chapters = await prisma.chapter.findMany({
+    where: { bookId: row.bookId },
+    select: { id: true, content: true },
+  })
+  const re = new RegExp('\\[img:' + id + '\\]', 'g')
+  for (const ch of chapters) {
+    if (!re.test(ch.content)) continue
+    re.lastIndex = 0
+    await prisma.chapter.update({ where: { id: ch.id }, data: { content: ch.content.replace(re, '') } })
+  }
+  revalidatePath(`/book/${row.bookId}`)
+}
+
+export async function getSceneImagesForScene(sceneId: string): Promise<SceneImageRow[]> {
+  await schemaReady
+  const rows = await prisma.sceneImage.findMany({ where: { sceneId }, orderBy: { order: 'asc' } })
+  return rows.map((r) => ({
+    id: r.id,
+    sceneId: r.sceneId,
+    caption: r.caption,
+    align: r.align,
+    widthPct: r.widthPct,
+    base64: r.base64,
+    order: r.order,
+  }))
 }
